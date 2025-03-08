@@ -1,0 +1,3 @@
+npx create-react-app frosty-trivia --template typescript
+cd frosty-trivia
+npm install @reduxjs/toolkit react-redux framer-motion i18next react-i18next styled-components 
