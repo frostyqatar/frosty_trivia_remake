@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RootState } from '../store';
-import { pauseTimer, revealAnswer, returnToBoard, startTimer, tickTimer, resetTimer, setActiveTeam, resetGame, awardPoints } from '../store/gameSlice';
+import { pauseTimer, revealAnswer, returnToBoard, startTimer, tickTimer, resetTimer, setActiveTeam, resetGame, awardPoints, setBothTeamsTimedOut } from '../store/gameSlice';
 import { BidirectionalText } from '../utils/textUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { showNotification } from '../utils/notificationUtils';
@@ -79,33 +79,31 @@ const ReturnButton = styled(Button)`
   color: white;
 `;
 
-const TeamTimerDisplay = styled.div`
-  background-color: #34495e;
+const TeamTimerDisplay = styled.div<{ $isTimeUp: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: ${props => props.$isTimeUp ? '#e74c3c' : '#3498db'};
   color: white;
-  padding: 16px 24px;
+  padding: 12px 20px;
   border-radius: 8px;
-  font-size: 24px;
-  margin-bottom: 24px;
-  display: inline-block;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-`;
-
-const TeamNameSpan = styled.span`
-  font-weight: bold;
-  color: #f39c12;
-  margin: 0 8px;
+  font-size: 18px;
+  margin-bottom: 20px;
+  text-align: center;
+  transition: background-color 0.3s ease;
+  position: relative;
 `;
 
 const TimerValue = styled.span`
   font-weight: bold;
-  font-size: 28px;
-  color: ${props => {
-    const timeRemaining = parseInt(props.children as string);
-    if (timeRemaining <= 5) return '#e74c3c';
-    if (timeRemaining <= 10) return '#f39c12';
-    return '#2ecc71';
-  }};
-  margin-left: 8px;
+  margin: 0 5px;
+  font-size: 22px;
+`;
+
+const TeamNameSpan = styled.span`
+  font-weight: bold;
+  margin: 0 5px;
+  color: #fff9c4;
 `;
 
 // Add a new styled button for ending the game
@@ -151,141 +149,377 @@ const AnswerText = styled.div`
 const AwardPointsContainer = styled.div`
   display: flex;
   flex-direction: column;
+  gap: 16px;
   width: 100%;
-  gap: 12px;
-  margin-top: 16px;
+  max-width: 600px;
+  margin: 24px 0;
 `;
 
-const AwardButton = styled(Button)`
+const AwardButton = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 24px;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
   background-color: #27ae60;
   color: white;
-  font-weight: bold;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  width: 100%;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: #2ecc71;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
 `;
 
-const NoAwardButton = styled(Button)`
-  background-color: #95a5a6;
+const NoAwardButton = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 24px;
+  font-size: 18px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  background-color: #e74c3c;
   color: white;
-  font-weight: bold;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+const TeamEmoji = styled.span`
+  font-size: 24px;
+  margin-right: 8px;
+`;
+
+// Add these new styled components for media display
+const MediaContainer = styled.div`
   width: 100%;
+  max-width: 600px;
+  margin: 20px auto;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const QuestionImage = styled.img`
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+`;
+
+const AudioPlayer = styled.audio`
+  width: 100%;
+  margin: 10px 0;
+`;
+
+const VideoContainer = styled.div`
+  position: relative;
+  padding-bottom: 56.25%; /* 16:9 aspect ratio */
+  height: 0;
+  overflow: hidden;
+  
+  iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+`;
+
+// Helper function to extract YouTube video ID
+const getYoutubeVideoId = (url: string): string | null => {
+  const regex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+};
+
+// Add this styled component
+const TeamIndicator = styled.div`
+  background-color: #3498db;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 18px;
+  margin-bottom: 16px;
+  text-align: center;
+`;
+
+// Update the TimerDisplay component with proper typing
+const TimerDisplay = styled.div<{ remaining: number }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: bold;
+  margin: 20px 0;
+  color: ${props => props.remaining <= 5 ? '#e74c3c' : '#2c3e50'};
+  
+  span {
+    padding: 12px 20px;
+    background-color: ${props => props.remaining <= 5 ? '#ffebee' : '#f0f3f5'};
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+// Add these styled components for the timer control buttons
+const TimerControlEmoji = styled.span`
+  cursor: pointer;
+  font-size: 22px;
+  margin: 0 6px;
+  transition: transform 0.2s ease;
+  display: inline-block;
+  
+  &:hover {
+    transform: scale(1.2);
+  }
+  
+  &:active {
+    transform: scale(0.9);
+  }
 `;
 
 const QuestionScreen: React.FC = () => {
   const dispatch = useDispatch();
-  const { currentQuestion, teams, answerRevealed, timer, activeTeamIndex } = useSelector((state: RootState) => ({
-    currentQuestion: state.currentQuestion,
-    teams: state.teams,
-    answerRevealed: state.answerRevealed,
-    timer: state.timer,
-    activeTeamIndex: state.activeTeamIndex
-  }));
   const { playSound } = useSoundEffects();
-  
-  // Add this state to track if both teams have had their turn
+  const [answerRevealed, setAnswerRevealed] = useState(false);
   const [bothTeamsFinished, setBothTeamsFinished] = useState(false);
-  const [teamTurnsCompleted, setTeamTurnsCompleted] = useState(0);
+  const [timerTeamIndex, setTimerTeamIndex] = useState(0);
   
-  // Update the timer useEffect to handle team switching and time up message
+  // Get state from Redux
+  const { currentQuestion, timer, teams, activeTeamIndex } = useSelector((state: RootState) => ({
+    currentQuestion: state.currentQuestion,
+    timer: state.timer,
+    teams: state.teams,
+    activeTeamIndex: state.activeTeamIndex || 0
+  }));
+  
+  // Update the timer duration for testing purposes
   useEffect(() => {
-    dispatch(startTimer());
-    
-    // Set up timer interval
-    const timerInterval = setInterval(() => {
-      dispatch(tickTimer());
-      
-      // Get current timer value after tick
-      const currentTimer = store.getState().timer;
-      
-      // Check if timer has reached zero
-      if (currentTimer.remaining <= 0) {
-        // Play time's up sound
-        playSound('timer-tick');
-        
-        // Increment completed turns
-        setTeamTurnsCompleted(prev => prev + 1);
-
-        // Check if both teams have had their turn
-        if (teamTurnsCompleted >= 1) {
-          // Both teams have had their turn
-          setBothTeamsFinished(true);
-          clearInterval(timerInterval);
-          showNotification(`انتهى الوقت للفريقين`, 3000);
-        } else {
-          // Switch to the other team
-          const currentActiveTeam = store.getState().activeTeamIndex;
-          const nextTeam = currentActiveTeam === 0 ? 1 : 0;
-          dispatch(setActiveTeam(nextTeam));
-          
-          // Reset timer back to 30 seconds
-          dispatch(resetTimer(30));
-          
-          // Show notification about team switch
-          showNotification(`انتهى الوقت! دور ${teams[nextTeam]?.name || 'الفريق الآخر'} الآن`, 3000);
-        }
-      }
-    }, 1000);
-    
-    // Play ticking sound when timer is low
-    if (timer.remaining <= 5 && timer.remaining > 0) {
-      playSound('timer-tick');
+    if (currentQuestion) {
+      // Set timer duration to 5 seconds for testing
+      dispatch({ type: 'game/setTimer', payload: { duration: 5, remaining: 5 } });
     }
-    
-    return () => {
-      clearInterval(timerInterval);
-      dispatch(pauseTimer());
-    };
-  }, [dispatch, playSound, timer.remaining, teams, teamTurnsCompleted]);
+  }, [currentQuestion, dispatch]);
   
+  // Update the useEffect that manages the timer
+  useEffect(() => {
+    // Only start the timer when question is loaded and no answer is revealed yet
+    if (currentQuestion && !answerRevealed) {
+      console.log(`Starting timer for team: ${teams[timerTeamIndex]?.name || 'الفريق'}`);
+      
+      // Reset and start timer for current team
+      dispatch(resetTimer());
+      dispatch(startTimer());
+      
+      // Set up interval to tick the timer
+      const timerInterval = setInterval(() => {
+        dispatch(tickTimer());
+        
+        // Check if timer has reached zero
+        const currentTimerValue = store.getState().timer.remaining;
+        
+        if (currentTimerValue <= 0) {
+          // Time's up for the current team
+          clearInterval(timerInterval);
+          console.log(`Time's up for team: ${teams[timerTeamIndex]?.name || 'الفريق'}`);
+          
+          // Check if this was the first team's timer
+          if (timerTeamIndex === 0) {
+            // Switch to second team's timer
+            setTimerTeamIndex(1);
+            
+            // Reset and start timer for the second team
+            setTimeout(() => {
+              dispatch(resetTimer());
+              dispatch(startTimer());
+            }, 1000);
+          } else {
+            // Both teams' timers have ended
+            setBothTeamsFinished(true);
+            showNotification("انتهى الوقت لكلا الفريقين");
+          }
+        }
+      }, 1000);
+      
+      // Clear interval when component unmounts or question changes
+      return () => {
+        clearInterval(timerInterval);
+        dispatch(pauseTimer());
+      };
+    }
+  }, [dispatch, currentQuestion, answerRevealed, teams, timerTeamIndex, setBothTeamsFinished, showNotification]);
+  
+  // Reset bothTeamsFinished state when question changes
+  useEffect(() => {
+    setBothTeamsFinished(false);
+  }, [currentQuestion]);
+  
+  // Reset timerTeamIndex when question changes
+  useEffect(() => {
+    setTimerTeamIndex(0);
+  }, [currentQuestion]);
+  
+  // Redirect if no question is selected
+  useEffect(() => {
+    if (!currentQuestion) {
+      dispatch(returnToBoard({ markAsAnswered: false }));
+    }
+  }, [currentQuestion, dispatch]);
+  
+  // Return early if no question
   if (!currentQuestion) {
-    return <div>No question selected</div>;
+    return null;
   }
   
-  const { categoryId, question } = currentQuestion;
+  const { categoryId, questionIndex, question } = currentQuestion;
   const activeTeam = teams[activeTeamIndex];
   const activeTeamName = activeTeam ? activeTeam.name : `Team ${activeTeamIndex + 1}`;
   
+  // Get the timer team name
+  const timerTeam = teams[timerTeamIndex];
+  const timerTeamName = timerTeam ? timerTeam.name : `Team ${timerTeamIndex + 1}`;
+  
+  // Update the handleRevealAnswer function
   const handleRevealAnswer = () => {
-    playSound('button-click');
+    playSound('answer-reveal');
     dispatch(revealAnswer());
+    setAnswerRevealed(true);
+    
+    // Stop the timer when revealing answer
+    dispatch(pauseTimer());
+    
+    // Switch to the other team when revealing answer
+    dispatch(setActiveTeam(activeTeamIndex === 0 ? 1 : 0));
   };
   
+  // Handle returning to the game board WITHOUT marking as answered
   const handleReturnToBoard = () => {
     playSound('button-click');
-    dispatch(returnToBoard());
-  };
-
-  const handleEndGame = () => {
-    if (window.confirm('هل أنت متأكد من أنك تريد إنهاء اللعبة؟')) {
-      dispatch(resetGame());
-      showNotification('تم إنهاء اللعبة');
-    }
+    dispatch(returnToBoard({ markAsAnswered: false }));
   };
   
+  // Handle awarding points to a team
   const handleAwardPoints = (teamIndex: 0 | 1) => {
     playSound('button-click');
-    if (currentQuestion) {
-      dispatch(awardPoints({ 
-        teamIndex, 
-        points: currentQuestion.question.value 
-      }));
-    }
-    dispatch(returnToBoard());
+    dispatch(awardPoints({ 
+      teamIndex, 
+      points: question.value 
+    }));
+    dispatch(returnToBoard({ markAsAnswered: true }));
   };
   
+  // Handle "No Award" - no points awarded
   const handleNoAward = () => {
     playSound('button-click');
-    dispatch(returnToBoard());
+    dispatch(returnToBoard({ markAsAnswered: true }));
+  };
+  
+  // Media rendering function
+  const renderMedia = () => {
+    if (!question) return null;
+    
+    if (question.image) {
+      return (
+        <MediaContainer>
+          <QuestionImage src={question.image} alt="Question visual" />
+        </MediaContainer>
+      );
+    }
+    
+    if (question.audio) {
+      return (
+        <MediaContainer>
+          <AudioPlayer controls>
+            <source src={question.audio} type="audio/mp3" />
+            Your browser does not support the audio element.
+          </AudioPlayer>
+        </MediaContainer>
+      );
+    }
+    
+    if (question.video) {
+      const videoId = getYoutubeVideoId(question.video);
+      if (videoId) {
+        return (
+          <MediaContainer>
+            <VideoContainer>
+              <iframe 
+                src={`https://www.youtube.com/embed/${videoId}`}
+                title="YouTube video player"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+            </VideoContainer>
+          </MediaContainer>
+        );
+      }
+    }
+    
+    return null;
+  };
+  
+  // Add these handler functions inside the component
+  const handleSkipTimer = () => {
+    playSound('button-click');
+    
+    // Clear any existing timer interval
+    dispatch(pauseTimer());
+    
+    if (timerTeamIndex === 0) {
+      // Switch to second team's timer
+      setTimerTeamIndex(1);
+      
+      // Reset and start timer for the second team
+      setTimeout(() => {
+        dispatch(resetTimer());
+        dispatch(startTimer());
+      }, 300);
+      
+      showNotification(`تم تخطي وقت الفريق ${teams[0]?.name || 'الأول'}`);
+    } else {
+      // Both teams' timers have been skipped
+      setBothTeamsFinished(true);
+      showNotification("تم إيقاف المؤقت");
+    }
+  };
+
+  const handleRestartTimers = () => {
+    playSound('button-click');
+    
+    // Reset to first team
+    setTimerTeamIndex(0);
+    setBothTeamsFinished(false);
+    
+    // Reset and restart timer
+    dispatch(resetTimer());
+    dispatch(startTimer());
+    
+    showNotification("تم إعادة تشغيل المؤقت");
   };
   
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.3 }}
+        exit={{ opacity: 0, y: -50 }}
       >
         <QuestionContainer>
           <QuestionHeader>
@@ -296,19 +530,46 @@ const QuestionScreen: React.FC = () => {
             <PointValue>{question.value} نقطة</PointValue>
           </QuestionHeader>
           
-          <TeamTimerDisplay>
-            {bothTeamsFinished ? (
+          <TeamTimerDisplay $isTimeUp={timer.remaining <= 0}>
+            {answerRevealed ? (
+              // When answer is revealed
+              <span>الإجابة معروضة الآن - الدور التالي للفريق {teams[activeTeamIndex]?.name}</span>
+            ) : bothTeamsFinished ? (
+              // When both teams have timed out
               <>
-                <span>انتهى الوقت للفريقين</span>
-                <span> ⌛</span>
+                <span>⚠️ انتهى الوقت لكلا الفريقين! </span>
+                <TimerControlEmoji 
+                  onClick={handleRestartTimers}
+                  title="إعادة تشغيل المؤقتات"
+                >
+                  🔁
+                </TimerControlEmoji>
               </>
             ) : (
+              // Normal timer display during team's turn - use timerTeamIndex instead of activeTeamIndex
               <>
-                <span>دور</span>
-                <TeamNameSpan>{activeTeamName}</TeamNameSpan>
-                <span> - الوقت: </span>
+               
+                <TeamNameSpan>
+                  {teams[timerTeamIndex]?.name}
+                </TeamNameSpan>
+                
                 <TimerValue>{timer.remaining}</TimerValue>
-                <span> ثانية ⌛</span>
+              
+                
+                {/* Emoji controls */}
+                <TimerControlEmoji 
+                  onClick={handleSkipTimer}
+                  title="تخطي المؤقت الحالي"
+                >
+                  ⏭️
+                </TimerControlEmoji>
+                
+                <TimerControlEmoji 
+                  onClick={handleRestartTimers}
+                  title="إعادة تشغيل المؤقتات"
+                >
+                  🔄
+                </TimerControlEmoji>
               </>
             )}
           </TeamTimerDisplay>
@@ -316,6 +577,9 @@ const QuestionScreen: React.FC = () => {
           <QuestionText>
             <BidirectionalText text={question.question} />
           </QuestionText>
+          
+          {/* Media rendering */}
+          {renderMedia()}
           
           {!answerRevealed ? (
             <ControlButtons>
@@ -347,6 +611,7 @@ const QuestionScreen: React.FC = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
+                  <TeamEmoji>🏆</TeamEmoji>
                   منح النقاط للفريق {teams[0]?.name || 'الفريق 1'}
                 </AwardButton>
                 
@@ -355,6 +620,7 @@ const QuestionScreen: React.FC = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
+                  <TeamEmoji>🏆</TeamEmoji>
                   منح النقاط للفريق {teams[1]?.name || 'الفريق 2'}
                 </AwardButton>
                 
@@ -363,6 +629,7 @@ const QuestionScreen: React.FC = () => {
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
+                  <TeamEmoji>❌</TeamEmoji>
                   لا نقاط
                 </NoAwardButton>
               </AwardPointsContainer>
@@ -377,6 +644,7 @@ const QuestionScreen: React.FC = () => {
               </ReturnButton>
             </AnswerRevealSection>
           )}
+
         </QuestionContainer>
       </motion.div>
     </AnimatePresence>

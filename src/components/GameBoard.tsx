@@ -100,12 +100,16 @@ const GameBoard: React.FC = () => {
   // Get all possible point values
   const pointValues = [100, 200, 300, 400, 500];
   
-  // Check if all questions are answered
-  useEffect(() => {
+  // Don't automatically check on every render
+  // Instead, add a separate function to check and end the game
+  const checkAllQuestionsAnswered = () => {
     if (selectedCategories.length > 0) {
       const allQuestionsAnswered = displayCategories.every((category: Category) => 
         category.questions.every((question: any) => question.answered)
       );
+      
+      // Add a console log to help debug
+      console.log('Checking questions:', allQuestionsAnswered, displayCategories);
       
       if (allQuestionsAnswered) {
         // Play the winner-celebration sound
@@ -113,13 +117,41 @@ const GameBoard: React.FC = () => {
         dispatch(setGamePhase('end'));
       }
     }
-  }, [categories, selectedCategories, dispatch, playSound, displayCategories]);
+  };
+
+  // Add an event listener for a custom event from returnToBoard action
+  useEffect(() => {
+    const handleReturnToBoard = () => {
+      // Small delay to ensure state is updated
+      setTimeout(checkAllQuestionsAnswered, 100);
+    };
+    
+    window.addEventListener('returnToBoard', handleReturnToBoard);
+    // Also check when component mounts or updates
+    setTimeout(checkAllQuestionsAnswered, 500);
+    
+    return () => {
+      window.removeEventListener('returnToBoard', handleReturnToBoard);
+    };
+  }, [displayCategories, selectedCategories, categories]); // Add categories dependency
   
   const handleEndGame = () => {
-    if (window.confirm('هل أنت متأكد من أنك تريد إنهاء اللعبة؟')) {
-      playSound('button-click');
-      dispatch(resetGame());
-      showNotification('تم إنهاء اللعبة');
+    // First check if all questions are already answered
+    const allQuestionsAnswered = displayCategories.every((category: Category) => 
+      category.questions.every((question: any) => question.answered)
+    );
+    
+    if (allQuestionsAnswered) {
+      // All questions answered, go directly to end game
+      playSound('winner-celebration');
+      dispatch(setGamePhase('end'));
+    } else {
+      // Not all questions answered, ask for confirmation
+      if (window.confirm('هل أنت متأكد من أنك تريد إنهاء اللعبة؟')) {
+        playSound('button-click');
+        dispatch(setGamePhase('end'));  // Changed from resetGame() to setGamePhase('end')
+        showNotification('تم إنهاء اللعبة');
+      }
     }
   };
 

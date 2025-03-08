@@ -3,6 +3,13 @@ import { GameState, TeamIndex, AbilityType, GamePhase, Question } from '../types
 import { getInitialCategories } from '../data/questions';
 import { createAction } from '@reduxjs/toolkit';
 
+interface TimerState {
+  duration: number;
+  remaining: number;
+  isRunning: boolean;
+  bothTeamsTimedOut: boolean;
+}
+
 const initialState: GameState = {
   gamePhase: 'setup',
   teams: [],
@@ -13,6 +20,7 @@ const initialState: GameState = {
     duration: 30,
     remaining: 30,
     isRunning: false,
+    bothTeamsTimedOut: false
   },
   volume: 0.7,
   musicEnabled: true,
@@ -147,6 +155,7 @@ const gameSlice = createSlice({
       }
       state.timer.remaining = state.timer.duration;
       state.timer.isRunning = false;
+      state.timer.bothTeamsTimedOut = false;
     },
     
     tickTimer: (state) => {
@@ -201,10 +210,30 @@ const gameSlice = createSlice({
       }
     },
     
-    returnToBoard: (state) => {
+    returnToBoard: (state, action: PayloadAction<{ markAsAnswered: boolean }>) => {
+      const { markAsAnswered } = action.payload;
+      
+      if (markAsAnswered && state.currentQuestion) {
+        // Find the category and question in the categories array
+        const { categoryId, questionIndex } = state.currentQuestion;
+        const category = state.categories.find(c => c.id === categoryId);
+        
+        if (category && category.questions[questionIndex]) {
+          // Mark the question as answered
+          category.questions[questionIndex].answered = true;
+        }
+      }
+      
+      // Reset game state
       state.gamePhase = 'playing';
       state.currentQuestion = null;
-      state.answerRevealed = false; // Reset this when returning to the board
+      state.answerRevealed = false;
+      
+      // Dispatch custom event when returning to board
+      // This will allow GameBoard to check if all questions are answered
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new Event('returnToBoard'));
+      }
     },
     
     setPointsMultiplier: (state, action: PayloadAction<{
@@ -219,6 +248,10 @@ const gameSlice = createSlice({
     
     setActiveTeam: (state, action: PayloadAction<TeamIndex>) => {
       state.activeTeamIndex = action.payload;
+    },
+    
+    setBothTeamsTimedOut: (state, action: PayloadAction<boolean>) => {
+      state.timer.bothTeamsTimedOut = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -252,6 +285,7 @@ export const {
   returnToBoard,
   setPointsMultiplier,
   setActiveTeam,
+  setBothTeamsTimedOut,
 } = gameSlice.actions;
 
 export const resetGame = createAction('game/resetGame');

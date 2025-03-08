@@ -122,12 +122,12 @@ const AnswerReveal: React.FC = () => {
       teamIndex, 
       points: question.value 
     }));
-    dispatch(returnToBoard());
+    dispatch(returnToBoard({ markAsAnswered: true }));
   };
   
-  const handleNoAward = () => {
+  const handleReturnToBoard = () => {
     playSound('button-click');
-    dispatch(returnToBoard());
+    dispatch(returnToBoard({ markAsAnswered: false }));
   };
   
   return (
@@ -166,11 +166,11 @@ const AnswerReveal: React.FC = () => {
         </AwardButton>
         
         <NoAwardButton
-          onClick={handleNoAward}
+          onClick={handleReturnToBoard}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          لا نقاط
+          العودة للوحة اللعبة
         </NoAwardButton>
         
         <AwardButton
@@ -183,7 +183,7 @@ const AnswerReveal: React.FC = () => {
       </ButtonsContainer>
       
       <ReturnButton
-        onClick={handleNoAward}
+        onClick={handleReturnToBoard}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >

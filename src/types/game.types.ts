@@ -5,6 +5,9 @@ export interface Question {
   question: string;
   answer: string;
   answered: boolean;
+  image?: string;
+  audio?: string;
+  video?: string;
 }
 
 export interface Category {
@@ -41,6 +44,13 @@ export interface Team {
   pointsMultiplier: number;
 }
 
+export interface TimerState {
+  duration: number;
+  remaining: number;
+  isRunning: boolean;
+  bothTeamsTimedOut: boolean;
+}
+
 export interface GameState {
   gamePhase: GamePhase;
   teams: Team[];
@@ -51,11 +61,7 @@ export interface GameState {
     questionIndex: number;
     question: Question;
   } | null;
-  timer: {
-    duration: number;
-    remaining: number;
-    isRunning: boolean;
-  };
+  timer: TimerState;
   volume: number;
   musicEnabled: boolean;
   activeTeamIndex: TeamIndex;
