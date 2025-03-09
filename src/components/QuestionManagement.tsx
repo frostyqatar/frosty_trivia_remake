@@ -7,6 +7,7 @@ import { BidirectionalText } from '../utils/textUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { setGamePhase, updateCategories } from '../store/gameSlice';
 import { Category, Question } from '../types/game.types';
+import { showNotification } from '../components/common/GameNotification';
 const Papa = require('papaparse');
 
 const DEFAULT_FORM_DATA = {
@@ -29,6 +30,8 @@ const Container = styled.div`
   border-radius: 24px;
   box-shadow: 0 10px 30px rgba(140, 82, 255, 0.15);
   overflow: hidden;
+  margin-top: 24px;
+  margin-bottom: 24px;
 `;
 
 const Header = styled.div`
@@ -51,22 +54,27 @@ const Subtitle = styled.p`
 `;
 
 const Content = styled.div`
-  padding: 24px;
+  padding: 32px;
   max-height: 70vh;
   overflow-y: auto;
+  
+  & > * + * {
+    margin-top: 28px;
+  }
 `;
 
 const ActionBar = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 36px;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 24px;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 12px;
+  gap: 16px;
+  flex-wrap: wrap;
 `;
 
 const Button = styled(motion.button)`
@@ -199,7 +207,9 @@ const ModalTitle = styled.h2`
 `;
 
 const FormGroup = styled.div`
-  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 24px;
 `;
 
 const FormLabel = styled.label`
@@ -413,6 +423,64 @@ const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: s
   
   return null;
 };
+
+const CategoriesSection = styled.div`
+  margin-top: 40px;
+  background-color: #f8f9fa;
+  padding: 24px;
+  border-radius: 16px;
+`;
+
+const CategoriesHeader = styled.h2`
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: #2c3e50;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 12px;
+`;
+
+const CategoryList = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 24px;
+  margin-top: 24px;
+`;
+
+const CategoryCard = styled.div`
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  
+  & > * + * {
+    margin-top: 8px;
+  }
+`;
+
+const CategoryName = styled.div`
+  font-weight: 600;
+  font-size: 16px;
+  margin-bottom: 8px;
+`;
+
+const CategoryIcon = styled.div`
+  font-size: 24px;
+  margin-bottom: 8px;
+`;
+
+const CategoryInfo = styled.div`
+  font-size: 14px;
+  color: #666;
+`;
+
+const CategoryDeleteButton = styled(DeleteIcon)`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+`;
 
 const QuestionManagement: React.FC = () => {
   const dispatch = useDispatch();
@@ -708,12 +776,15 @@ const QuestionManagement: React.FC = () => {
   const handleExportCSV = () => {
     playSound('button-click');
     
-    // Prepare data for CSV export
+    // Prepare data for CSV export with all media fields
     const csvData = flattenQuestions().map(q => ({
       category: q.categoryName,
       question: q.question,
       answer: q.answer,
       value: q.value,
+      image: q.image || '',
+      audio: q.audio || '',
+      video: q.video || ''
     }));
     
     // Convert to CSV
@@ -724,81 +795,81 @@ const QuestionManagement: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', 'game_questions.csv');
+    link.setAttribute('download', 'game_questions_with_media.csv');
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
   
-  const handleImportClick = () => {
-    playSound('button-click');
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
-    }
-  };
-  
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    playSound('button-click');
     
-    Papa.parse(file, {
-      header: true,
-      complete: (results: Papa.ParseResult<any>) => {
-        if (results.data && Array.isArray(results.data)) {
-          try {
-            // Create a deep copy of categories
-            const updatedCategories = JSON.parse(JSON.stringify(categories));
+    if (e.target.files && e.target.files.length > 0) {
+      const file = e.target.files[0];
+      
+      Papa.parse(file, {
+        header: true,
+        complete: function(results: any) {
+          // Create deep copy of categories
+          const updatedCategories = JSON.parse(JSON.stringify(categories));
+          
+          // Process each imported row
+          results.data.forEach((row: any) => {
+            if (!row.category || !row.question || !row.answer || !row.value) {
+              // Skip invalid rows
+              return;
+            }
             
-            // Process each row from CSV
-            results.data.forEach((row: any) => {
-              const { category, question, answer, value } = row;
-              
-              if (!category || !question || !answer || !value) return;
-              
-              // Find or create category
-              let categoryObj = updatedCategories.find((c: Category) => c.name.toLowerCase() === category.toLowerCase());
-              
-              if (!categoryObj) {
-                // Create new category if it doesn't exist
-                const newCategoryId = `category-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
-                categoryObj = {
-                  id: newCategoryId,
-                  name: category,
-                  icon: '❓', // Default icon
-                  questions: []
-                };
-                updatedCategories.push(categoryObj);
-              }
-              
-              // Add question to category
-              categoryObj.questions.push({
-                question,
-                answer,
-                value: parseInt(value) || 100,
-                answered: false,
-                image: '',
-                audio: '',
-                video: ''
-              });
-            });
+            // Find matching category by name
+            let categoryIndex = updatedCategories.findIndex(
+              (c: Category) => c.name.toLowerCase() === row.category.toLowerCase()
+            );
             
-            dispatch(updateCategories(updatedCategories));
-            alert('Questions imported successfully!');
-          } catch (error) {
-            console.error('Error importing questions:', error);
-            alert('Error importing questions. Please check the CSV format.');
+            // Create category if it doesn't exist
+            if (categoryIndex === -1) {
+              const newCategory = {
+                id: row.category.toLowerCase().replace(/\s+/g, '-'),
+                name: row.category,
+                icon: '📒', // Default icon
+                questions: []
+              };
+              updatedCategories.push(newCategory);
+              categoryIndex = updatedCategories.length - 1;
+            }
+            
+            // Create question with all media fields
+            const newQuestion = {
+              value: parseInt(row.value, 10) || 100,
+              question: row.question,
+              answer: row.answer,
+              answered: false,
+              image: row.image || undefined,
+              audio: row.audio || undefined,
+              video: row.video || undefined
+            };
+            
+            // Add question to category
+            updatedCategories[categoryIndex].questions.push(newQuestion);
+          });
+          
+          // Update Redux state
+          dispatch(updateCategories(updatedCategories));
+          
+          // Show success notification
+          showNotification(`Imported ${results.data.length} questions with media`);
+          
+          // Reset file input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
           }
+        },
+        error: function(error: any) {
+          console.error('CSV Import Error:', error);
+          showNotification('Error importing CSV file. Check console for details.');
         }
-      },
-      error: (error: Error) => {
-        console.error('Error parsing CSV:', error);
-        alert('Error parsing CSV file.');
-      }
-    });
-    
-    // Reset file input
-    e.target.value = '';
+      });
+    }
   };
   
   const handleReturnToSetup = () => {
@@ -1033,6 +1104,39 @@ const QuestionManagement: React.FC = () => {
     console.log('Categories changed:', categories);
   }, [categories]);
   
+  // First, add a new function to handle category deletion
+  const handleDeleteCategory = (categoryId: string) => {
+    const categoryToDelete = categories.find((c: Category) => c.id === categoryId);
+    
+    if (!categoryToDelete) return;
+    
+    if (window.confirm(`Are you sure you want to delete the category "${categoryToDelete.name}" and all its questions? This action cannot be undone.`)) {
+      // Create a deep copy of categories without the one to delete
+      const updatedCategories = categories.filter((c: Category) => c.id !== categoryId);
+      
+      // Update Redux
+      dispatch(updateCategories(updatedCategories));
+      
+      // Manual save to localStorage for redundancy
+      try {
+        localStorage.setItem('trivia-game-categories', JSON.stringify(updatedCategories));
+      } catch (e) {
+        console.error('Error saving to localStorage:', e);
+      }
+      
+      playSound('button-click');
+      showNotification(`Category "${categoryToDelete.name}" has been deleted.`);
+    }
+  };
+  
+  // Add this function to your QuestionManagement component
+  const handleImportClick = () => {
+    playSound('button-click');
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
@@ -1055,7 +1159,7 @@ const QuestionManagement: React.FC = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              ➕ New Category
+              ➕ Add Category
             </Button>
             <Button 
               onClick={handleSaveToLocalStorage}
@@ -1481,6 +1585,26 @@ const QuestionManagement: React.FC = () => {
           💾 Export All Data
         </Button>
       </ButtonGroup>
+      
+      <CategoriesSection>
+        <CategoriesHeader>Category Management</CategoriesHeader>
+        <CategoryList>
+          {categories.map((category: Category) => (
+            <CategoryCard key={category.id}>
+              <CategoryIcon>{category.icon}</CategoryIcon>
+              <CategoryName>{category.name}</CategoryName>
+              <CategoryInfo>{category.questions.length} questions</CategoryInfo>
+              <CategoryDeleteButton 
+                onClick={() => handleDeleteCategory(category.id)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                🗑️
+              </CategoryDeleteButton>
+            </CategoryCard>
+          ))}
+        </CategoryList>
+      </CategoriesSection>
     </Container>
   );
 };
