@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -252,12 +252,94 @@ const IconButton = styled(motion.button)`
   }
 `;
 
+// Add these styled components for media support
+const MediaContainer = styled.div`
+  margin: 20px 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+`;
+
+const QuestionImage = styled.img`
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+`;
+
+const VideoContainer = styled.div`
+  width: 100%;
+  max-width: 640px;
+  margin-bottom: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+`;
+
+const QuestionVideo = styled.video`
+  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: block;
+`;
+
+const AudioContainer = styled.div`
+  width: 100%;
+  max-width: 500px;
+  margin-bottom: 16px;
+`;
+
+const QuestionAudio = styled.audio`
+  width: 100%;
+`;
+
+// Add this function to detect YouTube URLs
+const isYouTubeUrl = (url: string) => {
+  return url.includes('youtube.com') || url.includes('youtu.be');
+};
+
+// Add this component for YouTube embeds
+const YouTubeEmbed = ({ url }: { url: string }) => {
+  // Extract video ID from YouTube URL
+  const getYouTubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
+  
+  const videoId = getYouTubeId(url);
+  if (!videoId) return null;
+  
+  return (
+    <iframe
+      width="100%"
+      height="315"
+      src={`https://www.youtube.com/embed/${videoId}`}
+      title="YouTube video player"
+      frameBorder="0"
+      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+      allowFullScreen
+    ></iframe>
+  );
+};
+
 const QuestionScreen: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
   const [currentTimerTeam, setCurrentTimerTeam] = useState<TeamIndex | null>(null);
   const [otherTeamFinished, setOtherTeamFinished] = useState(false);
   const [bothTeamsFinished, setBothTeamsFinished] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
+  // Add this function to handle audio ended event
+  const handleAudioEnded = useCallback(() => {
+    console.log('Audio playback ended');
+    // Add any behavior you want when audio finishes
+  }, []);
   
   // Get state from Redux
   const { currentQuestion, timer, teams, activeTeamIndex, answerRevealed } = useSelector((state: RootState) => ({
@@ -383,6 +465,77 @@ const QuestionScreen: React.FC = () => {
     console.log("QuestionScreen mounted. Active team index:", activeTeamIndex);
   }, []);
   
+  // Handle audio loading and cleanup
+  useEffect(() => {
+    let newAudioElement: HTMLAudioElement | null = null;
+    
+    if (currentQuestion?.question?.audio) {
+      newAudioElement = new Audio(currentQuestion.question.audio);
+      setAudioElement(newAudioElement);
+      
+      // Add event listeners
+      newAudioElement.addEventListener('ended', handleAudioEnded);
+      
+      // Clean up function for when component unmounts or effect re-runs
+      return () => {
+        if (newAudioElement) {
+          newAudioElement.pause();
+          newAudioElement.src = '';
+          newAudioElement.removeEventListener('ended', handleAudioEnded);
+        }
+      };
+    }
+    
+    // Clean up previous audio if no new audio is provided
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.src = '';
+      }
+    };
+  }, [currentQuestion?.question?.audio, handleAudioEnded]);
+
+  // Control audio playback
+  const playAudio = useCallback(() => {
+    if (audioElement) {
+      audioElement.volume = 0.5; // Set volume (0-1)
+      audioElement.play().catch(e => console.error("Error playing audio:", e));
+    }
+  }, [audioElement]);
+
+  // Add a button or trigger to play audio when needed
+  // For example:
+  useEffect(() => {
+    // Auto-play audio when question is shown
+    if (audioElement && currentQuestion) {
+      playAudio();
+    }
+  }, [audioElement, currentQuestion, playAudio]);
+  
+  // Add this effect to handle video lifecycle
+  useEffect(() => {
+    // This ensures video persists and doesn't unexpectedly disappear
+    if (currentQuestion?.question?.video && videoRef.current) {
+      // Setup the video element
+      const videoElement = videoRef.current;
+      
+      // Ensure it's visible
+      videoElement.style.display = 'block';
+      
+      // Add event listeners for debugging
+      const handleVideoError = (e: any) => {
+        console.error('Video error:', e);
+      };
+      
+      videoElement.addEventListener('error', handleVideoError);
+      
+      // Cleanup
+      return () => {
+        videoElement.removeEventListener('error', handleVideoError);
+      };
+    }
+  }, [currentQuestion?.question?.video]);
+  
   // Right after your early return if no question (around line 304),
   // add another early return if the answer has been revealed
   if (answerRevealed && currentQuestion) {
@@ -425,6 +578,58 @@ const QuestionScreen: React.FC = () => {
                 <BidirectionalText text={question.question} />
               </QuestionText>
             </motion.div>
+            
+            {currentQuestion.question.image || currentQuestion.question.video || currentQuestion.question.audio ? (
+              <MediaContainer>
+                {currentQuestion.question.image && (
+                  <QuestionImage 
+                    src={currentQuestion.question.image} 
+                    alt="Question illustration" 
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                      console.error('Error loading image:', currentQuestion.question.image);
+                    }}
+                  />
+                )}
+                
+                {currentQuestion.question.video && (
+                  <VideoContainer>
+                    {isYouTubeUrl(currentQuestion.question.video) ? (
+                      <YouTubeEmbed url={currentQuestion.question.video} />
+                    ) : (
+                      <QuestionVideo 
+                        controls
+                        autoPlay={false}
+                        preload="metadata"
+                        onError={(e) => {
+                          console.error('Error loading video:', e);
+                          e.currentTarget.style.display = 'none';
+                        }}
+                        ref={videoRef}
+                      >
+                        <source src={currentQuestion.question.video} />
+                        Your browser does not support the video tag.
+                      </QuestionVideo>
+                    )}
+                  </VideoContainer>
+                )}
+                
+                {currentQuestion.question.audio && (
+                  <AudioContainer>
+                    <QuestionAudio 
+                      controls
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        console.error('Error loading audio:', currentQuestion.question.audio);
+                      }}
+                    >
+                      <source src={currentQuestion.question.audio} />
+                      Your browser does not support the audio tag.
+                    </QuestionAudio>
+                  </AudioContainer>
+                )}
+              </MediaContainer>
+            ) : null}
             
             <TimerSection>
               <TimerContainer>

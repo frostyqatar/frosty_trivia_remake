@@ -1,4 +1,4 @@
-export type GamePhase = 'setup' | 'playing' | 'question' | 'answer' | 'end';
+export type GamePhase = 'setup' | 'playing' | 'question' | 'answer' | 'end' | 'questionManagement';
 
 export interface Question {
   value: number;

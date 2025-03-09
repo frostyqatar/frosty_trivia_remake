@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { RootState } from '../store';
-import { startGame } from '../store/gameSlice';
+import { startGame, setGamePhase } from '../store/gameSlice';
 import { Team } from '../types/game.types';
 import CategorySelector from './setup/CategorySelector';
 import TeamSetup from './setup/TeamSetup';
@@ -55,6 +55,24 @@ const StartButton = styled(motion.button)<{ disabled: boolean }>`
   max-width: 400px;
   margin: 0 auto;
   display: block;
+`;
+
+const Button = styled(motion.button)`
+  background-color: #8c52ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  &:disabled {
+    background-color: #d1d1d1;
+    cursor: not-allowed;
+  }
 `;
 
 const SetupScreen: React.FC = () => {
@@ -142,6 +160,14 @@ const SetupScreen: React.FC = () => {
       >
         ابدأ اللعبة
       </StartButton>
+      
+      <Button
+        onClick={() => dispatch(setGamePhase('questionManagement'))}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        📝 Manage Questions
+      </Button>
     </Container>
   );
 };

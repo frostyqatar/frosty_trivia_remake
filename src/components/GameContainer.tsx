@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RootState } from '../store';
+import { GamePhase } from '../types/game.types';
 import TeamPanel from './TeamPanel';
 import GameBoard from './GameBoard';
 import QuestionScreen from './QuestionScreen';
@@ -12,6 +13,7 @@ import EndGame from './EndGame';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { toggleMusic, setVolume, setGamePhase } from '../store/gameSlice';
 import { useAbilities } from '../hooks/useAbilities';
+import QuestionManagement from './QuestionManagement';
 
 const Container = styled.div`
   display: flex;
@@ -183,6 +185,9 @@ const GameContainer: React.FC = () => {
   
   let content;
   switch (gamePhase) {
+    case 'setup' as GamePhase:
+      content = <SetupScreen />;
+      break;
     case 'playing':
       content = <GameBoard />;
       break;
@@ -195,8 +200,11 @@ const GameContainer: React.FC = () => {
     case 'end':
       content = <EndGame />;
       break;
+    case 'questionManagement':
+      content = <QuestionManagement />;
+      break;
     default:
-      content = <div>Unknown game phase</div>;
+      content = <SetupScreen />;
   }
   
   return (

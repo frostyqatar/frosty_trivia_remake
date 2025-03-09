@@ -19,6 +19,20 @@ const persistConfig = {
     'musicEnabled',
     'activeTeamIndex'
   ],
+  // Add this for more reliable persistence
+  stateReconciler: (
+    inboundState: any, 
+    originalState: any, 
+    reducedState: any, 
+    config: any
+  ) => {
+    // Use a deep merge strategy rather than a shallow merge
+    return JSON.parse(JSON.stringify({
+      ...reducedState,
+      ...inboundState,
+      categories: inboundState.categories || reducedState.categories
+    }));
+  }
 };
 
 const persistedReducer = persistReducer(persistConfig, gameReducer);

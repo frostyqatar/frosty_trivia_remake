@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { GameState, TeamIndex, AbilityType, GamePhase, Question } from '../types/game.types';
+import { GameState, TeamIndex, AbilityType, GamePhase, Question, Category } from '../types/game.types';
 import { getInitialCategories } from '../data/questions';
 import { createAction } from '@reduxjs/toolkit';
 
@@ -256,13 +256,46 @@ const gameSlice = createSlice({
     setBothTeamsTimedOut: (state, action: PayloadAction<boolean>) => {
       state.timer.bothTeamsTimedOut = action.payload;
     },
+    
+    updateCategories: (state, action: PayloadAction<Category[]>) => {
+      // Create a deep copy of the incoming categories to avoid reference issues
+      const updatedCategories = JSON.parse(JSON.stringify(action.payload));
+      
+      // Replace the entire categories array
+      state.categories = updatedCategories;
+      
+      // If you have selected categories, make sure they still exist in the updated list
+      state.selectedCategories = state.selectedCategories.filter(
+        id => updatedCategories.some((cat: Category) => cat.id === id)
+      );
+      
+      // Force clear the current question if it's from a category that was modified
+      if (state.currentQuestion) {
+        const modifiedCategoryIds = updatedCategories.map((c: Category) => c.id);
+        if (modifiedCategoryIds.includes(state.currentQuestion.categoryId)) {
+          state.currentQuestion = null;
+        }
+      }
+      
+      // Update localStorage backup as well
+      try {
+        localStorage.setItem('trivia-game-categories', JSON.stringify(updatedCategories));
+      } catch (e) {
+        console.error('Failed to save categories to localStorage:', e);
+      }
+    },
   },
   extraReducers: (builder) => {
-    builder
-      .addCase(resetGame, (state) => {
-        // Reset the game state to initial values
-        return initialState;
-      });
+    builder.addCase(resetGame, (state) => {
+      // Instead of completely replacing the state, preserve the categories
+      const preservedCategories = [...state.categories];
+      
+      // Reset the state
+      Object.assign(state, initialState);
+      
+      // Restore the categories
+      state.categories = preservedCategories;
+    });
   },
 });
 
@@ -289,6 +322,7 @@ export const {
   setPointsMultiplier,
   setActiveTeam,
   setBothTeamsTimedOut,
+  updateCategories,
 } = gameSlice.actions;
 
 export const resetGame = createAction('game/resetGame');

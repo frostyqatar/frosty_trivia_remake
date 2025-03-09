@@ -6,7 +6,7 @@ import { RootState } from '../store';
 import { setGamePhase } from '../store/gameSlice';
 import { BidirectionalText } from '../utils/textUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
-import { Category } from '../types/game.types';
+import { Category, Question } from '../types/game.types';
 
 const BoardContainer = styled.div`
   display: flex;
@@ -82,24 +82,31 @@ const EndGameButton = styled(motion.button)`
   }
 `;
 
-const QuestionCard = styled(motion.div)<{ answered: boolean }>`
-  background-color: ${props => props.answered ? '#e0e0e0' : '#f5f0ff'};
-  color: ${props => props.answered ? '#999' : '#8c52ff'};
-  border-radius: 12px;
-  padding: 25px 15px;
+// First, let's define a proper interface for our QuestionCard props
+interface QuestionCardProps {
+  categoryId: string;
+  questionIndex: number;
+  question: Question;
+  answered: boolean;
+}
+
+// Then update the QuestionCard component to use these props
+const QuestionCard = styled(motion.div)<QuestionCardProps>`
+  background-color: ${props => props.answered ? '#f1f1f1' : '#8c52ff'};
+  color: ${props => props.answered ? '#aaa' : 'white'};
+  border-radius: 8px;
+  padding: 16px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 22px;
-  font-weight: bold;
+  font-size: 24px;
+  font-weight: 700;
   cursor: ${props => props.answered ? 'default' : 'pointer'};
-  text-align: center;
-  box-shadow: ${props => props.answered ? 'none' : '0 4px 8px rgba(140, 82, 255, 0.1)'};
   transition: all 0.2s ease;
   
   &:hover {
-    transform: ${props => props.answered ? 'none' : 'translateY(-4px)'};
-    box-shadow: ${props => props.answered ? 'none' : '0 6px 12px rgba(140, 82, 255, 0.2)'};
+    transform: ${props => props.answered ? 'none' : 'translateY(-5px)'};
+    box-shadow: ${props => props.answered ? 'none' : '0 8px 15px rgba(0, 0, 0, 0.1)'};
   }
 `;
 
@@ -159,8 +166,8 @@ const GameBoard: React.FC = () => {
   
   // Calculate completion percentage
   const totalQuestions = displayCategories.length * pointValues.length;
-  const answeredQuestions = displayCategories.reduce((total, category) => {
-    return total + category.questions.filter(q => q.answered).length;
+  const answeredQuestions = displayCategories.reduce((total: number, category: Category) => {
+    return total + category.questions.filter((q: Question) => q.answered).length;
   }, 0);
   
   const completionPercent = totalQuestions > 0 
@@ -208,22 +215,78 @@ const GameBoard: React.FC = () => {
   };
 
   const handleSelectQuestion = (categoryId: string, questionIndex: number) => {
-    const category = categories.find(c => c.id === categoryId);
+    const category = categories.find((c: Category) => c.id === categoryId);
     if (!category) return;
     
-    const question = category.questions[questionIndex];
-    if (question.answered) return;
+    if (questionIndex >= 0 && questionIndex < category.questions.length) {
+      const question = category.questions[questionIndex];
+      if (question.answered) return;
+      
+      playSound('question-reveal');
+      dispatch({
+        type: 'game/selectQuestion',
+        payload: {
+          categoryId,
+          questionIndex,
+          question
+        }
+      });
+    }
+  };
+
+  const renderCategoryQuestions = (category: Category) => {
+    // Create a map of questions indexed by their point value
+    const questionsByValue: Record<number, any> = {};
     
-    playSound('question-reveal');
-    dispatch({
-      type: 'game/selectQuestion',
-      payload: {
-        categoryId,
-        questionIndex,
-        question
+    // Populate the map
+    category.questions.forEach((question, index) => {
+      questionsByValue[question.value] = {
+        question,
+        index
+      };
+    });
+    
+    // Render a card for each point value
+    return pointValues.map(value => {
+      const questionData = questionsByValue[value];
+      
+      // If there's no question for this value, show empty slot
+      if (!questionData) {
+        return (
+          <EmptyQuestionSlot key={`${category.id}-${value}`}>
+            {value}
+          </EmptyQuestionSlot>
+        );
       }
+      
+      // Otherwise render the question card
+      return (
+        <QuestionCard
+          key={`${category.id}-${value}`}
+          categoryId={category.id}
+          questionIndex={questionData.index}
+          question={questionData.question}
+          answered={questionData.question.answered}
+          onClick={() => handleSelectQuestion(category.id, questionData.index)}
+        >
+          {value}
+        </QuestionCard>
+      );
     });
   };
+
+  // Add this styled component for empty question slots
+  const EmptyQuestionSlot = styled.div`
+    background-color: #f1f1f1;
+    color: #aaa;
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 24px;
+    font-weight: 700;
+  `;
 
   return (
     <BoardContainer as={motion.div} variants={containerVariants} initial="hidden" animate="visible">
@@ -232,7 +295,7 @@ const GameBoard: React.FC = () => {
       </ProgressBar>
       
       <CategoryContainer>
-        {displayCategories.map((category) => (
+        {displayCategories.map((category: Category) => (
           <CategoryCard 
             key={category.id}
             variants={cardVariants}
@@ -243,22 +306,7 @@ const GameBoard: React.FC = () => {
             <CategoryIcon>{category.icon}</CategoryIcon>
             
             <QuestionGrid>
-              {pointValues.map((value, i) => {
-                const question = category.questions.find(q => q.value === value);
-                if (!question) return null;
-                
-                return (
-                  <QuestionCard
-                    key={`${category.id}-${value}`}
-                    onClick={() => handleSelectQuestion(category.id, i)}
-                    variants={cardVariants}
-                    answered={question.answered}
-                    whileHover={question.answered ? {} : { scale: 1.05 }}
-                  >
-                    {value}
-                  </QuestionCard>
-                );
-              })}
+              {renderCategoryQuestions(category)}
             </QuestionGrid>
           </CategoryCard>
         ))}

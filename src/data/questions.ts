@@ -204,7 +204,16 @@ export const categories: Category[] = [
 ];
 
 export const getInitialCategories = (): Category[] => {
-  console.log('Loading initial categories:', categories.length);
-  // Create a deep copy to ensure we don't mutate the original
-  return JSON.parse(JSON.stringify(categories));
+  try {
+    // Try to get categories from localStorage first
+    const savedCategories = localStorage.getItem('trivia-game-categories');
+    if (savedCategories) {
+      return JSON.parse(savedCategories);
+    }
+  } catch (error) {
+    console.error('Error loading categories from localStorage:', error);
+  }
+  
+  // Fall back to default categories if localStorage is empty or fails
+  return categories;
 }; 

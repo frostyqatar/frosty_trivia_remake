@@ -8,6 +8,7 @@ import { BidirectionalText } from '../../utils/textUtils';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
 import { clearSavedGame } from '../../utils/storageUtils';
 import { showNotification } from '../../components/common/GameNotification';
+import { Category } from '../../types/game.types';
 
 const Container = styled.div`
   display: flex;
@@ -113,7 +114,7 @@ const CategorySelector: React.FC = () => {
       
       <CategoriesGrid>
         {categories && categories.length > 0 ? (
-          categories.map(category => (
+          categories.map((category: Category) => (
             <CategoryCard
               key={category.id}
               selected={selectedCategories.includes(category.id)}

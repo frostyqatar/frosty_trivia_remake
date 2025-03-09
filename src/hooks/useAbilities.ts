@@ -10,7 +10,7 @@ import {
   awardPoints
 } from '../store/gameSlice';
 import { RootState } from '../store';
-import { AbilityType, TeamIndex, GamePhase } from '../types/game.types';
+import { AbilityType, TeamIndex, GamePhase, Player } from '../types/game.types';
 import { useSoundEffects } from './useSoundEffects';
 import { showNotification } from '../components/common/GameNotification';
 
@@ -154,7 +154,7 @@ export const useAbilities = () => {
         
         if (opposingTeam && opposingTeam.players) {
           // Filter to get only active players
-          const activePlayers = opposingTeam.players.filter(p => !p.dismissed);
+          const activePlayers = opposingTeam.players.filter((p: Player) => !p.dismissed);
           
           if (activePlayers.length > 0) {
             // Randomly select a player
