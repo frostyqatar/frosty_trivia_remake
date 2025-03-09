@@ -119,21 +119,44 @@ const GameBoard: React.FC = () => {
     }
   };
 
-  // Add an event listener for a custom event from returnToBoard action
+  // Modify the useEffect to properly check when all questions are answered
   useEffect(() => {
     const handleReturnToBoard = () => {
+      // Add debug logging
+      console.log('Return to board event triggered, checking questions status...');
       // Small delay to ensure state is updated
-      setTimeout(checkAllQuestionsAnswered, 100);
+      setTimeout(() => {
+        checkAllQuestionsAnswered();
+      }, 100);
     };
     
     window.addEventListener('returnToBoard', handleReturnToBoard);
-    // Also check when component mounts or updates
-    setTimeout(checkAllQuestionsAnswered, 500);
+    
+    // Also check when the component updates with new categories data
+    // This ensures we catch when all questions become answered
+    const allQuestionsAnswered = displayCategories.length > 0 && 
+      displayCategories.every((category: Category) => 
+        category.questions.every((question: any) => question.answered)
+      );
+    
+    console.log('Checking on update:', { 
+      categoriesCount: displayCategories.length,
+      allAnswered: allQuestionsAnswered
+    });
+    
+    if (allQuestionsAnswered && displayCategories.length > 0) {
+      console.log('All questions are now answered, ending game!');
+      // Add small delay to ensure we don't end too early
+      setTimeout(() => {
+        playSound('winner-celebration');
+        dispatch(setGamePhase('end'));
+      }, 300);
+    }
     
     return () => {
       window.removeEventListener('returnToBoard', handleReturnToBoard);
     };
-  }, [displayCategories, selectedCategories, categories]); // Add categories dependency
+  }, [displayCategories, selectedCategories]); // Add proper dependencies
   
   const handleEndGame = () => {
     // First check if all questions are already answered

@@ -41,23 +41,34 @@ const ActiveTeamIndicator = styled.div`
 
 const TeamHeader = styled.div`
   display: flex;
+  flex-direction: column;
   align-items: center;
   margin-bottom: 16px;
 `;
 
 const TeamAvatar = styled.div`
-  font-size: 36px;
-  margin-right: 16px;
+  font-size: 48px;
+  margin-bottom: 12px;
+  animation: bounce 2s infinite;
+  
+  @keyframes bounce {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+  }
 `;
 
 const TeamInfo = styled.div`
-  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
 `;
 
 const TeamName = styled.h2`
   margin: 0;
   font-size: 24px;
   color: #2c3e50;
+  margin-bottom: 12px;
 `;
 
 const ScoreControls = styled.div`

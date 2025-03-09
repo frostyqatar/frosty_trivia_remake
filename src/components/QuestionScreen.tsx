@@ -21,6 +21,19 @@ const QuestionContainer = styled.div`
   width: 100%;
   max-width: 800px;
   margin: 0 auto;
+  position: relative;
+  overflow: hidden;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #3498db, #2ecc71, #f1c40f, #e74c3c);
+    border-radius: 16px 16px 0 0;
+  }
 `;
 
 const QuestionHeader = styled.div`
@@ -29,18 +42,28 @@ const QuestionHeader = styled.div`
   align-items: center;
   width: 100%;
   margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 `;
 
 const CategoryInfo = styled.div`
   display: flex;
   align-items: center;
   font-size: 24px;
+  font-weight: 600;
+  color: #3498db;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: rgba(52, 152, 219, 0.1);
 `;
 
 const PointValue = styled.div`
   font-size: 24px;
   font-weight: bold;
-  color: #2c3e50;
+  color: #f1c40f;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background-color: rgba(241, 196, 15, 0.1);
 `;
 
 const QuestionText = styled.div`
@@ -49,6 +72,10 @@ const QuestionText = styled.div`
   margin-bottom: 40px;
   text-align: center;
   width: 100%;
+  color: #2c3e50;
+  padding: 20px;
+  background-color: rgba(236, 240, 241, 0.5);
+  border-radius: 12px;
 `;
 
 const ControlButtons = styled.div`
@@ -56,27 +83,55 @@ const ControlButtons = styled.div`
   justify-content: space-between;
   width: 100%;
   margin-top: 24px;
+  gap: 16px;
 `;
 
 const Button = styled(motion.button)`
   padding: 16px 32px;
   font-size: 18px;
+  font-weight: 600;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 `;
 
 const RevealButton = styled(Button)`
   background-color: #e74c3c;
   color: white;
+  flex: 1;
+  
+  &:hover {
+    background-color: #c0392b;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  &::before {
+    content: '🎯';
+    margin-right: 8px;
+  }
 `;
 
 const ReturnButton = styled(Button)`
   background-color: #3498db;
   color: white;
+  flex: 1;
+  
+  &:hover {
+    background-color: #2980b9;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  &::before {
+    content: '🔙';
+    margin-right: 8px;
+  }
 `;
 
 const TeamTimerDisplay = styled.div<{ $isTimeUp: boolean }>`
@@ -92,12 +147,26 @@ const TeamTimerDisplay = styled.div<{ $isTimeUp: boolean }>`
   text-align: center;
   transition: background-color 0.3s ease;
   position: relative;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  ${props => props.$isTimeUp && `
+    animation: pulse-warning 1s infinite;
+    
+    @keyframes pulse-warning {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+  `}
 `;
 
 const TimerValue = styled.span`
   font-weight: bold;
   margin: 0 5px;
   font-size: 22px;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 4px 10px;
+  border-radius: 6px;
 `;
 
 const TeamNameSpan = styled.span`
@@ -117,6 +186,13 @@ const EndGameButton = styled(motion.button)`
   cursor: pointer;
   margin-top: 15px;
   font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    background-color: #c9302c;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
 `;
 
 // Update or add these styled components for better answer reveal UI
@@ -212,6 +288,7 @@ const MediaContainer = styled.div`
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border: 2px solid rgba(0, 0, 0, 0.05);
 `;
 
 const QuestionImage = styled.img`
@@ -219,11 +296,17 @@ const QuestionImage = styled.img`
   height: auto;
   display: block;
   object-fit: contain;
+  transition: transform 0.2s ease;
+  
+  &:hover {
+    transform: scale(1.01);
+  }
 `;
 
 const AudioPlayer = styled.audio`
   width: 100%;
   margin: 10px 0;
+  height: 40px;
 `;
 
 const VideoContainer = styled.div`
@@ -238,6 +321,7 @@ const VideoContainer = styled.div`
     left: 0;
     width: 100%;
     height: 100%;
+    border: none;
   }
 `;
 
@@ -257,6 +341,7 @@ const TeamIndicator = styled.div`
   font-size: 18px;
   margin-bottom: 16px;
   text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 `;
 
 // Update the TimerDisplay component with proper typing
@@ -274,6 +359,16 @@ const TimerDisplay = styled.div<{ remaining: number }>`
     background-color: ${props => props.remaining <= 5 ? '#ffebee' : '#f0f3f5'};
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    
+    ${props => props.remaining <= 5 && `
+      animation: pulse-timer 1s infinite;
+      
+      @keyframes pulse-timer {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.03); }
+        100% { transform: scale(1); }
+      }
+    `}
   }
 `;
 
@@ -284,9 +379,13 @@ const TimerControlEmoji = styled.span`
   margin: 0 6px;
   transition: transform 0.2s ease;
   display: inline-block;
+  background-color: rgba(0, 0, 0, 0.2);
+  padding: 5px;
+  border-radius: 50%;
   
   &:hover {
     transform: scale(1.2);
+    background-color: rgba(0, 0, 0, 0.3);
   }
   
   &:active {
@@ -408,10 +507,35 @@ const QuestionScreen: React.FC = () => {
     dispatch(setActiveTeam(activeTeamIndex === 0 ? 1 : 0));
   };
   
-  // Handle returning to the game board WITHOUT marking as answered
+  // Update the handleReturnToBoard function with a console log
   const handleReturnToBoard = () => {
     playSound('button-click');
+    
+    console.log('RETURNING TO BOARD: Question should NOT be marked as answered');
+    
+    // Add a direct state check before dispatching
+    const state = store.getState();
+    const { categoryId, questionIndex } = currentQuestion;
+    const category = state.categories.find(c => c.id === categoryId);
+    const questionBeforeReturn = category?.questions[questionIndex];
+    
+    console.log('Question answered state BEFORE return:', questionBeforeReturn?.answered);
+    
     dispatch(returnToBoard({ markAsAnswered: false }));
+    
+    // Check state after dispatch with setTimeout
+    setTimeout(() => {
+      const afterState = store.getState();
+      const categoryAfter = afterState.categories.find(c => c.id === categoryId);
+      const questionAfterReturn = categoryAfter?.questions[questionIndex];
+      
+      console.log('Question answered state AFTER return:', questionAfterReturn?.answered);
+      
+      // If it's marked as answered, log a warning
+      if (questionAfterReturn?.answered) {
+        console.error('PROBLEM: Question was marked as answered despite markAsAnswered: false');
+      }
+    }, 100);
   };
   
   // Handle awarding points to a team
@@ -421,12 +545,6 @@ const QuestionScreen: React.FC = () => {
       teamIndex, 
       points: question.value 
     }));
-    dispatch(returnToBoard({ markAsAnswered: true }));
-  };
-  
-  // Handle "No Award" - no points awarded
-  const handleNoAward = () => {
-    playSound('button-click');
     dispatch(returnToBoard({ markAsAnswered: true }));
   };
   
@@ -625,7 +743,7 @@ const QuestionScreen: React.FC = () => {
                 </AwardButton>
                 
                 <NoAwardButton 
-                  onClick={handleNoAward}
+                  onClick={() => dispatch(returnToBoard({ markAsAnswered: true }))}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >

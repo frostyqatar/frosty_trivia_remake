@@ -46,12 +46,6 @@ const gameSlice = createSlice({
       state.gamePhase = 'question';
       state.timer.remaining = 30;
       state.timer.duration = 30;
-      
-      // Mark question as answered
-      const category = state.categories.find(c => c.id === action.payload.categoryId);
-      if (category) {
-        category.questions[action.payload.questionIndex].answered = true;
-      }
     },
     
     awardPoints: (state, action: PayloadAction<{

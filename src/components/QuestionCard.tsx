@@ -14,7 +14,7 @@ interface QuestionCardProps {
 }
 
 const StyledCard = styled(motion.div)<{ answered: boolean }>`
-  background-color: ${props => props.answered ? '#2a3f5f' : '#3498db'};
+  background-color: ${props => props.answered ? '#bdc3c7' : '#3498db'};
   color: white;
   border-radius: 8px;
   padding: 16px;
