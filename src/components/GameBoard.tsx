@@ -3,93 +3,150 @@ import { useSelector, useDispatch } from 'react-redux';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { RootState } from '../store';
-import QuestionCard from './QuestionCard';
+import { setGamePhase } from '../store/gameSlice';
 import { BidirectionalText } from '../utils/textUtils';
-import { resetGame, setGamePhase } from '../store/gameSlice';
-import { showNotification } from '../utils/notificationUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { Category } from '../types/game.types';
 
 const BoardContainer = styled.div`
   display: flex;
   flex-direction: column;
-  padding: 16px;
-  background-color: #f8f9fa;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
 `;
 
-const CategoryRow = styled.div`
+const CategoryContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
-  margin-bottom: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
 `;
 
-const CategoryHeader = styled.div`
-  background-color: #1c3f60;
-  color: white;
-  padding: 16px;
-  border-radius: 8px;
-  text-align: center;
+const CategoryCard = styled(motion.div)`
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  cursor: pointer;
+  padding-bottom: 12px;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const CategoryHeader = styled.div`
+  background-color: #8c52ff;
+  color: white;
+  padding: 20px 10px;
+  text-align: center;
+  width: 100%;
+  font-weight: 600;
+  font-size: 16px;
 `;
 
 const CategoryIcon = styled.div`
-  font-size: 24px;
-  margin-bottom: 8px;
+  font-size: 36px;
+  margin: 15px 0;
 `;
 
-const CategoryName = styled.div`
-  font-weight: bold;
-`;
-
-const QuestionsGrid = styled.div`
+const QuestionGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 16px;
-`;
-
-const EndGameButtonContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  margin-top: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 15px;
   width: 100%;
 `;
 
 const EndGameButton = styled(motion.button)`
-  background-color: #d9534f;
+  background-color: #ff6b6b;
   color: white;
-  padding: 12px 24px;
   border: none;
-  border-radius: 8px;
-  font-size: 18px;
-  font-weight: bold;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 30px;
   cursor: pointer;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: all 0.3s ease;
+  margin: 30px auto 10px;
+  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
+  display: block;
+  
+  &:hover {
+    background-color: #ff5252;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4);
+  }
 `;
 
-const rowVariants = {
+const QuestionCard = styled(motion.div)<{ answered: boolean }>`
+  background-color: ${props => props.answered ? '#e0e0e0' : '#f5f0ff'};
+  color: ${props => props.answered ? '#999' : '#8c52ff'};
+  border-radius: 12px;
+  padding: 25px 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 22px;
+  font-weight: bold;
+  cursor: ${props => props.answered ? 'default' : 'pointer'};
+  text-align: center;
+  box-shadow: ${props => props.answered ? 'none' : '0 4px 8px rgba(140, 82, 255, 0.1)'};
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: ${props => props.answered ? 'none' : 'translateY(-4px)'};
+    box-shadow: ${props => props.answered ? 'none' : '0 6px 12px rgba(140, 82, 255, 0.2)'};
+  }
+`;
+
+const ProgressBar = styled.div`
+  width: 100%;
+  max-width: 500px;
+  height: 10px;
+  background-color: #f0f0f0;
+  border-radius: 10px;
+  margin: 0 auto 30px;
+  overflow: hidden;
+`;
+
+const Progress = styled.div<{ percent: number }>`
+  height: 100%;
+  width: ${props => props.percent}%;
+  background-color: #8c52ff;
+  border-radius: 10px;
+  transition: width 0.5s ease-in-out;
+`;
+
+const containerVariants = {
   hidden: { opacity: 0 },
-  visible: (i: number) => ({
+  visible: { 
     opacity: 1,
     transition: {
-      delay: i * 0.2,
-    },
-  }),
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const cardVariants = {
+  hidden: { y: 20, opacity: 0 },
+  visible: { 
+    y: 0, 
+    opacity: 1,
+    transition: { duration: 0.4 }
+  }
 };
 
 const GameBoard: React.FC = () => {
   const dispatch = useDispatch();
-  const { categories, selectedCategories, teams } = useSelector((state: RootState) => ({
+  const { categories, selectedCategories } = useSelector((state: RootState) => ({
     categories: state.categories,
     selectedCategories: state.selectedCategories,
-    teams: state.teams
   }));
+  
   const { playSound } = useSoundEffects();
   
   // Filter categories that are selected
@@ -100,53 +157,38 @@ const GameBoard: React.FC = () => {
   // Get all possible point values
   const pointValues = [100, 200, 300, 400, 500];
   
-  // Don't automatically check on every render
-  // Instead, add a separate function to check and end the game
+  // Calculate completion percentage
+  const totalQuestions = displayCategories.length * pointValues.length;
+  const answeredQuestions = displayCategories.reduce((total, category) => {
+    return total + category.questions.filter(q => q.answered).length;
+  }, 0);
+  
+  const completionPercent = totalQuestions > 0 
+    ? (answeredQuestions / totalQuestions) * 100 
+    : 0;
+  
   const checkAllQuestionsAnswered = () => {
     if (selectedCategories.length > 0) {
       const allQuestionsAnswered = displayCategories.every((category: Category) => 
         category.questions.every((question: any) => question.answered)
       );
       
-      // Add a console log to help debug
-      console.log('Checking questions:', allQuestionsAnswered, displayCategories);
-      
       if (allQuestionsAnswered) {
-        // Play the winner-celebration sound
         playSound('winner-celebration');
         dispatch(setGamePhase('end'));
       }
     }
   };
 
-  // Modify the useEffect to properly check when all questions are answered
   useEffect(() => {
     const handleReturnToBoard = () => {
-      // Add debug logging
-      console.log('Return to board event triggered, checking questions status...');
-      // Small delay to ensure state is updated
-      setTimeout(() => {
-        checkAllQuestionsAnswered();
-      }, 100);
+      setTimeout(() => checkAllQuestionsAnswered(), 100);
     };
     
     window.addEventListener('returnToBoard', handleReturnToBoard);
     
-    // Also check when the component updates with new categories data
-    // This ensures we catch when all questions become answered
-    const allQuestionsAnswered = displayCategories.length > 0 && 
-      displayCategories.every((category: Category) => 
-        category.questions.every((question: any) => question.answered)
-      );
-    
-    console.log('Checking on update:', { 
-      categoriesCount: displayCategories.length,
-      allAnswered: allQuestionsAnswered
-    });
-    
-    if (allQuestionsAnswered && displayCategories.length > 0) {
-      console.log('All questions are now answered, ending game!');
-      // Add small delay to ensure we don't end too early
+    // Check when categories update
+    if (completionPercent === 100) {
       setTimeout(() => {
         playSound('winner-celebration');
         dispatch(setGamePhase('end'));
@@ -156,88 +198,79 @@ const GameBoard: React.FC = () => {
     return () => {
       window.removeEventListener('returnToBoard', handleReturnToBoard);
     };
-  }, [displayCategories, selectedCategories]); // Add proper dependencies
+  }, [displayCategories, selectedCategories]);
   
   const handleEndGame = () => {
-    // First check if all questions are already answered
-    const allQuestionsAnswered = displayCategories.every((category: Category) => 
-      category.questions.every((question: any) => question.answered)
-    );
-    
-    if (allQuestionsAnswered) {
-      // All questions answered, go directly to end game
-      playSound('winner-celebration');
+    if (window.confirm('هل أنت متأكد من أنك تريد إنهاء اللعبة؟')) {
+      playSound('button-click');
       dispatch(setGamePhase('end'));
-    } else {
-      // Not all questions answered, ask for confirmation
-      if (window.confirm('هل أنت متأكد من أنك تريد إنهاء اللعبة؟')) {
-        playSound('button-click');
-        dispatch(setGamePhase('end'));  // Changed from resetGame() to setGamePhase('end')
-        showNotification('تم إنهاء اللعبة');
-      }
     }
   };
 
+  const handleSelectQuestion = (categoryId: string, questionIndex: number) => {
+    const category = categories.find(c => c.id === categoryId);
+    if (!category) return;
+    
+    const question = category.questions[questionIndex];
+    if (question.answered) return;
+    
+    playSound('question-reveal');
+    dispatch({
+      type: 'game/selectQuestion',
+      payload: {
+        categoryId,
+        questionIndex,
+        question
+      }
+    });
+  };
+
   return (
-    <BoardContainer>
-      {/* Category headers */}
-      <CategoryRow>
-        {displayCategories.map((category: Category, index: number) => (
-          <motion.div
+    <BoardContainer as={motion.div} variants={containerVariants} initial="hidden" animate="visible">
+      <ProgressBar>
+        <Progress percent={completionPercent} />
+      </ProgressBar>
+      
+      <CategoryContainer>
+        {displayCategories.map((category) => (
+          <CategoryCard 
             key={category.id}
-            custom={index}
-            initial="hidden"
-            animate="visible"
-            variants={rowVariants}
+            variants={cardVariants}
           >
             <CategoryHeader>
-              <CategoryIcon>{category.icon}</CategoryIcon>
-              <CategoryName>
-                <BidirectionalText text={category.name} />
-              </CategoryName>
+              <BidirectionalText text={category.name} />
             </CategoryHeader>
-          </motion.div>
+            <CategoryIcon>{category.icon}</CategoryIcon>
+            
+            <QuestionGrid>
+              {pointValues.map((value, i) => {
+                const question = category.questions.find(q => q.value === value);
+                if (!question) return null;
+                
+                return (
+                  <QuestionCard
+                    key={`${category.id}-${value}`}
+                    onClick={() => handleSelectQuestion(category.id, i)}
+                    variants={cardVariants}
+                    answered={question.answered}
+                    whileHover={question.answered ? {} : { scale: 1.05 }}
+                  >
+                    {value}
+                  </QuestionCard>
+                );
+              })}
+            </QuestionGrid>
+          </CategoryCard>
         ))}
-      </CategoryRow>
+      </CategoryContainer>
       
-      {/* Questions for each point value row */}
-      {pointValues.map((value, rowIndex) => (
-        <motion.div
-          key={value}
-          custom={rowIndex + displayCategories.length}
-          initial="hidden"
-          animate="visible"
-          variants={rowVariants}
-        >
-          <QuestionsGrid>
-            {displayCategories.map((category: Category) => {
-              const questionIndex = category.questions.findIndex((q: any) => q.value === value);
-              const question = category.questions[questionIndex];
-              
-              return (
-                <QuestionCard
-                  key={`${category.id}-${value}`}
-                  categoryId={category.id}
-                  questionIndex={questionIndex}
-                  question={question}
-                  answered={!!question.answered}
-                />
-              );
-            })}
-          </QuestionsGrid>
-        </motion.div>
-      ))}
-      
-      {/* End Game Button */}
-      <EndGameButtonContainer>
-        <EndGameButton
-          onClick={handleEndGame}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          إنهاء اللعبة
-        </EndGameButton>
-      </EndGameButtonContainer>
+      <EndGameButton
+        onClick={handleEndGame}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        إنهاء اللعبة
+      </EndGameButton>
     </BoardContainer>
   );
 };

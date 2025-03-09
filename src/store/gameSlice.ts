@@ -218,13 +218,18 @@ const gameSlice = createSlice({
         }
       }
       
-      // Reset game state
+      // Reset game state but preserve activeTeamIndex
+      const currentActiveTeamIndex = state.activeTeamIndex;
+      
+      // Set game phase before clearing currentQuestion
       state.gamePhase = 'playing';
       state.currentQuestion = null;
       state.answerRevealed = false;
       
+      // Ensure activeTeamIndex remains set
+      state.activeTeamIndex = currentActiveTeamIndex;
+      
       // Dispatch custom event when returning to board
-      // This will allow GameBoard to check if all questions are answered
       if (typeof window !== 'undefined') {
         window.dispatchEvent(new Event('returnToBoard'));
       }
@@ -241,7 +246,11 @@ const gameSlice = createSlice({
     },
     
     setActiveTeam: (state, action: PayloadAction<TeamIndex>) => {
+      console.log("Setting active team in Redux to:", action.payload);
       state.activeTeamIndex = action.payload;
+      
+      // Force state update by creating a new array reference
+      state.teams = [...state.teams];
     },
     
     setBothTeamsTimedOut: (state, action: PayloadAction<boolean>) => {

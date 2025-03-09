@@ -18,30 +18,46 @@ const Container = styled.div`
   flex-direction: column;
   min-height: 100vh;
   position: relative;
+  background-color: #f2edf9;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 `;
 
 const GameContent = styled.div`
-  display: grid;
-  grid-template-columns: 300px 1fr 300px;
-  gap: 24px;
-  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
   flex-grow: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+`;
+
+const TeamsContainer = styled.div`
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  margin-bottom: 20px;
+  gap: 20px;
   
-  @media (max-width: 1200px) {
-    grid-template-columns: 250px 1fr 250px;
+  @media (max-width: 768px) {
+    flex-direction: column;
   }
-  
-  @media (max-width: 900px) {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr auto;
-  }
+`;
+
+const ContentContainer = styled(motion.div)`
+  width: 100%;
+  display: flex;
+  justify-content: center;
 `;
 
 const ControlsBar = styled.div`
   display: flex;
   justify-content: space-between;
-  padding: 12px 24px;
-  background-color: #2c3e50;
+  padding: 16px 24px;
+  background-color: #8c52ff;
+  color: white;
 `;
 
 const MusicButton = styled.button`
@@ -62,7 +78,7 @@ const VolumeSlider = styled.input`
   width: 120px;
   height: 8px;
   margin-top: 8px;
-  background-color: #3498db;
+  background-color: #f1f0fe;
   border-radius: 4px;
   outline: none;
   z-index: 10;
@@ -85,7 +101,8 @@ const ClockText = styled.span`
 `;
 
 const TeamActiveText = styled.span`
-  color: #3498db;
+  color: #fff;
+  font-weight: bold;
 `;
 
 const GameContainer: React.FC = () => {
@@ -207,38 +224,45 @@ const GameContainer: React.FC = () => {
           <TeamClock>
             <ClockIcon>⏱️</ClockIcon>
             <ClockText>
-              دور <TeamActiveText>{teams[activeTeamIndex]?.name || '?'}</TeamActiveText>
+              <span style={{ opacity: 0.7 }}>Current Turn: </span>
+              <TeamActiveText>{teams[activeTeamIndex]?.name || '?'}</TeamActiveText>
+              <span style={{ fontSize: '12px', opacity: 0.7, marginLeft: '5px' }}>(Team {activeTeamIndex + 1})</span>
             </ClockText>
           </TeamClock>
         )}
       </ControlsBar>
       
       <GameContent>
-        <TeamPanel 
-          team={teams[0]} 
-          teamIndex={0} 
-          isActive={activeTeamIndex === 0}
-          isShocked={shockedTeam === 0}
-        />
+        <TeamsContainer>
+          <TeamPanel 
+            team={teams[0]} 
+            teamIndex={0} 
+            isActive={activeTeamIndex === 0}
+            isShocked={shockedTeam === 0}
+          />
+          
+          <TeamPanel 
+            team={teams[1]} 
+            teamIndex={1} 
+            isActive={activeTeamIndex === 1}
+            isShocked={shockedTeam === 1}
+          />
+        </TeamsContainer>
         
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={gamePhase}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-          >
-            {content}
-          </motion.div>
-        </AnimatePresence>
-        
-        <TeamPanel 
-          team={teams[1]} 
-          teamIndex={1} 
-          isActive={activeTeamIndex === 1}
-          isShocked={shockedTeam === 1}
-        />
+        <ContentContainer>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={gamePhase}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              style={{ width: '100%' }}
+            >
+              {content}
+            </motion.div>
+          </AnimatePresence>
+        </ContentContainer>
       </GameContent>
     </Container>
   );
