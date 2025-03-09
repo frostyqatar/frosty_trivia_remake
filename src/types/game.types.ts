@@ -92,4 +92,6 @@ export type Action =
   | { type: 'DISMISS_PLAYER'; payload: { teamIndex: TeamIndex; playerId: string } }
   | { type: 'RETURN_PLAYER'; payload: { teamIndex: TeamIndex; playerId: string } }
   | { type: 'REVEAL_ANSWER' }
-  | { type: 'RETURN_TO_BOARD' }; 
+  | { type: 'RETURN_TO_BOARD' };
+
+export type EmojiData = string; 

@@ -482,6 +482,69 @@ const CategoryDeleteButton = styled(DeleteIcon)`
   right: 10px;
 `;
 
+const CategoryEditButton = styled(motion.button)`
+  position: absolute;
+  top: 8px;
+  right: 40px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #3498db;
+  z-index: 2;
+`;
+
+const COMMON_EMOJIS = [
+  '📚', '🎮', '🎬', '🎵', '🎨', '🏛️', '🌍', '🏆', 
+  '🧩', '⚽', '🏀', '🏈', '🎯', '🎲', '🎭', '🎪',
+  '🧠', '💡', '⚙️', '💻', '🔬', '🔭', '📱', '📷',
+  '🏖️', '🌋', '🏔️', '🌲', '🌊', '🐾', '🦁', '🐘',
+  '🍕', '🍰', '🍦', '🍷', '👗', '👑', '💎', '🚗',
+  '✈️', '🚀', '⏱️', '📆', '📝', '��', '💰', '🏛️'
+];
+
+const EmojiGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 8px;
+  margin-top: 16px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+`;
+
+const EmojiButton = styled(motion.button)<{ selected: boolean }>`
+  background-color: ${props => props.selected ? '#3498db' : 'white'};
+  color: ${props => props.selected ? 'white' : 'inherit'};
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 24px;
+  cursor: pointer;
+  transition: all 0.2s;
+  
+  &:hover {
+    background-color: ${props => props.selected ? '#2980b9' : '#f0f0f0'};
+  }
+`;
+
+const SelectedEmoji = styled.div`
+  font-size: 32px;
+  margin: 16px 0;
+  text-align: center;
+  background-color: #f8f9fa;
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+`;
+
 const QuestionManagement: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
@@ -527,6 +590,11 @@ const QuestionManagement: React.FC = () => {
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   const [lastUpdateTimestamp, setLastUpdateTimestamp] = useState<number>(Date.now());
+  
+  const [showEditCategoryModal, setShowEditCategoryModal] = useState(false);
+  const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
+  const [editCategoryName, setEditCategoryName] = useState('');
+  const [editCategoryIcon, setEditCategoryIcon] = useState('');
   
   // First, update the flattenQuestions function to properly handle all questions
   const flattenQuestions = useCallback(() => {
@@ -1137,6 +1205,54 @@ const QuestionManagement: React.FC = () => {
     }
   };
   
+  const handleOpenEditCategoryModal = (category: Category) => {
+    setCategoryToEdit(category);
+    setEditCategoryName(category.name);
+    setEditCategoryIcon(category.icon);
+    setShowEditCategoryModal(true);
+    playSound('button-click');
+  };
+  
+  const handleSaveCategory = () => {
+    if (!categoryToEdit || editCategoryName.trim() === '') {
+      alert('Category name is required.');
+      return;
+    }
+
+    // Create a deep copy of categories to avoid reference issues
+    const updatedCategories = JSON.parse(JSON.stringify(categories));
+    
+    // Find the category to update
+    const categoryIndex = updatedCategories.findIndex(
+      (c: Category) => c.id === categoryToEdit.id
+    );
+    
+    if (categoryIndex !== -1) {
+      // Update the category
+      updatedCategories[categoryIndex].name = editCategoryName;
+      updatedCategories[categoryIndex].icon = editCategoryIcon;
+      
+      // Update Redux state
+      dispatch(updateCategories(updatedCategories));
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem('trivia-game-categories', JSON.stringify(updatedCategories));
+      } catch (e) {
+        console.error('Error saving to localStorage:', e);
+      }
+      
+      // Close modal and reset state
+      setShowEditCategoryModal(false);
+      setCategoryToEdit(null);
+      setEditCategoryName('');
+      setEditCategoryIcon('');
+      
+      playSound('button-click');
+      showNotification('Category updated successfully!');
+    }
+  };
+  
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
@@ -1540,12 +1656,22 @@ const QuestionManagement: React.FC = () => {
             </FormGroup>
             
             <FormGroup>
-              <FormLabel>Category Icon (emoji)</FormLabel>
-              <FormInput
-                value={newCategoryIcon}
-                onChange={(e) => setNewCategoryIcon(e.target.value)}
-                placeholder="❓"
-              />
+              <FormLabel>Select Category Icon:</FormLabel>
+              <SelectedEmoji>{newCategoryIcon}</SelectedEmoji>
+              
+              <EmojiGrid>
+                {COMMON_EMOJIS.map((emoji) => (
+                  <EmojiButton
+                    key={emoji}
+                    selected={emoji === newCategoryIcon}
+                    onClick={() => setNewCategoryIcon(emoji)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    {emoji}
+                  </EmojiButton>
+                ))}
+              </EmojiGrid>
             </FormGroup>
             
             <ModalActions>
@@ -1564,6 +1690,50 @@ const QuestionManagement: React.FC = () => {
                 Add Category
               </Button>
             </ModalActions>
+          </ModalContent>
+        </Modal>
+      )}
+      
+      {showEditCategoryModal && (
+        <Modal onClick={e => e.stopPropagation()}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>Edit Category</ModalTitle>
+              <CloseButton onClick={() => setShowEditCategoryModal(false)}>×</CloseButton>
+            </ModalHeader>
+            
+            <FormGroup>
+              <FormLabel>Category Name</FormLabel>
+              <FormInput
+                value={editCategoryName}
+                onChange={(e) => setEditCategoryName(e.target.value)}
+                placeholder="Enter category name"
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel>Select Category Icon</FormLabel>
+              <SelectedEmoji>{editCategoryIcon}</SelectedEmoji>
+              
+              <EmojiGrid>
+                {COMMON_EMOJIS.map((emoji) => (
+                  <EmojiButton
+                    key={emoji}
+                    selected={emoji === editCategoryIcon}
+                    onClick={() => setEditCategoryIcon(emoji)}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    {emoji}
+                  </EmojiButton>
+                ))}
+              </EmojiGrid>
+            </FormGroup>
+            
+            <ButtonGroup>
+              <Button onClick={() => setShowEditCategoryModal(false)}>Cancel</Button>
+              <Button onClick={handleSaveCategory}>Save Changes</Button>
+            </ButtonGroup>
           </ModalContent>
         </Modal>
       )}
@@ -1594,6 +1764,13 @@ const QuestionManagement: React.FC = () => {
               <CategoryIcon>{category.icon}</CategoryIcon>
               <CategoryName>{category.name}</CategoryName>
               <CategoryInfo>{category.questions.length} questions</CategoryInfo>
+              <CategoryEditButton 
+                onClick={() => handleOpenEditCategoryModal(category)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                ✏️
+              </CategoryEditButton>
               <CategoryDeleteButton 
                 onClick={() => handleDeleteCategory(category.id)}
                 whileHover={{ scale: 1.1 }}
