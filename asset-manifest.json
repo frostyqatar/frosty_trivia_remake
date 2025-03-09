@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/frostyqatar/frosty_trivia_remake/static/css/main.5ed471e8.css",
+    "main.js": "/frostyqatar/frosty_trivia_remake/static/js/main.146332bc.js",
+    "static/js/488.8fd71efa.chunk.js": "/frostyqatar/frosty_trivia_remake/static/js/488.8fd71efa.chunk.js",
+    "index.html": "/frostyqatar/frosty_trivia_remake/index.html",
+    "main.5ed471e8.css.map": "/frostyqatar/frosty_trivia_remake/static/css/main.5ed471e8.css.map",
+    "main.146332bc.js.map": "/frostyqatar/frosty_trivia_remake/static/js/main.146332bc.js.map",
+    "488.8fd71efa.chunk.js.map": "/frostyqatar/frosty_trivia_remake/static/js/488.8fd71efa.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.5ed471e8.css",
+    "static/js/main.146332bc.js"
+  ]
+}
