@@ -2,10 +2,11 @@ import React from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
-import { Team, AbilityType } from '../types/game.types';
+import { Team, AbilityType, TeamIndex } from '../types/game.types';
 import { awardPoints } from '../store/gameSlice';
 import { useAbilities } from '../hooks/useAbilities';
 import { RootState } from '../store';
+import { useSoundEffects } from '../hooks/useSoundEffects';
 
 interface TeamPanelProps {
   team: Team;
@@ -70,9 +71,25 @@ const TeamName = styled.h2`
 `;
 
 const TeamScore = styled.div`
-  font-size: 26px;
+  font-size: 32px;
   font-weight: bold;
-  color: #8c52ff;
+  margin: 8px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ScoreAdjustButton = styled(motion.button)`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 8px;
+  opacity: 0.7;
+  
+  &:hover {
+    opacity: 1;
+  }
 `;
 
 const AbilitiesSection = styled.div`
@@ -158,6 +175,7 @@ const shockAnimation = {
 const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShocked }) => {
   const dispatch = useDispatch();
   const { activateAbility } = useAbilities();
+  const { playSound } = useSoundEffects();
   
   // Track cooldown for electric ability
   const [electricCooldown, setElectricCooldown] = React.useState(0);
@@ -196,6 +214,14 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
     activateAbility(teamIndex, abilityType);
   };
   
+  const handleAdjustScore = (amount: number) => {
+    playSound('button-click');
+    dispatch(awardPoints({ 
+      teamIndex: teamIndex as TeamIndex, 
+      points: amount 
+    }));
+  };
+  
   if (!team) return <div>Loading team data...</div>;
   
   return (
@@ -211,7 +237,25 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
         <TeamAvatar>{team.avatar}</TeamAvatar>
         <TeamInfo>
           <TeamName>{team.name}</TeamName>
-          <TeamScore>{team.score}</TeamScore>
+          <TeamScore>
+            <ScoreAdjustButton 
+              onClick={() => handleAdjustScore(-10)}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              ➖
+            </ScoreAdjustButton>
+            
+            {team.score}
+            
+            <ScoreAdjustButton 
+              onClick={() => handleAdjustScore(10)}
+              whileHover={{ scale: 1.2 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              ➕
+            </ScoreAdjustButton>
+          </TeamScore>
         </TeamInfo>
       </TeamHeader>
       

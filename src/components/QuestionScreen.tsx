@@ -316,7 +316,7 @@ const YouTubeEmbed = ({ url }: { url: string }) => {
     <iframe
       width="100%"
       height="315"
-      src={`https://www.youtube.com/embed/${videoId}`}
+      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`}
       title="YouTube video player"
       frameBorder="0"
       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -554,6 +554,90 @@ const QuestionScreen: React.FC = () => {
   const questionCount = 10; // This should come from your state
   const currentQuestionNumber = questionIndex + 1;
   
+  const renderMedia = () => {
+    if (question.video) {
+      // Extract the video ID if it's a YouTube URL
+      let videoSrc = question.video;
+      let videoId = '';
+      
+      // Check if it's a YouTube URL
+      if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {
+        // Extract video ID from various YouTube URL formats
+        if (videoSrc.includes('youtube.com/watch')) {
+          // Format: https://www.youtube.com/watch?v=VIDEO_ID
+          const urlParams = new URLSearchParams(new URL(videoSrc).search);
+          videoId = urlParams.get('v') || '';
+        } else if (videoSrc.includes('youtu.be')) {
+          // Format: https://youtu.be/VIDEO_ID
+          videoId = videoSrc.split('/').pop() || '';
+        } else if (videoSrc.includes('youtube.com/embed')) {
+          // Format: https://www.youtube.com/embed/VIDEO_ID
+          videoId = videoSrc.split('/').pop() || '';
+        }
+        
+        if (videoId) {
+          // Create embed URL with autoplay parameter but without mute
+          videoSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
+          
+          // Return iframe with script to set volume after loading
+          return (
+            <MediaContainer>
+              <iframe
+                id="youtube-player"
+                width="100%"
+                height="315"
+                src={videoSrc}
+                title="Video content"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              ></iframe>
+              <script dangerouslySetInnerHTML={{ __html: `
+                // Initialize YouTube API
+                var tag = document.createElement('script');
+                tag.src = "https://www.youtube.com/iframe_api";
+                var firstScriptTag = document.getElementsByTagName('script')[0];
+                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+                
+                var player;
+                
+                // When YouTube API is ready
+                window.onYouTubeIframeAPIReady = function() {
+                  player = new YT.Player('youtube-player', {
+                    events: {
+                      'onReady': function(event) {
+                        // Set volume to 10%
+                        event.target.setVolume(10);
+                        event.target.playVideo();
+                      }
+                    }
+                  });
+                };
+              `}} />
+            </MediaContainer>
+          );
+        }
+      }
+      
+      // For non-YouTube videos, show regular iframe
+      return (
+        <MediaContainer>
+          <iframe
+            width="100%"
+            height="315"
+            src={videoSrc}
+            title="Video content"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </MediaContainer>
+      );
+    }
+    
+    // Rest of your media rendering code for images and audio...
+  };
+  
   return (
     <AnimatePresence>
       <motion.div
@@ -592,27 +676,7 @@ const QuestionScreen: React.FC = () => {
                   />
                 )}
                 
-                {currentQuestion.question.video && (
-                  <VideoContainer>
-                    {isYouTubeUrl(currentQuestion.question.video) ? (
-                      <YouTubeEmbed url={currentQuestion.question.video} />
-                    ) : (
-                      <QuestionVideo 
-                        controls
-                        autoPlay={false}
-                        preload="metadata"
-                        onError={(e) => {
-                          console.error('Error loading video:', e);
-                          e.currentTarget.style.display = 'none';
-                        }}
-                        ref={videoRef}
-                      >
-                        <source src={currentQuestion.question.video} />
-                        Your browser does not support the video tag.
-                      </QuestionVideo>
-                    )}
-                  </VideoContainer>
-                )}
+                {currentQuestion.question.video && renderMedia()}
                 
                 {currentQuestion.question.audio && (
                   <AudioContainer>

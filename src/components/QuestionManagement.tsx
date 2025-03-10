@@ -8,6 +8,7 @@ import { useSoundEffects } from '../hooks/useSoundEffects';
 import { setGamePhase, updateCategories } from '../store/gameSlice';
 import { Category, Question } from '../types/game.types';
 import { showNotification } from '../components/common/GameNotification';
+import axios from 'axios';
 const Papa = require('papaparse');
 
 const DEFAULT_FORM_DATA = {
@@ -121,6 +122,7 @@ const Table = styled.table`
   width: 100%;
   border-collapse: collapse;
   margin-top: 16px;
+  table-layout: fixed;
 `;
 
 const TableHeader = styled.th`
@@ -196,8 +198,10 @@ const ModalContent = styled(motion.div)`
   border-radius: 16px;
   width: 90%;
   max-width: 700px;
+  max-height: 90vh;
   padding: 32px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
 `;
 
 const ModalTitle = styled.h2`
@@ -339,15 +343,25 @@ const ModalHeader = styled.div`
   margin-bottom: 16px;
 `;
 
-const CloseButton = styled.button`
+const CloseButton = styled(motion.button)`
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 18px;
   cursor: pointer;
   color: #666;
+  padding: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  position: absolute;
+  right: 16px;
+  top: 16px;
   
   &:hover {
-    color: #333;
+    background-color: rgba(0, 0, 0, 0.05);
   }
 `;
 
@@ -545,6 +559,56 @@ const SelectedEmoji = styled.div`
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 `;
 
+const GenerationSection = styled.div`
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+  border: 1px dashed #ddd;
+`;
+
+const GenerationPromptInput = styled.textarea`
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+  min-height: 80px;
+  resize: vertical;
+  margin-bottom: 16px;
+  
+  &:focus {
+    outline: none;
+    border-color: #8c52ff;
+    box-shadow: 0 0 0 2px rgba(140, 82, 255, 0.2);
+  }
+`;
+
+const GenerationButton = styled(motion.button)`
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  
+  &:disabled {
+    background-color: #93c5fd;
+    cursor: not-allowed;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: #ef4444;
+  font-size: 14px;
+  margin-top: 8px;
+`;
+
 const QuestionManagement: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
@@ -595,6 +659,10 @@ const QuestionManagement: React.FC = () => {
   const [categoryToEdit, setCategoryToEdit] = useState<Category | null>(null);
   const [editCategoryName, setEditCategoryName] = useState('');
   const [editCategoryIcon, setEditCategoryIcon] = useState('');
+  
+  const [generationPrompt, setGenerationPrompt] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState('');
   
   // First, update the flattenQuestions function to properly handle all questions
   const flattenQuestions = useCallback(() => {
@@ -1253,6 +1321,80 @@ const QuestionManagement: React.FC = () => {
     }
   };
   
+  const generateWithGemini = async () => {
+    if (!generationPrompt.trim()) {
+      setGenerationError('Please enter a prompt');
+      return;
+    }
+    
+    setIsGenerating(true);
+    setGenerationError('');
+    
+    try {
+      const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // Replace with your actual Gemini API key
+      
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          contents: [{
+            parts: [{
+              text: `You are a trivia question generator. Create a trivia question with its answer based on the following prompt: ${generationPrompt}. Format your response exactly like this: "Question: [your question] Answer: [your answer]"`
+            }]
+          }]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Extract the generated content from Gemini's response
+      const generatedContent = response.data.candidates[0].content.parts[0].text;
+      
+      // Simple parsing assuming format "Question: ... Answer: ..."
+      const questionMatch = generatedContent.match(/Question:(.+?)(?=Answer:)/s);
+      const answerMatch = generatedContent.match(/Answer:(.+)/s);
+      
+      const generatedQuestion = questionMatch ? questionMatch[1].trim() : '';
+      const generatedAnswer = answerMatch ? answerMatch[1].trim() : '';
+      
+      // Update form data with generated content
+      setFormData({
+        ...formData,
+        question: generatedQuestion,
+        answer: generatedAnswer
+      });
+      
+      setGenerationPrompt('');
+    } catch (error) {
+      console.error('Error generating content:', error);
+      setGenerationError(`Failed to generate content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+  
+  // First, add a useEffect for Escape key handling
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showModal) {
+          setShowModal(false);
+        } else if (showAddCategoryModal) {
+          setShowAddCategoryModal(false);
+        } else if (showEditCategoryModal) {
+          setShowEditCategoryModal(false);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      document.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [showModal, showAddCategoryModal, showEditCategoryModal]);
+  
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
@@ -1526,7 +1668,16 @@ const QuestionManagement: React.FC = () => {
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
             >
-              <ModalTitle>{modalMode === 'add' ? 'Add New Question' : 'Edit Question'}</ModalTitle>
+              <ModalHeader>
+                <ModalTitle>{modalMode === 'add' ? 'Add New Question' : 'Edit Question'}</ModalTitle>
+                <CloseButton 
+                  onClick={handleCloseModal}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  ✕
+                </CloseButton>
+              </ModalHeader>
               
               <FormGroup>
                 <FormLabel>Category</FormLabel>
@@ -1541,6 +1692,24 @@ const QuestionManagement: React.FC = () => {
                     </option>
                   ))}
                 </FormSelect>
+              </FormGroup>
+              
+              <FormGroup>
+                <FormLabel>Generate Question with DeepSeek AI</FormLabel>
+                <GenerationPromptInput
+                  placeholder="Describe what kind of trivia question you want (e.g., 'A question about astronomy' or 'Rewrite this: What is the capital of France?')"
+                  value={generationPrompt}
+                  onChange={(e) => setGenerationPrompt(e.target.value)}
+                />
+                <GenerationButton
+                  onClick={generateWithGemini}
+                  disabled={isGenerating || !generationPrompt.trim()}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  {isGenerating ? '⏳ Generating...' : '✨ Generate with Gemini'}
+                </GenerationButton>
+                {generationError && <ErrorMessage>{generationError}</ErrorMessage>}
               </FormGroup>
               
               <FormGroup>
@@ -1782,6 +1951,23 @@ const QuestionManagement: React.FC = () => {
           ))}
         </CategoryList>
       </CategoriesSection>
+      
+      <GenerationSection>
+        <GenerationPromptInput
+          value={generationPrompt}
+          onChange={(e) => setGenerationPrompt(e.target.value)}
+          placeholder="Enter a prompt to generate a question"
+        />
+        <GenerationButton
+          onClick={generateWithGemini}
+          disabled={isGenerating}
+        >
+          {isGenerating ? 'Generating...' : 'Generate with Gemini'}
+        </GenerationButton>
+        {generationError && (
+          <ErrorMessage>{generationError}</ErrorMessage>
+        )}
+      </GenerationSection>
     </Container>
   );
 };

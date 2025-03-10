@@ -228,6 +228,13 @@ const AnswerReveal: React.FC = () => {
     dispatch(returnToBoard({ markAsAnswered: false }));
   };
   
+  const handleNoPoints = () => {
+    playSound('button-click');
+    
+    // Return to the board and mark the question as answered
+    dispatch(returnToBoard({ markAsAnswered: true }));
+  };
+  
   return (
     <AnswerContainer>
       {showSuspense && (
@@ -283,7 +290,7 @@ const AnswerReveal: React.FC = () => {
       </ButtonsContainer>
       
       <NoPointsButton
-        onClick={handleReturnToBoard}
+        onClick={handleNoPoints}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
       >

@@ -205,34 +205,24 @@ const gameSlice = createSlice({
     },
     
     returnToBoard: (state, action: PayloadAction<{ markAsAnswered: boolean }>) => {
-      const { markAsAnswered } = action.payload;
-      
-      if (markAsAnswered && state.currentQuestion) {
-        // Find the category and question in the categories array
-        const { categoryId, questionIndex } = state.currentQuestion;
-        const category = state.categories.find(c => c.id === categoryId);
+      if (state.currentQuestion) {
+        // Find the question in the categories array
+        const categoryIndex = state.categories.findIndex(
+          c => c.id === state.currentQuestion?.categoryId
+        );
         
-        if (category && category.questions[questionIndex]) {
-          // Mark the question as answered
-          category.questions[questionIndex].answered = true;
+        if (categoryIndex !== -1) {
+          // Mark the question as answered if markAsAnswered is true
+          if (action.payload.markAsAnswered) {
+            state.categories[categoryIndex].questions[state.currentQuestion.questionIndex].answered = true;
+          }
         }
       }
       
-      // Reset game state but preserve activeTeamIndex
-      const currentActiveTeamIndex = state.activeTeamIndex;
-      
-      // Set game phase before clearing currentQuestion
-      state.gamePhase = 'playing';
+      // Reset the current question
       state.currentQuestion = null;
+      state.gamePhase = 'playing';
       state.answerRevealed = false;
-      
-      // Ensure activeTeamIndex remains set
-      state.activeTeamIndex = currentActiveTeamIndex;
-      
-      // Dispatch custom event when returning to board
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new Event('returnToBoard'));
-      }
     },
     
     setPointsMultiplier: (state, action: PayloadAction<{
