@@ -223,6 +223,13 @@ const gameSlice = createSlice({
       state.currentQuestion = null;
       state.gamePhase = 'playing';
       state.answerRevealed = false;
+      
+      // Reset dismissed state for all players - do this directly instead of creating a new array
+      state.teams.forEach(team => {
+        team.players.forEach(player => {
+          player.dismissed = false;
+        });
+      });
     },
     
     setPointsMultiplier: (state, action: PayloadAction<{

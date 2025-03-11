@@ -148,7 +148,27 @@ export const useAbilities = () => {
         break;
         
       case 'dismiss':
-        // Randomly select a player from opposing team to dismiss
+        if (gamePhase !== 'question') {
+          playSound('button-click');
+          showNotification('Dismiss ability can only be used during a question!');
+          return false;
+        }
+
+        if (team.abilities.dismiss.used) {
+          playSound('button-click');
+          showNotification('Dismiss ability already used!');
+          return false;
+        }
+
+        // Change to dispatch activateAbilityAction first
+        dispatch(activateAbilityAction({ 
+          teamIndex, 
+          abilityType: 'dismiss'
+        }));
+        
+        playSound('ability-dismiss');
+        
+        // Get opposing team index properly
         const opposingTeamIndex = teamIndex === 0 ? 1 : 0;
         const opposingTeam = game.teams[opposingTeamIndex];
         
@@ -162,7 +182,7 @@ export const useAbilities = () => {
             const playerToRemove = activePlayers[randomIndex];
             
             dispatch(dismissPlayer({ 
-              teamIndex: opposingTeamIndex, 
+              teamIndex: opposingTeamIndex, // Make sure this is the OPPOSING team index
               playerId: playerToRemove.id 
             }));
             

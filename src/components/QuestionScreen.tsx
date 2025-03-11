@@ -536,6 +536,18 @@ const QuestionScreen: React.FC = () => {
     }
   }, [currentQuestion?.question?.video]);
   
+  // Add the effect here, along with other hooks at the top level
+  useEffect(() => {
+    if (currentQuestion && currentQuestion.question.audio) {
+      // Find any audio elements and prevent autoplay
+      const audioElements = document.querySelectorAll('audio');
+      audioElements.forEach(audioElement => {
+        audioElement.autoplay = false;
+        audioElement.preload = 'none';
+      });
+    }
+  }, [currentQuestion]);
+  
   // Right after your early return if no question (around line 304),
   // add another early return if the answer has been revealed
   if (answerRevealed && currentQuestion) {
@@ -648,8 +660,8 @@ const QuestionScreen: React.FC = () => {
       >
         <QuestionContainer>
           <QuestionHeader>
-            <QuestionProgress>Question {currentQuestionNumber}/{questionCount}</QuestionProgress>
-            <BookmarkButton>🔖</BookmarkButton>
+          
+            
           </QuestionHeader>
           
           <QuestionContent>
@@ -682,6 +694,7 @@ const QuestionScreen: React.FC = () => {
                   <AudioContainer>
                     <QuestionAudio 
                       controls
+                      preload="none"
                       onError={(e) => {
                         e.currentTarget.style.display = 'none';
                         console.error('Error loading audio:', currentQuestion.question.audio);
@@ -752,13 +765,10 @@ const QuestionScreen: React.FC = () => {
           <BottomControls>
             <ControlStats>
               <StatItem>
-                <span>💯</span>
+                <span></span>
                 <span>{question.value} points</span>
               </StatItem>
-              <StatItem>
-                <span>📊</span>
-                <span>50/50</span>
-              </StatItem>
+  
             </ControlStats>
             
             <TimerActions>
@@ -776,12 +786,7 @@ const QuestionScreen: React.FC = () => {
               >
                 🔄
               </IconButton>
-              <IconButton 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                ⏱️
-              </IconButton>
+        
             </TimerActions>
           </BottomControls>
         </QuestionContainer>

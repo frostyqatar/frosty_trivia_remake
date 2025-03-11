@@ -1,4 +1,5 @@
 import { Category } from '../types/game.types';
+import styled from 'styled-components';
 
 export const categories: Category[] = [
   {
@@ -216,4 +217,79 @@ export const getInitialCategories = (): Category[] => {
   
   // Fall back to default categories if localStorage is empty or fails
   return categories;
-}; 
+};
+
+const PaginationContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 0;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const PageButton = styled.button`
+  padding: 6px 12px;
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  cursor: pointer;
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  &:hover:not(:disabled) {
+    background-color: #e0e0e0;
+  }
+`;
+
+const PageNumber = styled.button<{ isActive: boolean }>`
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid ${props => props.isActive ? '#8c52ff' : '#ddd'};
+  background-color: ${props => props.isActive ? '#8c52ff' : '#fff'};
+  color: ${props => props.isActive ? '#fff' : '#333'};
+  cursor: pointer;
+  
+  &:hover:not(:disabled) {
+    background-color: ${props => props.isActive ? '#7b44e0' : '#f0f0f0'};
+  }
+`;
+
+const PageEllipsis = styled.span`
+  margin: 0 8px;
+`;
+
+const PageJump = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+`;
+
+const PageJumpInput = styled.input`
+  width: 60px;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  text-align: center;
+`;
+
+const ItemsPerPageSelector = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+  
+  select {
+    padding: 6px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+`; 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
@@ -7,6 +7,8 @@ import { awardPoints } from '../store/gameSlice';
 import { useAbilities } from '../hooks/useAbilities';
 import { RootState } from '../store';
 import { useSoundEffects } from '../hooks/useSoundEffects';
+import Lightning, { updateTeamPosition, updateAvatarPosition } from './effects/Lightning';
+import CatLoader from './effects/CatLoader';
 
 interface TeamPanelProps {
   team: Team;
@@ -47,6 +49,7 @@ const TeamHeader = styled.div`
 `;
 
 const TeamAvatar = styled.div`
+  position: relative;
   font-size: 36px;
   display: flex;
   align-items: center;
@@ -182,6 +185,65 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
   
   const gamePhase = useSelector((state: RootState) => state.gamePhase);
   
+  // Add this to track the panel position
+  const panelRef = useRef<HTMLDivElement>(null);
+  const avatarRef = useRef<HTMLDivElement>(null);
+  
+  // Track panel position for lightning effect
+  useEffect(() => {
+    if (panelRef.current) {
+      const rect = panelRef.current.getBoundingClientRect();
+      updateTeamPosition(teamIndex, { 
+        x: rect.left, 
+        y: rect.top, 
+        width: rect.width, 
+        height: rect.height 
+      });
+    }
+
+    // Track avatar position separately
+    if (avatarRef.current) {
+      const rect = avatarRef.current.getBoundingClientRect();
+      updateAvatarPosition(teamIndex, {
+        x: rect.left,
+        y: rect.top,
+        width: rect.width,
+        height: rect.height
+      });
+    }
+    
+    // Update positions on resize and scroll
+    const handlePositionUpdate = () => {
+      if (panelRef.current) {
+        const rect = panelRef.current.getBoundingClientRect();
+        updateTeamPosition(teamIndex, { 
+          x: rect.left, 
+          y: rect.top, 
+          width: rect.width, 
+          height: rect.height 
+        });
+      }
+      
+      if (avatarRef.current) {
+        const rect = avatarRef.current.getBoundingClientRect();
+        updateAvatarPosition(teamIndex, {
+          x: rect.left,
+          y: rect.top,
+          width: rect.width,
+          height: rect.height
+        });
+      }
+    };
+    
+    window.addEventListener('resize', handlePositionUpdate);
+    window.addEventListener('scroll', handlePositionUpdate);
+    
+    return () => {
+      window.removeEventListener('resize', handlePositionUpdate);
+      window.removeEventListener('scroll', handlePositionUpdate);
+    };
+  }, [teamIndex]);
+  
   React.useEffect(() => {
     if (team?.abilities?.electric) {
       const cooldownTimer = setInterval(() => {
@@ -226,15 +288,29 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
   
   return (
     <TeamContainer 
+      ref={panelRef}
       isActive={isActive} 
       isShocked={isShocked}
       variants={shockAnimation}
       animate={isShocked ? 'animate' : 'initial'}
     >
+      {/* Only show the lightning effect on the team RECEIVING the shock */}
+      {isShocked && 
+        <Lightning 
+          active={isShocked} 
+          toTeam={true} 
+          targetTeamIndex={teamIndex} 
+          sourceTeamIndex={teamIndex === 0 ? 1 : 0} 
+        />
+      }
+      
       {isActive && <ActiveTeamIndicator />}
       
       <TeamHeader>
-        <TeamAvatar>{team.avatar}</TeamAvatar>
+        <TeamAvatar ref={avatarRef}>
+          {team.avatar}
+          <CatLoader active={true} size={1.2} />
+        </TeamAvatar>
         <TeamInfo>
           <TeamName>{team.name}</TeamName>
           <TeamScore>

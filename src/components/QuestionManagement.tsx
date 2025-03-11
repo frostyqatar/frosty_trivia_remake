@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,51 +25,55 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1200px;
   margin: 0 auto;
   background-color: white;
   border-radius: 24px;
   box-shadow: 0 10px 30px rgba(140, 82, 255, 0.15);
   overflow: hidden;
-  margin-top: 24px;
-  margin-bottom: 24px;
+  margin-top: 32px;
+  margin-bottom: 32px;
 `;
 
 const Header = styled.div`
   background: linear-gradient(135deg, #8c52ff 0%, #5e17eb 100%);
   color: white;
-  padding: 24px;
+  padding: 32px;
   text-align: center;
 `;
 
 const Title = styled.h1`
   margin: 0;
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
 `;
 
 const Subtitle = styled.p`
-  margin: 8px 0 0;
-  font-size: 16px;
-  opacity: 0.8;
+  margin: 12px 0 0;
+  font-size: 18px;
+  opacity: 0.9;
+  line-height: 1.5;
 `;
 
 const Content = styled.div`
-  padding: 32px;
-  max-height: 70vh;
+  padding: 40px;
+  max-height: 75vh;
   overflow-y: auto;
   
   & > * + * {
-    margin-top: 28px;
+    margin-top: 36px;
   }
 `;
 
 const ActionBar = styled.div`
   display: flex;
   justify-content: space-between;
-  margin-bottom: 36px;
+  margin-bottom: 40px;
   flex-wrap: wrap;
-  gap: 24px;
+  gap: 28px;
+  background-color: #f9f7ff;
+  padding: 24px;
+  border-radius: 16px;
 `;
 
 const ButtonGroup = styled.div`
@@ -82,102 +86,148 @@ const Button = styled(motion.button)`
   background-color: #8c52ff;
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
+  border-radius: 12px;
+  padding: 12px 20px;
   font-weight: 600;
+  font-size: 15px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(140, 82, 255, 0.2);
+  
+  &:hover {
+    background-color: #7b45e8;
+    box-shadow: 0 6px 8px rgba(140, 82, 255, 0.3);
+  }
   
   &:disabled {
     background-color: #d1d1d1;
     cursor: not-allowed;
+    box-shadow: none;
   }
 `;
 
 const DangerButton = styled(Button)`
   background-color: #ff5252;
+  box-shadow: 0 4px 6px rgba(255, 82, 82, 0.2);
+  
+  &:hover {
+    background-color: #e04747;
+    box-shadow: 0 6px 8px rgba(255, 82, 82, 0.3);
+  }
 `;
 
 const ImportButton = styled(Button)`
   background-color: #4caf50;
+  box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+  
+  &:hover {
+    background-color: #43a047;
+    box-shadow: 0 6px 8px rgba(76, 175, 80, 0.3);
+  }
 `;
 
 const SearchInput = styled.input`
-  padding: 10px 16px;
-  border-radius: 8px;
+  padding: 12px 20px;
+  border-radius: 12px;
   border: 1px solid #e0e0e0;
-  width: 250px;
+  width: 300px;
   font-size: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
   
   &:focus {
     outline: none;
     border-color: #8c52ff;
-    box-shadow: 0 0 0 2px rgba(140, 82, 255, 0.2);
+    box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.2);
   }
 `;
 
 const Table = styled.table`
   width: 100%;
-  border-collapse: collapse;
-  margin-top: 16px;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-top: 24px;
   table-layout: fixed;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  overflow: hidden;
 `;
 
 const TableHeader = styled.th`
   text-align: left;
-  padding: 12px 16px;
+  padding: 16px 20px;
   background-color: #f5f5f5;
   font-weight: 600;
   border-bottom: 2px solid #e0e0e0;
+  color: #333;
+  font-size: 15px;
 `;
 
 const TableRow = styled.tr`
   border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
   
   &:hover {
     background-color: #f9f5ff;
   }
+  
+  &:last-child td {
+    border-bottom: none;
+  }
 `;
 
 const TableCell = styled.td`
-  padding: 12px 16px;
+  padding: 16px 20px;
   max-width: 300px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  border-bottom: 1px solid #eaeaea;
+  color: #444;
+  font-size: 15px;
 `;
 
 const ActionCell = styled.td`
-  padding: 12px 16px;
+  padding: 16px 20px;
   display: flex;
-  gap: 8px;
+  gap: 12px;
+  border-bottom: 1px solid #eaeaea;
 `;
 
 const ActionIcon = styled(motion.button)`
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 18px;
+  font-size: 20px;
   color: #666;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   
   &:hover {
     color: #8c52ff;
+    background-color: rgba(140, 82, 255, 0.1);
   }
 `;
 
 const DeleteIcon = styled(ActionIcon)`
   &:hover {
     color: #ff5252;
+    background-color: rgba(255, 82, 82, 0.1);
   }
 `;
 
 const NoQuestionsMessage = styled.div`
   text-align: center;
-  padding: 32px;
+  padding: 48px;
   color: #666;
-  font-size: 18px;
+  font-size: 20px;
+  background-color: #f9f9f9;
+  border-radius: 16px;
+  margin: 32px 0;
 `;
 
 const Modal = styled(motion.div)`
@@ -186,85 +236,97 @@ const Modal = styled(motion.div)`
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  padding: 20px;
 `;
 
 const ModalContent = styled(motion.div)`
   background-color: white;
-  border-radius: 16px;
+  border-radius: 20px;
   width: 90%;
-  max-width: 700px;
+  max-width: 800px;
   max-height: 90vh;
-  padding: 32px;
+  padding: 40px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
   overflow-y: auto;
+  position: relative;
 `;
 
 const ModalTitle = styled.h2`
-  margin: 0 0 24px;
-  font-size: 24px;
+  margin: 0 0 28px;
+  font-size: 28px;
   color: #333;
+  font-weight: 700;
 `;
 
 const FormGroup = styled.div`
   display: flex;
   flex-direction: column;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 `;
 
 const FormLabel = styled.label`
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   font-weight: 600;
   color: #444;
+  font-size: 16px;
 `;
 
 const FormInput = styled.input`
   width: 100%;
-  padding: 12px;
+  padding: 14px;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
-  transition: border-color 0.2s;
+  transition: all 0.2s ease;
+  background-color: #fafafa;
   
   &:focus {
     border-color: #8c52ff;
     outline: none;
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.2);
   }
 `;
 
 const FormTextarea = styled.textarea`
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
   font-size: 16px;
-  min-height: 100px;
+  min-height: 120px;
   resize: vertical;
+  transition: all 0.2s ease;
+  background-color: #fafafa;
   
   &:focus {
     outline: none;
     border-color: #8c52ff;
-    box-shadow: 0 0 0 2px rgba(140, 82, 255, 0.2);
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.2);
   }
 `;
 
 const FormSelect = styled.select`
   width: 100%;
-  padding: 12px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  padding: 14px;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
   font-size: 16px;
-  background-color: white;
+  background-color: #fafafa;
+  transition: all 0.2s ease;
   
   &:focus {
     outline: none;
     border-color: #8c52ff;
-    box-shadow: 0 0 0 2px rgba(140, 82, 255, 0.2);
+    background-color: white;
+    box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.2);
   }
 `;
 
@@ -272,28 +334,37 @@ const ModalActions = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 16px;
-  margin-top: 24px;
+  margin-top: 32px;
+  padding-top: 20px;
+  border-top: 1px solid #eaeaea;
 `;
 
 const FileInput = styled.input`
   display: none;
 `;
 
-const Pagination = styled.div`
+const PaginationContainer = styled.div`
   display: flex;
   justify-content: center;
-  margin-top: 24px;
-  gap: 8px;
+  margin-top: 32px;
+  gap: 10px;
+  padding: 16px;
 `;
 
 const PageButton = styled(motion.button)<{ $active?: boolean }>`
-  padding: 8px 14px;
-  border-radius: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
   background-color: ${props => props.$active ? '#8c52ff' : '#f5f5f5'};
   color: ${props => props.$active ? 'white' : '#333'};
   border: none;
   cursor: pointer;
   font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: ${props => props.$active ? '0 4px 8px rgba(140, 82, 255, 0.3)' : 'none'};
+  
+  &:hover {
+    background-color: ${props => props.$active ? '#7b45e8' : '#e9e9e9'};
+  }
   
   &:disabled {
     opacity: 0.5;
@@ -301,35 +372,95 @@ const PageButton = styled(motion.button)<{ $active?: boolean }>`
   }
 `;
 
-const BatchSizeSelector = styled.div`
-  margin-bottom: 16px;
+const PageNumber = styled(PageButton)<{ $active?: boolean }>`
+  padding: 10px 16px;
+  border-radius: 10px;
+  background-color: ${props => props.$active ? '#8c52ff' : 'transparent'};
+  color: ${props => props.$active ? 'white' : '#333'};
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  box-shadow: ${props => props.$active ? '0 4px 8px rgba(140, 82, 255, 0.3)' : 'none'};
+  
+  &:hover {
+    background-color: ${props => props.$active ? '#7b45e8' : '#e9e9e9'};
+  }
 `;
 
-const SelectLabel = styled.label`
-  margin-right: 8px;
+const PageEllipsis = styled.span`
+  padding: 10px 16px;
+  border-radius: 10px;
+  background-color: transparent;
+  color: #666;
   font-weight: 600;
 `;
 
+const PageJump = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const PageJumpInput = styled.input`
+  width: 50px;
+  padding: 10px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 16px;
+  text-align: center;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #8c52ff;
+    box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.2);
+  }
+`;
+
+const ItemsPerPageSelector = styled.div`
+  margin-bottom: 24px;
+  background-color: #f9f7ff;
+  padding: 16px 20px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+`;
+
+const SelectLabel = styled.label`
+  margin-right: 12px;
+  font-weight: 600;
+  color: #444;
+`;
+
 const Select = styled.select`
-  padding: 8px 12px;
-  border-radius: 8px;
+  padding: 10px 14px;
+  border-radius: 10px;
   border: 1px solid #ddd;
   background-color: white;
-  font-size: 14px;
+  font-size: 15px;
+  transition: all 0.2s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: #8c52ff;
+    box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.1);
+  }
 `;
 
 const ActionButtons = styled.div`
   display: flex;
-  gap: 8px;
+  gap: 12px;
 `;
 
 const ActionButton = styled.button`
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 18px;
-  padding: 4px;
-  border-radius: 4px;
+  font-size: 20px;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
   
   &:hover {
     background-color: #f0f0f0;
@@ -340,56 +471,71 @@ const ModalHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 `;
 
 const CloseButton = styled(motion.button)`
   background: none;
   border: none;
-  font-size: 18px;
+  font-size: 24px;
   cursor: pointer;
   color: #666;
-  padding: 5px;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
-  width: 30px;
-  height: 30px;
+  width: 40px;
+  height: 40px;
   position: absolute;
-  right: 16px;
-  top: 16px;
+  right: 20px;
+  top: 20px;
+  transition: all 0.2s ease;
   
   &:hover {
     background-color: rgba(0, 0, 0, 0.05);
+    color: #333;
   }
 `;
 
 const Checkbox = styled.input`
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
   cursor: pointer;
+  border-radius: 4px;
+  border: 2px solid #8c52ff;
+  
+  &:checked {
+    accent-color: #8c52ff;
+  }
 `;
 
 const DangerButtonGroup = styled.div`
   display: flex;
-  gap: 8px;
+  gap: 12px;
   margin-left: auto;
 `;
 
 const TableHeaderCell = styled.th`
-  padding: 12px 16px;
+  padding: 16px 20px;
   text-align: left;
   font-weight: 600;
   background-color: #f7f9fc;
   border-bottom: 2px solid #e9ecef;
+  color: #333;
+  font-size: 15px;
+  transition: background-color 0.2s ease;
+  
+  &:hover {
+    background-color: #eef2f7;
+  }
   
   &:first-child {
-    border-top-left-radius: 8px;
+    border-top-left-radius: 12px;
   }
   
   &:last-child {
-    border-top-right-radius: 8px;
+    border-top-right-radius: 12px;
   }
 `;
 
@@ -403,11 +549,11 @@ const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: s
   
   if (type === 'image') {
     return (
-      <div style={{ marginTop: '8px' }}>
+      <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
         <img 
           src={src} 
           alt="Preview" 
-          style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px' }} 
+          style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block', margin: '0 auto' }} 
         />
       </div>
     );
@@ -415,7 +561,7 @@ const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: s
   
   if (type === 'audio') {
     return (
-      <div style={{ marginTop: '8px' }}>
+      <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
         <audio controls style={{ width: '100%' }}>
           <source src={src} />
           Your browser does not support audio playback.
@@ -426,8 +572,8 @@ const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: s
   
   if (type === 'video') {
     return (
-      <div style={{ marginTop: '8px' }}>
-        <video controls style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px' }}>
+      <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+        <video controls style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block', margin: '0 auto' }}>
           <source src={src} />
           Your browser does not support video playback.
         </video>
@@ -439,73 +585,114 @@ const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: s
 };
 
 const CategoriesSection = styled.div`
-  margin-top: 40px;
+  margin-top: 48px;
   background-color: #f8f9fa;
-  padding: 24px;
-  border-radius: 16px;
+  padding: 32px;
+  border-radius: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 `;
 
 const CategoriesHeader = styled.h2`
-  font-size: 24px;
-  margin-bottom: 24px;
+  font-size: 28px;
+  margin-bottom: 28px;
   color: #2c3e50;
   border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 12px;
+  padding-bottom: 16px;
 `;
 
 const CategoryList = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 24px;
-  margin-top: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 28px;
+  margin-top: 28px;
 `;
 
 const CategoryCard = styled.div`
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  padding: 20px;
+  background-color: white;
+  border-radius: 16px;
+  padding: 24px;
   display: flex;
   flex-direction: column;
   position: relative;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+  }
   
   & > * + * {
-    margin-top: 8px;
+    margin-top: 12px;
   }
 `;
 
 const CategoryName = styled.div`
   font-weight: 600;
-  font-size: 16px;
-  margin-bottom: 8px;
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #333;
 `;
 
 const CategoryIcon = styled.div`
-  font-size: 24px;
-  margin-bottom: 8px;
+  font-size: 32px;
+  margin-bottom: 16px;
+  background-color: #f9f7ff;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
 `;
 
 const CategoryInfo = styled.div`
-  font-size: 14px;
+  font-size: 15px;
   color: #666;
+  background-color: #f9f7ff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  display: inline-block;
 `;
 
 const CategoryDeleteButton = styled(DeleteIcon)`
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 16px;
+  right: 16px;
+  background-color: rgba(255, 82, 82, 0.1);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &:hover {
+    background-color: rgba(255, 82, 82, 0.2);
+  }
 `;
 
 const CategoryEditButton = styled(motion.button)`
   position: absolute;
-  top: 8px;
-  right: 40px;
-  background: none;
+  top: 16px;
+  right: 60px;
+  background: rgba(52, 152, 219, 0.1);
   border: none;
   font-size: 20px;
   cursor: pointer;
   color: #3498db;
   z-index: 2;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: rgba(52, 152, 219, 0.2);
+  }
 `;
 
 const COMMON_EMOJIS = [
@@ -520,67 +707,70 @@ const COMMON_EMOJIS = [
 const EmojiGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(8, 1fr);
-  gap: 8px;
-  margin-top: 16px;
-  max-height: 200px;
+  gap: 10px;
+  margin-top: 20px;
+  max-height: 220px;
   overflow-y: auto;
-  padding: 8px;
+  padding: 16px;
   background-color: #f8f9fa;
-  border-radius: 8px;
+  border-radius: 12px;
 `;
 
 const EmojiButton = styled(motion.button)<{ selected: boolean }>`
   background-color: ${props => props.selected ? '#3498db' : 'white'};
   color: ${props => props.selected ? 'white' : 'inherit'};
   border: 1px solid #e0e0e0;
-  border-radius: 4px;
-  padding: 8px;
+  border-radius: 8px;
+  padding: 10px;
   font-size: 24px;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   
   &:hover {
     background-color: ${props => props.selected ? '#2980b9' : '#f0f0f0'};
+    transform: scale(1.05);
   }
 `;
 
 const SelectedEmoji = styled.div`
-  font-size: 32px;
-  margin: 16px 0;
+  font-size: 36px;
+  margin: 20px 0;
   text-align: center;
   background-color: #f8f9fa;
   border-radius: 50%;
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 0 auto;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 `;
 
 const GenerationSection = styled.div`
   background-color: #f8f9fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 24px;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 28px;
   border: 1px dashed #ddd;
 `;
 
 const GenerationPromptInput = styled.textarea`
   width: 100%;
-  padding: 12px;
+  padding: 16px;
   border: 1px solid #ddd;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 16px;
-  min-height: 80px;
+  min-height: 100px;
   resize: vertical;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  background-color: white;
+  transition: all 0.2s ease;
   
   &:focus {
     outline: none;
     border-color: #8c52ff;
-    box-shadow: 0 0 0 2px rgba(140, 82, 255, 0.2);
+    box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.2);
   }
 `;
 
@@ -588,25 +778,90 @@ const GenerationButton = styled(motion.button)`
   background-color: #2563eb;
   color: white;
   border: none;
-  border-radius: 8px;
-  padding: 10px 16px;
+  border-radius: 12px;
+  padding: 14px 20px;
   font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
+  gap: 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.2);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: #1d4ed8;
+    box-shadow: 0 6px 8px rgba(37, 99, 235, 0.3);
+  }
   
   &:disabled {
     background-color: #93c5fd;
     cursor: not-allowed;
+    box-shadow: none;
   }
 `;
 
 const ErrorMessage = styled.div`
   color: #ef4444;
+  font-size: 15px;
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #fee2e2;
+  border-radius: 8px;
+`;
+
+const HelpText = styled.div`
   font-size: 14px;
-  margin-top: 8px;
+  color: #666;
+  margin-top: 12px;
+  line-height: 1.5;
+  background-color: #f0f9ff;
+  padding: 12px;
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+`;
+
+const SectionDivider = styled.div`
+  height: 1px;
+  background-color: #e5e7eb;
+  margin: 40px 0;
+`;
+
+const SectionTitle = styled.h3`
+  font-size: 20px;
+  color: #333;
+  margin-bottom: 16px;
+  font-weight: 600;
+`;
+
+// Replace the duplicate components with renamed versions
+const BatchSizeSelector = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+`;
+
+// Rename to avoid conflict with existing SelectLabel
+const BatchSelectLabel = styled.label`
+  font-weight: 600;
+  color: #333;
+`;
+
+// Rename to avoid conflict with existing Select
+const BatchSelect = styled.select`
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background-color: white;
+  font-size: 14px;
+  
+  &:focus {
+    outline: none;
+    border-color: #8c52ff;
+    box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.2);
+  }
 `;
 
 const QuestionManagement: React.FC = () => {
@@ -616,7 +871,7 @@ const QuestionManagement: React.FC = () => {
   
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [showModal, setShowModal] = useState(false);
   const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
   const [editingQuestion, setEditingQuestion] = useState<{ categoryId: string; questionIndex: number } | null>(null);
@@ -664,6 +919,9 @@ const QuestionManagement: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState('');
   
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
+  
   // First, update the flattenQuestions function to properly handle all questions
   const flattenQuestions = useCallback(() => {
     const allQuestions: any[] = [];
@@ -684,8 +942,8 @@ const QuestionManagement: React.FC = () => {
     return allQuestions;
   }, [categories]);
   
-  // Update the useEffect that handles displaying questions
-  useEffect(() => {
+  // Add this function to calculate pagination data without modifying state
+  const calculatePagination = () => {
     // Get all questions and apply search filter if needed
     let filteredQuestions = flattenQuestions();
     
@@ -698,49 +956,37 @@ const QuestionManagement: React.FC = () => {
       );
     }
     
-    // Apply sorting
-    filteredQuestions = sortQuestions(filteredQuestions);
-    
     // Calculate pagination
+    const totalItems = filteredQuestions.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    // Get current items
     const indexOfLastItem = currentPage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const paginatedQuestions = filteredQuestions.slice(indexOfFirstItem, indexOfLastItem);
     
-    // Update displayed questions
-    setDisplayedQuestions(paginatedQuestions);
+    return { 
+      totalPages,
+      filteredQuestions,
+      paginatedQuestions
+    };
+  };
+  
+  // Update the useEffect to use the calculate function and update state
+  useEffect(() => {
+    const { totalPages, paginatedQuestions } = calculatePagination();
     
-    // Update total pages if needed
-    const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
+    // Ensure current page is valid
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(1); // Reset to first page if current page is now invalid
+    } else {
+      // Update displayed questions
+      setDisplayedQuestions(paginatedQuestions);
     }
-  }, [categories, searchQuery, currentPage, itemsPerPage, flattenQuestions, sortBy, sortDirection]);
-  
-  // Fix the pagination handler
-  const handlePageChange = (newPage: number) => {
-    if (newPage < 1) return;
-    
-    const allQuestions = flattenQuestions();
-    const filteredQuestions = searchQuery 
-      ? allQuestions.filter(q => 
-          q.question.toLowerCase().includes(searchQuery.toLowerCase()) || 
-          q.answer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          q.categoryName.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : allQuestions;
-      
-    const totalPages = Math.ceil(filteredQuestions.length / itemsPerPage);
-    
-    if (newPage > totalPages) return;
-    
-    setCurrentPage(newPage);
-    playSound('button-click');
-  };
+  }, [currentPage, searchQuery, itemsPerPage, categories]);
   
   // Ensure the form submission correctly adds questions
   const handleSubmit = () => {
-    playSound('button-click');
-    
     if (!formData.categoryId || formData.question.trim() === '' || formData.answer.trim() === '') {
       alert('Category, question and answer are required.');
       return;
@@ -839,7 +1085,6 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleOpenModal = (mode: 'add' | 'edit', question?: { categoryId: string; questionIndex: number }) => {
-    playSound('button-click');
     setModalMode(mode);
     
     if (mode === 'add') {
@@ -876,14 +1121,11 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleCloseModal = () => {
-    playSound('button-click');
     setShowModal(false);
   };
   
   const handleDeleteQuestion = (categoryId: string, questionIndex: number) => {
     if (window.confirm('Are you sure you want to delete this question?')) {
-      playSound('button-click');
-      
       // Create a proper deep copy of the categories
       const updatedCategories = JSON.parse(JSON.stringify(categories));
       
@@ -910,8 +1152,6 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleExportCSV = () => {
-    playSound('button-click');
-    
     // Prepare data for CSV export with all media fields
     const csvData = flattenQuestions().map(q => ({
       category: q.categoryName,
@@ -939,8 +1179,6 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
-    playSound('button-click');
-    
     if (e.target.files && e.target.files.length > 0) {
       const file = e.target.files[0];
       
@@ -1009,7 +1247,6 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleReturnToSetup = () => {
-    playSound('button-click');
     dispatch(setGamePhase('setup'));
   };
   
@@ -1102,7 +1339,6 @@ const QuestionManagement: React.FC = () => {
       
       dispatch(updateCategories(updatedCategories));
       setSelectedQuestions([]);
-      playSound('button-click');
     }
   };
   
@@ -1115,7 +1351,6 @@ const QuestionManagement: React.FC = () => {
       }));
       
       dispatch(updateCategories(emptiedCategories));
-      playSound('button-click');
     }
   };
   
@@ -1126,8 +1361,6 @@ const QuestionManagement: React.FC = () => {
       
       // Alert the user about cache clearing
       alert('Questions saved to browser storage successfully! Note that clearing your browser cache will remove these saved edits.');
-      
-      playSound('button-click');
     } catch (error) {
       console.error('Error saving to localStorage:', error);
       alert('Failed to save questions to browser storage. Your browser may have insufficient storage space or has restrictions on localStorage.');
@@ -1163,8 +1396,6 @@ const QuestionManagement: React.FC = () => {
       setSortBy(column);
       setSortDirection('asc');
     }
-    
-    playSound('button-click');
   };
   
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1181,8 +1412,6 @@ const QuestionManagement: React.FC = () => {
       // Deselect all questions
       setSelectedQuestions([]);
     }
-    
-    playSound('button-click');
   };
   
   const handleForceReload = () => {
@@ -1199,14 +1428,12 @@ const QuestionManagement: React.FC = () => {
         if (savedCategories) {
           const parsedCategories = JSON.parse(savedCategories);
           dispatch(updateCategories(parsedCategories));
-          playSound('button-click');
           alert('Categories have been force reloaded from storage.');
         } else {
           // If no categories in localStorage, restore from the backup we just made
           const backupCategories = localStorage.getItem('trivia-game-categories-backup');
           if (backupCategories) {
             dispatch(updateCategories(JSON.parse(backupCategories)));
-            playSound('button-click');
             alert('Categories have been restored from backup.');
           }
         }
@@ -1235,7 +1462,7 @@ const QuestionManagement: React.FC = () => {
     }
   };
   
-  // Add a useEffect to debug changes to categories
+  // First, add a useEffect to debug changes to categories
   useEffect(() => {
     console.log('Categories changed:', categories);
   }, [categories]);
@@ -1260,14 +1487,12 @@ const QuestionManagement: React.FC = () => {
         console.error('Error saving to localStorage:', e);
       }
       
-      playSound('button-click');
-      showNotification(`Category "${categoryToDelete.name}" has been deleted.`);
+      alert(`Category "${categoryToDelete.name}" has been deleted.`);
     }
   };
   
   // Add this function to your QuestionManagement component
   const handleImportClick = () => {
-    playSound('button-click');
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
@@ -1278,7 +1503,6 @@ const QuestionManagement: React.FC = () => {
     setEditCategoryName(category.name);
     setEditCategoryIcon(category.icon);
     setShowEditCategoryModal(true);
-    playSound('button-click');
   };
   
   const handleSaveCategory = () => {
@@ -1316,8 +1540,7 @@ const QuestionManagement: React.FC = () => {
       setEditCategoryName('');
       setEditCategoryIcon('');
       
-      playSound('button-click');
-      showNotification('Category updated successfully!');
+      alert('Category updated successfully!');
     }
   };
   
@@ -1327,14 +1550,18 @@ const QuestionManagement: React.FC = () => {
       return;
     }
     
+    // Check if we have an API key, if not show the prompt
+    if (!geminiApiKey) {
+      setShowApiKeyPrompt(true);
+      return;
+    }
+    
     setIsGenerating(true);
     setGenerationError('');
     
     try {
-      const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY'; // Replace with your actual Gemini API key
-      
       const response = await axios.post(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
         {
           contents: [{
             parts: [{
@@ -1375,6 +1602,18 @@ const QuestionManagement: React.FC = () => {
     }
   };
   
+  // Add an API key submission handler
+  const handleApiKeySubmit = () => {
+    // Save the API key (could also save to localStorage if you want to persist it)
+    if (geminiApiKey.trim()) {
+      setShowApiKeyPrompt(false);
+      // Now call generate again
+      generateWithGemini();
+    } else {
+      setGenerationError('Please enter a valid API key');
+    }
+  };
+  
   // First, add a useEffect for Escape key handling
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
@@ -1395,6 +1634,114 @@ const QuestionManagement: React.FC = () => {
     };
   }, [showModal, showAddCategoryModal, showEditCategoryModal]);
   
+  // Update the renderPagination function to use the calculation function without state changes
+  const renderPagination = () => {
+    const { totalPages } = calculatePagination();
+    
+    if (totalPages <= 1) return null;
+    
+    // Create an improved pagination UI with ellipses for large page counts
+    const renderPageNumbers = () => {
+      const pageNumbers = [];
+      const maxPagesToShow = 7; // Show max 7 page numbers in the pagination
+      
+      if (totalPages <= maxPagesToShow) {
+        // Show all pages if there are fewer than maxPagesToShow
+        for (let i = 1; i <= totalPages; i++) {
+          pageNumbers.push(i);
+        }
+      } else {
+        // Always show first page
+        pageNumbers.push(1);
+        
+        // Show ellipsis if needed
+        if (currentPage > 3) {
+          pageNumbers.push('ellipsis-start');
+        }
+        
+        // Show pages around current page
+        const startPage = Math.max(2, currentPage - 1);
+        const endPage = Math.min(totalPages - 1, currentPage + 1);
+        
+        for (let i = startPage; i <= endPage; i++) {
+          pageNumbers.push(i);
+        }
+        
+        // Show ellipsis if needed
+        if (currentPage < totalPages - 2) {
+          pageNumbers.push('ellipsis-end');
+        }
+        
+        // Always show last page
+        pageNumbers.push(totalPages);
+      }
+      
+      return pageNumbers;
+    };
+    
+    return (
+      <PaginationContainer>
+        <PageButton 
+          onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+          disabled={currentPage === 1}
+        >
+          &laquo; Previous
+        </PageButton>
+        
+        {renderPageNumbers().map((page, index) => 
+          typeof page === 'number' ? (
+            <PageNumber 
+              key={index} 
+              $active={page === currentPage}
+              onClick={() => setCurrentPage(page)}
+            >
+              {page}
+            </PageNumber>
+          ) : (
+            <PageEllipsis key={page}>...</PageEllipsis>
+          )
+        )}
+        
+        <PageButton 
+          onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+          disabled={currentPage === totalPages}
+        >
+          Next &raquo;
+        </PageButton>
+        
+        <PageJump>
+          <span>Go to:</span>
+          <PageJumpInput 
+            type="number" 
+            min="1" 
+            max={totalPages}
+            value={currentPage}
+            onChange={(e) => {
+              const value = parseInt(e.target.value);
+              if (!isNaN(value) && value >= 1 && value <= totalPages) {
+                setCurrentPage(value);
+              }
+            }}
+          />
+          <span>of {totalPages}</span>
+        </PageJump>
+        
+        <ItemsPerPageSelector>
+          <span>Items per page:</span>
+          <select 
+            value={itemsPerPage}
+            onChange={(e) => setItemsPerPage(Number(e.target.value))}
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </ItemsPerPageSelector>
+      </PaginationContainer>
+    );
+  };
+  
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
@@ -1405,6 +1752,33 @@ const QuestionManagement: React.FC = () => {
       <Content>
         <ActionBar>
           <ButtonGroup>
+           <Button 
+              onClick={handleReturnToSetup}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              ← Back to Setup
+            </Button>
+           <ImportButton 
+              onClick={handleImportClick}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              📥 Import CSV
+            </ImportButton>
+            <Button 
+              onClick={handleExportCSV}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              📤 Export CSV
+            </Button>
+            <FileInput 
+              type="file" 
+              ref={fileInputRef} 
+              accept=".csv" 
+              onChange={handleImportCSV} 
+            />
             <Button 
               onClick={() => handleOpenModal('add')}
               whileHover={{ scale: 1.05 }}
@@ -1426,26 +1800,7 @@ const QuestionManagement: React.FC = () => {
             >
               💾 Save Edits to Browser
             </Button>
-            <ImportButton 
-              onClick={handleImportClick}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              📥 Import CSV
-            </ImportButton>
-            <Button 
-              onClick={handleExportCSV}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              📤 Export CSV
-            </Button>
-            <FileInput 
-              type="file" 
-              ref={fileInputRef} 
-              accept=".csv" 
-              onChange={handleImportCSV} 
-            />
+           
             <Button
               onClick={handleToggleSelectMode}
               whileHover={{ scale: 1.05 }}
@@ -1454,9 +1809,30 @@ const QuestionManagement: React.FC = () => {
             >
               {selectMode ? '❌ Cancel Selection' : '✓ Select Questions'}
             </Button>
-          </ButtonGroup>
-          
-          <DangerButtonGroup>
+             
+             <Button 
+        onClick={handleForceReload}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        🔄 Force Reload Questions
+      </Button>
+      
+     
+        <Button 
+          onClick={handleExportAllData}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+        >
+          💾 Export All Data
+        </Button>
+        <SearchInput 
+              type="text" 
+              placeholder="Search questions..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+     <DangerButtonGroup>
             {selectMode && selectedQuestions.length > 0 && (
               <DangerButton
                 onClick={handleDeleteSelected}
@@ -1474,34 +1850,24 @@ const QuestionManagement: React.FC = () => {
               ⚠️ Delete All Questions
             </DangerButton>
           </DangerButtonGroup>
-          
-          <ButtonGroup>
-            <SearchInput 
-              type="text" 
-              placeholder="Search questions..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Button 
-              onClick={handleReturnToSetup}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              ← Back to Setup
-            </Button>
           </ButtonGroup>
+          
+         
+          
+       
         </ActionBar>
         
         <BatchSizeSelector>
-          <SelectLabel>Questions per page:</SelectLabel>
-          <Select value={batchSize} onChange={handleBatchSizeChange}>
+          <BatchSelectLabel>Questions per page:</BatchSelectLabel>
+          <BatchSelect value={batchSize} onChange={handleBatchSizeChange}>
             <option value={10}>10</option>
             <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
             <option value={200}>200</option>
-            <option value={300}>300</option>
             <option value={500}>500</option>
             <option value={1000}>1000</option>
-          </Select>
+          </BatchSelect>
         </BatchSizeSelector>
         
         {displayedQuestions.length > 0 ? (
@@ -1591,62 +1957,7 @@ const QuestionManagement: React.FC = () => {
               </tbody>
             </Table>
             
-            {flattenQuestions().length > 0 && (
-              <Pagination>
-                <PageButton 
-                  onClick={() => handlePageChange(1)}
-                  disabled={currentPage === 1}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  ⏮️
-                </PageButton>
-                <PageButton 
-                  onClick={() => handlePageChange(currentPage - 1)}
-                  disabled={currentPage === 1}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  ◀️
-                </PageButton>
-                
-                {Array.from({ length: Math.min(5, Math.ceil(flattenQuestions().length / itemsPerPage)) }, (_, i) => {
-                  // Show 5 pages around current page
-                  let pageNum = currentPage - 2 + i;
-                  if (pageNum <= 0) pageNum = i + 1;
-                  if (pageNum > Math.ceil(flattenQuestions().length / itemsPerPage)) return null;
-                  
-                  return (
-                    <PageButton 
-                      key={pageNum}
-                      $active={pageNum === currentPage}
-                      onClick={() => handlePageChange(pageNum)}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      {pageNum}
-                    </PageButton>
-                  );
-                })}
-                
-                <PageButton 
-                  onClick={() => handlePageChange(currentPage + 1)}
-                  disabled={currentPage === Math.ceil(flattenQuestions().length / itemsPerPage)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  ▶️
-                </PageButton>
-                <PageButton 
-                  onClick={() => handlePageChange(Math.ceil(flattenQuestions().length / itemsPerPage))}
-                  disabled={currentPage === Math.ceil(flattenQuestions().length / itemsPerPage)}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  ⏭️
-                </PageButton>
-              </Pagination>
-            )}
+            {renderPagination()}
           </>
         ) : (
           <NoQuestionsMessage>
@@ -1695,7 +2006,7 @@ const QuestionManagement: React.FC = () => {
               </FormGroup>
               
               <FormGroup>
-                <FormLabel>Generate Question with DeepSeek AI</FormLabel>
+                <FormLabel>Generate Question with AI</FormLabel>
                 <GenerationPromptInput
                   placeholder="Describe what kind of trivia question you want (e.g., 'A question about astronomy' or 'Rewrite this: What is the capital of France?')"
                   value={generationPrompt}
@@ -1907,23 +2218,56 @@ const QuestionManagement: React.FC = () => {
         </Modal>
       )}
       
-      <Button 
-        onClick={handleForceReload}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        🔄 Force Reload Questions
-      </Button>
-      
-      <ButtonGroup>
-        <Button 
-          onClick={handleExportAllData}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+      {showApiKeyPrompt && (
+        <Modal
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 50, opacity: 0 }}
         >
-          💾 Export All Data
-        </Button>
-      </ButtonGroup>
+          <ModalHeader>
+            <h2>Enter Gemini API Key</h2>
+            <CloseButton 
+              onClick={() => setShowApiKeyPrompt(false)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              ✕
+            </CloseButton>
+          </ModalHeader>
+          
+          <ModalContent>
+            <FormGroup>
+              <FormLabel>Gemini API Key</FormLabel>
+              <FormInput
+                type="text"
+                value={geminiApiKey}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGeminiApiKey(e.target.value)}
+                placeholder="Enter your Gemini API key here"
+              />
+              <HelpText>
+                You can get a Gemini API key from the Google AI Studio. This key will only be used in your browser.
+              </HelpText>
+            </FormGroup>
+          </ModalContent>
+          
+          <ButtonGroup style={{ justifyContent: 'flex-end', padding: '20px' }}>
+            <Button 
+              onClick={handleApiKeySubmit}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Submit
+            </Button>
+            <Button 
+              onClick={() => setShowApiKeyPrompt(false)}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              Cancel
+            </Button>
+          </ButtonGroup>
+        </Modal>
+      )}
       
       <CategoriesSection>
         <CategoriesHeader>Category Management</CategoriesHeader>
@@ -1952,22 +2296,6 @@ const QuestionManagement: React.FC = () => {
         </CategoryList>
       </CategoriesSection>
       
-      <GenerationSection>
-        <GenerationPromptInput
-          value={generationPrompt}
-          onChange={(e) => setGenerationPrompt(e.target.value)}
-          placeholder="Enter a prompt to generate a question"
-        />
-        <GenerationButton
-          onClick={generateWithGemini}
-          disabled={isGenerating}
-        >
-          {isGenerating ? 'Generating...' : 'Generate with Gemini'}
-        </GenerationButton>
-        {generationError && (
-          <ErrorMessage>{generationError}</ErrorMessage>
-        )}
-      </GenerationSection>
     </Container>
   );
 };

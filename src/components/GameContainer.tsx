@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
+import Snowfall from 'react-snowfall';
 import { RootState } from '../store';
 import { GamePhase } from '../types/game.types';
 import TeamPanel from './TeamPanel';
@@ -73,6 +74,12 @@ const MusicButton = styled.button`
   align-items: center;
 `;
 
+const AudioControlsContainer = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+`;
+
 const VolumeSlider = styled.input`
   position: absolute;
   top: 100%;
@@ -84,6 +91,18 @@ const VolumeSlider = styled.input`
   border-radius: 4px;
   outline: none;
   z-index: 10;
+  padding: 8px 0;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s, visibility 0.3s;
+  
+  transition-delay: 0s;
+  
+  &:hover {
+    opacity: 1;
+    visibility: visible;
+    transition-delay: 0s;
+  }
 `;
 
 const TeamClock = styled.div`
@@ -120,13 +139,14 @@ const GameContainer: React.FC = () => {
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [shockedTeam, setShockedTeam] = useState<0 | 1 | null>(null);
   const { initializeElectricCooldown } = useAbilities();
+  const [showSnow, setShowSnow] = useState(true);
   
   // Listen for electric shock ability
   useEffect(() => {
     const handleElectricShock = (event: CustomEvent) => {
       if (event.detail && (event.detail.teamIndex === 0 || event.detail.teamIndex === 1)) {
-        const shockedIdx = event.detail.teamIndex === 0 ? 1 : 0;
-        setShockedTeam(shockedIdx);
+        // Don't switch the team indexes - event.detail.teamIndex is already the team to be shocked
+        setShockedTeam(event.detail.teamIndex);
         
         // Reset shocked state after animation
         setTimeout(() => {
@@ -171,14 +191,6 @@ const GameContainer: React.FC = () => {
     dispatch(setVolume(Number(e.target.value) / 100));
   };
   
-  const handleMusicButtonHover = () => {
-    setShowVolumeSlider(true);
-  };
-  
-  const handleMusicButtonLeave = () => {
-    setShowVolumeSlider(false);
-  };
-  
   if (gamePhase === 'setup') {
     return <SetupScreen />;
   }
@@ -209,24 +221,47 @@ const GameContainer: React.FC = () => {
   
   return (
     <Container>
+      {showSnow && (
+        <Snowfall 
+          snowflakeCount={150}
+          style={{
+            position: 'fixed',
+            width: '100vw',
+            height: '100vh',
+            zIndex: 1,
+            pointerEvents: 'none'
+          }}
+        />
+      )}
+      
       <ControlsBar>
-        <div
-          onMouseEnter={handleMusicButtonHover}
-          onMouseLeave={handleMusicButtonLeave}
+        <AudioControlsContainer
+          onMouseEnter={() => setShowVolumeSlider(true)}
+          onMouseLeave={() => {
+            setTimeout(() => setShowVolumeSlider(false), 1000);
+          }}
         >
           <MusicButton onClick={handleToggleMusic}>
             {musicEnabled ? '🔊' : '🔇'}
-            {showVolumeSlider && (
-              <VolumeSlider
-                type="range"
-                min="0"
-                max="100"
-                value={volume * 100}
-                onChange={handleVolumeChange}
-              />
-            )}
           </MusicButton>
-        </div>
+          
+          <VolumeSlider
+            type="range"
+            min="0"
+            max="100"
+            value={volume * 100}
+            onChange={handleVolumeChange}
+            style={{
+              opacity: showVolumeSlider ? 1 : 0,
+              visibility: showVolumeSlider ? 'visible' : 'hidden',
+              transitionDelay: showVolumeSlider ? '0s' : '0.5s'
+            }}
+          />
+        </AudioControlsContainer>
+        
+        <MusicButton onClick={() => setShowSnow(!showSnow)}>
+          {showSnow ? '❄️' : '☀️'}
+        </MusicButton>
         
         {gamePhase !== 'question' && (
           <TeamClock>

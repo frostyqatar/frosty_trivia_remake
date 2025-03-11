@@ -136,7 +136,13 @@ const SetupScreen: React.FC = () => {
         <Logo>Frosty Trivia ❄️</Logo>
         <CreatorInfo>برمجة: عبدالله الشاعر - QATAR</CreatorInfo>
       </Header>
-      
+      <Button
+        onClick={() => dispatch(setGamePhase('questionManagement'))}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        📝 إدارة الأسئلة
+      </Button>
       <CategorySelector />
       
       <TeamsContainer>
@@ -161,13 +167,7 @@ const SetupScreen: React.FC = () => {
         ابدأ اللعبة
       </StartButton>
       
-      <Button
-        onClick={() => dispatch(setGamePhase('questionManagement'))}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        📝 Manage Questions
-      </Button>
+  
     </Container>
   );
 };
