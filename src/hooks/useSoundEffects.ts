@@ -31,14 +31,14 @@ let musicInitialized = false;
 const createSoundMap = (): SoundMap => {
   return {
     'button-click': new Audio('https://cdn.pixabay.com/download/audio/2021/08/04/audio_bf3620f48d.mp3?filename=yay-6120.mp3'),
-    'question-reveal': new Audio('/assets/sounds/question-reveal.mp3'),
-    'answer-reveal': new Audio('/assets/sounds/answer-reveal.mp3'),
-    'ability-chatgpt': new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_e8b2fa25cf.mp3?filename=goodresult-82807.mp3'),
-    'ability-double': new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_e8b2fa25cf.mp3?filename=goodresult-82807.mp3'),
+    'question-reveal': new Audio('https://cdn.pixabay.com/download/audio/2023/03/18/audio_fec1635076.mp3?filename=particles-143023.mp3'),
+    'answer-reveal': new Audio('https://cdn.pixabay.com/download/audio/2023/03/18/audio_fec1635076.mp3?filename=particles-143023.mp3'),
+    'ability-chatgpt': new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_a6c8d04aa5.mp3?filename=classcified-android-88675.mp3'),
+    'ability-double': new Audio('https://cdn.pixabay.com/download/audio/2024/08/07/audio_42938daf19.mp3?filename=sweet-game-over-sound-effect-230470.mp3'),
     'ability-google': new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_e8b2fa25cf.mp3?filename=goodresult-82807.mp3'),
     'ability-dismiss': new Audio('https://cdn.pixabay.com/download/audio/2022/03/15/audio_e8b2fa25cf.mp3?filename=goodresult-82807.mp3'),
     'ability-electric': new Audio('https://cdn.pixabay.com/download/audio/2022/03/25/audio_1d3757234d.mp3?filename=electrical-shock-zap-106412.mp3'),
-    'timer-tick': new Audio('/assets/sounds/timer-tick.mp3'),
+    'timer-tick': new Audio('https://cdn.pixabay.com/download/audio/2022/03/14/audio_3308d39191.mp3?filename=ticking-timer-65220.mp3'),
     'victory': new Audio('https://cdn.pixabay.com/download/audio/2024/08/07/audio_c11dea5bd4.mp3?filename=victorymale-version-230553.mp3'),
     // Don't recreate background music for each component
     'winner-celebration': new Audio('https://cdn.pixabay.com/download/audio/2022/03/10/audio_2564010374.mp3?filename=tadaa-47995.mp3'),
@@ -139,27 +139,31 @@ export const useSoundEffects = () => {
       return;
     }
     
-    // For victory and winner-celebration, clone the audio to prevent overlapping/cutoffs
-    if (soundType === 'victory' || soundType === 'winner-celebration') {
+    // Handle priority sounds with cloning (victory, winner-celebration, answer-reveal, and now question-reveal)
+    if (soundType === 'victory' || soundType === 'winner-celebration' || 
+        soundType === 'answer-reveal' || soundType === 'question-reveal') {
       const originalSound = soundsRef.current[soundType];
       if (!originalSound) return;
       
-      // Create a fresh clone for each play to avoid cutoffs
+      // Create a fresh clone for each play to avoid cutoffs and delays
       const soundClone = new Audio(originalSound.src);
       soundClone.volume = volume;
       soundClone.muted = !musicEnabled; // Apply mute state to new sounds
       
-      // Store the clone to track it
-      if (!activeSounds[soundType]) {
-        activeSounds[soundType] = [];
+      // Store the clone to track it (except for answer-reveal and question-reveal which don't need tracking)
+      if (soundType !== 'answer-reveal' && soundType !== 'question-reveal') {
+        if (!activeSounds[soundType]) {
+          activeSounds[soundType] = [];
+        }
+        activeSounds[soundType].push(soundClone);
+        
+        // Remove from tracking when done
+        soundClone.addEventListener('ended', () => {
+          activeSounds[soundType] = activeSounds[soundType].filter(s => s !== soundClone);
+        });
       }
-      activeSounds[soundType].push(soundClone);
       
-      // Remove from tracking when done
-      soundClone.addEventListener('ended', () => {
-        activeSounds[soundType] = activeSounds[soundType].filter(s => s !== soundClone);
-      });
-      
+      // Play immediately with high priority
       soundClone.play().catch(e => console.error(`Error playing ${soundType}:`, e));
       return;
     }

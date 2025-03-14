@@ -18,8 +18,8 @@ const BoardContainer = styled.div`
 
 const CategoryContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 16px;
   margin-bottom: 30px;
 `;
 
@@ -43,11 +43,26 @@ const CategoryCard = styled(motion.div)`
 const CategoryHeader = styled.div`
   background-color: #8c52ff;
   color: white;
-  padding: 20px 10px;
+  padding: 16px 8px;
   text-align: center;
   width: 100%;
   font-weight: 600;
-  font-size: 16px;
+  font-size: 14px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 8px 8px 0 0;
+`;
+
+const CategoryHeaderText = styled.div`
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 `;
 
 const CategoryIcon = styled.div`
@@ -57,8 +72,8 @@ const CategoryIcon = styled.div`
 
 const QuestionGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 15px;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 12px;
   width: 100%;
 `;
 
@@ -95,11 +110,11 @@ const QuestionCard = styled(motion.div)<QuestionCardProps>`
   background-color: ${props => props.answered ? '#f1f1f1' : '#8c52ff'};
   color: ${props => props.answered ? '#aaa' : 'white'};
   border-radius: 8px;
-  padding: 16px;
+  padding: 14px 10px;
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 24px;
+  font-size: 22px;
   font-weight: 700;
   cursor: ${props => props.answered ? 'default' : 'pointer'};
   transition: all 0.2s ease;
@@ -280,11 +295,11 @@ const GameBoard: React.FC = () => {
     background-color: #f1f1f1;
     color: #aaa;
     border-radius: 8px;
-    padding: 16px;
+    padding: 14px 10px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 24px;
+    font-size: 22px;
     font-weight: 700;
   `;
 
@@ -301,7 +316,9 @@ const GameBoard: React.FC = () => {
             variants={cardVariants}
           >
             <CategoryHeader>
-              <BidirectionalText text={category.name} />
+              <CategoryHeaderText>
+                <BidirectionalText text={category.name} />
+              </CategoryHeaderText>
             </CategoryHeader>
             <CategoryIcon>{category.icon}</CategoryIcon>
             

@@ -7,7 +7,7 @@ import { RootState } from '../store';
 import { resetGame } from '../store/gameSlice';
 import { BidirectionalText } from '../utils/textUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
-import ShootingStars from './effects/ShootingStars';
+import { trackGameEvent } from '../services/analytics';
 
 const Container = styled(motion.div)`
   display: flex;
@@ -89,9 +89,11 @@ const PlayAgainButton = styled(motion.button)`
 
 const EndGame: React.FC = () => {
   const dispatch = useDispatch();
+  
   const { teams } = useSelector((state: RootState) => ({
     teams: state.teams
   }));
+  
   const { playSound } = useSoundEffects();
   
   const team1Score = teams[0]?.score || 0;
@@ -101,10 +103,12 @@ const EndGame: React.FC = () => {
   const isTie = team1Score === team2Score;
   
   useEffect(() => {
-    // Play victory sound when end game screen is displayed
+    const winningTeamName = winningTeam?.name || (isTie ? 'Tie' : 'Unknown');
+    const finalScore = Math.max(team1Score, team2Score);
+    trackGameEvent.endGame(winningTeamName, finalScore);
+    
     playSound('victory');
     
-    // Trigger confetti animation
     const duration = 5 * 1000;
     const animationEnd = Date.now() + duration;
     
@@ -145,9 +149,6 @@ const EndGame: React.FC = () => {
   
   return (
     <AnimatePresence>
-      {isTie && (
-        <ShootingStars active={true} />
-      )}
       <Container
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}

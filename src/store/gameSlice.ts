@@ -163,7 +163,7 @@ const gameSlice = createSlice({
     },
     
     selectCategory: (state, action: PayloadAction<string>) => {
-      if (state.selectedCategories.length < 6 && !state.selectedCategories.includes(action.payload)) {
+      if (!state.selectedCategories.includes(action.payload) && state.selectedCategories.length < 8) {
         state.selectedCategories.push(action.payload);
       }
     },
@@ -284,14 +284,21 @@ const gameSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder.addCase(resetGame, (state) => {
-      // Instead of completely replacing the state, preserve the categories
-      const preservedCategories = [...state.categories];
+      // Reset to initial state but preserve original categories
+      const preservedCategories = JSON.parse(JSON.stringify(state.categories)).map((cat: Category) => {
+        // Reset answered flag for all questions
+        cat.questions = cat.questions.map(q => ({...q, answered: false}));
+        return cat;
+      });
       
-      // Reset the state
+      // Reset the state 
       Object.assign(state, initialState);
       
-      // Restore the categories
+      // Restore the categories with reset questions
       state.categories = preservedCategories;
+      
+      // Explicitly set game phase
+      state.gamePhase = 'setup';
     });
   },
 });

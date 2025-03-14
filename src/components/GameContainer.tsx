@@ -4,7 +4,7 @@ import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import Snowfall from 'react-snowfall';
 import { RootState } from '../store';
-import { GamePhase } from '../types/game.types';
+import { GamePhase, Category, Question } from '../types/game.types';
 import TeamPanel from './TeamPanel';
 import GameBoard from './GameBoard';
 import QuestionScreen from './QuestionScreen';
@@ -141,6 +141,11 @@ const GameContainer: React.FC = () => {
   const { initializeElectricCooldown } = useAbilities();
   const [showSnow, setShowSnow] = useState(true);
   
+  const { categories, selectedCategories } = useSelector((state: RootState) => ({
+    categories: state.categories || [],
+    selectedCategories: state.selectedCategories || []
+  }));
+  
   // Listen for electric shock ability
   useEffect(() => {
     const handleElectricShock = (event: CustomEvent) => {
@@ -190,6 +195,29 @@ const GameContainer: React.FC = () => {
   const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     dispatch(setVolume(Number(e.target.value) / 100));
   };
+  
+  useEffect(() => {
+    // Debug logging for game phase changes
+    console.log("Current game phase:", gamePhase);
+    
+    if (gamePhase === 'playing') {
+      const displayCats = categories.filter((cat: Category) => selectedCategories.includes(cat.id));
+      
+      let answeredCount = 0;
+      let totalCount = 0;
+      
+      displayCats.forEach((cat: Category) => {
+        totalCount += cat.questions.length;
+        answeredCount += cat.questions.filter((q: Question) => q.answered).length;
+      });
+      
+      console.log(`Questions answered: ${answeredCount}/${totalCount}`);
+      
+      if (answeredCount === totalCount && totalCount > 0) {
+        console.warn("All questions are already marked as answered!");
+      }
+    }
+  }, [gamePhase, categories, selectedCategories]);
   
   if (gamePhase === 'setup') {
     return <SetupScreen />;

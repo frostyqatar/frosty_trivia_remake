@@ -9,6 +9,8 @@ import CategorySelector from './setup/CategorySelector';
 import TeamSetup from './setup/TeamSetup';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { categories } from '../data/questions';
+import { trackGameEvent } from '../services/analytics';
+import FeedbackModal from './FeedbackModal';
 
 const Container = styled.div`
   max-width: 1200px;
@@ -19,6 +21,9 @@ const Container = styled.div`
 const Header = styled.header`
   text-align: center;
   margin-bottom: 32px;
+  font-size: 70px; /* Increased font size */
+  font-weight: bold; /* Made text bold */
+  color: #2c3e50; /* Added a clear color for better visibility */
 `;
 
 const Logo = styled.h1`
@@ -75,6 +80,24 @@ const Button = styled(motion.button)`
   }
 `;
 
+const FeedbackButton = styled(motion.button)`
+  background-color: #8c52ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 5px;
+  &:disabled {
+    background-color: #d1d1d1;
+    cursor: not-allowed;
+  }
+`;
+
 const SetupScreen: React.FC = () => {
   const dispatch = useDispatch();
   const selectedCategories = useSelector((state: RootState) => state.selectedCategories);
@@ -82,6 +105,7 @@ const SetupScreen: React.FC = () => {
   
   const [teams, setTeams] = useState<[Partial<Team>, Partial<Team>]>([{}, {}]);
   const [isReady, setIsReady] = useState(false);
+  const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
   
   // Check if setup is complete and game can start
   useEffect(() => {
@@ -111,22 +135,30 @@ const SetupScreen: React.FC = () => {
     
     playSound('button-click');
     
-    // Create full team objects
+    // Create full team objects with initial state
     const fullTeams = teams.map((team, index) => ({
       id: `team-${index + 1}`,
       name: team.name || `Team ${index + 1}`,
       avatar: team.avatar || '😎',
       score: 0,
       players: team.players || [],
-      abilities: team.abilities || {},
+      abilities: {
+        chatgpt: { type: 'chatgpt', used: false },
+        double: { type: 'double', used: false, active: false },
+        google: { type: 'google', used: false },
+        dismiss: { type: 'dismiss', used: false },
+        electric: { type: 'electric', used: false, cooldown: 0, cooldownStart: 0 }
+      },
       pointsMultiplier: 1,
     })) as Team[];
     
-    // Filter categories to only include selected ones
-    const filteredCategories = categories.filter(cat => 
-      selectedCategories.includes(cat.id)
-    );
+    // Make sure we're going to the playing phase
+    console.log("Starting game with teams:", fullTeams);
     
+    // Track the game start in analytics
+    trackGameEvent.startGame();
+    
+    // Dispatch with the teams
     dispatch(startGame(fullTeams));
   };
   
@@ -136,6 +168,18 @@ const SetupScreen: React.FC = () => {
         <Logo>Frosty Trivia ❄️</Logo>
         <CreatorInfo>برمجة: عبدالله الشاعر - QATAR</CreatorInfo>
       </Header>
+      <FeedbackButton
+        onClick={() => setIsFeedbackModalOpen(true)}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+      >
+        عطنا رايك 📝
+      </FeedbackButton>
+      
+      <FeedbackModal 
+        isOpen={isFeedbackModalOpen} 
+        onClose={() => setIsFeedbackModalOpen(false)} 
+      />
       <Button
         onClick={() => dispatch(setGamePhase('questionManagement'))}
         whileHover={{ scale: 1.05 }}
@@ -167,7 +211,7 @@ const SetupScreen: React.FC = () => {
         ابدأ اللعبة
       </StartButton>
       
-  
+     
     </Container>
   );
 };

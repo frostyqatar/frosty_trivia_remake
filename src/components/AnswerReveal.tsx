@@ -186,11 +186,13 @@ const AnswerReveal: React.FC = () => {
     // Show suspense for 2 seconds
     const timer = setTimeout(() => {
       setShowSuspense(false);
-      playSound('answer-reveal');
+      // Only play the sound in the traditional way if we're not using the enhanced sound system
+      // Comment out or remove this line since we now handle this in the button click
+      // playSound('answer-reveal');
     }, 2000);
     
     return () => clearTimeout(timer);
-  }, [playSound]);
+  }, []);
   
   useEffect(() => {
     console.log("AnswerReveal mounted, current active team:", activeTeamIndex);

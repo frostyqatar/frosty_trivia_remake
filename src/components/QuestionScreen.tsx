@@ -739,6 +739,23 @@ const QuestionScreen: React.FC = () => {
                   {bothTeamsFinished && (
                     <span>⏰ Both teams out of time!</span>
                   )}
+                  <TimerActions>
+              <IconButton 
+                onClick={handleSkipTimer}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                ⏩
+              </IconButton>
+              <IconButton 
+                onClick={handleRestartTimers}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                🔄
+              </IconButton>
+        
+            </TimerActions>
                 </TeamInfo>
               </motion.div>
             </TimerSection>
@@ -771,23 +788,7 @@ const QuestionScreen: React.FC = () => {
   
             </ControlStats>
             
-            <TimerActions>
-              <IconButton 
-                onClick={handleSkipTimer}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                ⏩
-              </IconButton>
-              <IconButton 
-                onClick={handleRestartTimers}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                🔄
-              </IconButton>
-        
-            </TimerActions>
+            
           </BottomControls>
         </QuestionContainer>
       </motion.div>

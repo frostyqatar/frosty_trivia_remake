@@ -9,7 +9,26 @@ import { setGamePhase, updateCategories } from '../store/gameSlice';
 import { Category, Question } from '../types/game.types';
 import { showNotification } from '../components/common/GameNotification';
 import axios from 'axios';
-const Papa = require('papaparse');
+import { getInitialCategories, resetToDefaultCategories } from '../data/questions';
+import Papa from 'papaparse';
+// Import the ImageCropper component
+import ImageCropper from './common/ImageCropper';
+// Import the new function
+import { importQuestionsFromCSV } from '../utils/csvImport';
+import { trackGameEvent } from '../services/analytics';
+
+// Temporary local implementation until module resolution is fixed
+const trackEvent = (category: string, action: string, label?: string, value?: number) => {
+  console.log('Analytics event:', { category, action, label, value });
+  // Attempt to use the real analytics if available
+  try {
+    // @ts-ignore - Dynamically import at runtime
+    const ReactGA = require('react-ga4');
+    ReactGA.event({ category, action, label, value });
+  } catch (e) {
+    console.warn('Analytics not available:', e);
+  }
+};
 
 const DEFAULT_FORM_DATA = {
   categoryId: '',
@@ -922,6 +941,16 @@ const QuestionManagement: React.FC = () => {
   const [geminiApiKey, setGeminiApiKey] = useState('');
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   
+  // Add state for image cropping
+  const [showImageCropper, setShowImageCropper] = useState(false);
+  const [originalImageUrl, setOriginalImageUrl] = useState('');
+  
+  // Add state for file handling
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  
+  // Add notification state to your component if not already there
+  const [notification, setNotification] = useState({ message: '', type: 'info', visible: false });
+  
   // First, update the flattenQuestions function to properly handle all questions
   const flattenQuestions = useCallback(() => {
     const allQuestions: any[] = [];
@@ -1121,7 +1150,23 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleCloseModal = () => {
-    setShowModal(false);
+    const hasData = formData.question.trim() !== '' || 
+                    formData.answer.trim() !== '' || 
+                    formData.image !== '' || 
+                    formData.audio !== '' || 
+                    formData.video !== '';
+    
+    if (hasData) {
+      if (window.confirm('Are you sure you want to close? All unsaved changes will be lost.')) {
+        setShowModal(false);
+        setFormData({...DEFAULT_FORM_DATA});
+        setEditingQuestion(null);
+      }
+    } else {
+      setShowModal(false);
+      setFormData({...DEFAULT_FORM_DATA});
+      setEditingQuestion(null);
+    }
   };
   
   const handleDeleteQuestion = (categoryId: string, questionIndex: number) => {
@@ -1148,7 +1193,30 @@ const QuestionManagement: React.FC = () => {
   
   const handleFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
+    
+    if (name === 'image' && value !== '') {
+      // Store the original image URL
+      setOriginalImageUrl(value);
+      
+      // We'll show the cropper when the image loads successfully
+      const img = new Image();
+      img.onload = () => {
+        setShowImageCropper(true);
+      };
+      img.onerror = () => {
+        // If the image doesn't load, just use the URL directly
+        setFormData({
+          ...formData,
+          [name]: value
+        });
+      };
+      img.src = value;
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
   };
   
   const handleExportCSV = () => {
@@ -1178,70 +1246,77 @@ const QuestionManagement: React.FC = () => {
     document.body.removeChild(link);
   };
   
-  const handleImportCSV = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
+  const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    try {
       const file = e.target.files[0];
+      const reader = new FileReader();
       
-      Papa.parse(file, {
-        header: true,
-        complete: function(results: any) {
-          // Create deep copy of categories
-          const updatedCategories = JSON.parse(JSON.stringify(categories));
+      reader.onload = async (event) => {
+        if (!event.target || typeof event.target.result !== 'string') return;
+        
+        try {
+          const questions = await importQuestionsFromCSV(file);
           
-          // Process each imported row
-          results.data.forEach((row: any) => {
-            if (!row.category || !row.question || !row.answer || !row.value) {
-              // Skip invalid rows
-              return;
-            }
+          // Add the questions to the categories state
+          if (questions.length > 0) {
+            const updatedCategories = [...categories];
             
-            // Find matching category by name
-            let categoryIndex = updatedCategories.findIndex(
-              (c: Category) => c.name.toLowerCase() === row.category.toLowerCase()
-            );
+            // Group questions by category
+            questions.forEach(question => {
+              const categoryName = question.category;
+              
+              // Find or create category
+              let category = updatedCategories.find(c => c.name === categoryName);
+              if (!category) {
+                // Create new category with unique ID
+                category = {
+                  id: `category-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                  name: categoryName,
+                  questions: []
+                };
+                updatedCategories.push(category);
+              }
+              
+              // Add question to category
+              category.questions.push({
+                ...question,
+                id: `question-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+              });
+            });
             
-            // Create category if it doesn't exist
-            if (categoryIndex === -1) {
-              const newCategory = {
-                id: row.category.toLowerCase().replace(/\s+/g, '-'),
-                name: row.category,
-                icon: '📒', // Default icon
-                questions: []
-              };
-              updatedCategories.push(newCategory);
-              categoryIndex = updatedCategories.length - 1;
-            }
+            // Update the store
+            dispatch(updateCategories(updatedCategories));
             
-            // Create question with all media fields
-            const newQuestion = {
-              value: parseInt(row.value, 10) || 100,
-              question: row.question,
-              answer: row.answer,
-              answered: false,
-              image: row.image || undefined,
-              audio: row.audio || undefined,
-              video: row.video || undefined
-            };
+            // Track the import in analytics
+            trackGameEvent.importQuestions(questions.length);
             
-            // Add question to category
-            updatedCategories[categoryIndex].questions.push(newQuestion);
-          });
-          
-          // Update Redux state
-          dispatch(updateCategories(updatedCategories));
-          
-          // Show success notification
-          showNotification(`Imported ${results.data.length} questions with media`);
-          
-          // Reset file input
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
+            // Show success notification
+            setNotification({
+              message: `Successfully imported ${questions.length} questions`,
+              type: 'success',
+              visible: true
+            });
           }
-        },
-        error: function(error: any) {
-          console.error('CSV Import Error:', error);
-          showNotification('Error importing CSV file. Check console for details.');
+        } catch (error) {
+          console.error('Error parsing CSV:', error);
+          setNotification({
+            message: `Error parsing CSV: ${error}`,
+            type: 'error',
+            visible: true
+          });
         }
+      };
+      
+      // Read the file as text with UTF-8 encoding
+      reader.readAsText(file, 'UTF-8');
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      setNotification({
+        message: `Error importing CSV: ${error}`,
+        type: 'error',
+        visible: true
       });
     }
   };
@@ -1617,22 +1692,36 @@ const QuestionManagement: React.FC = () => {
   // First, add a useEffect for Escape key handling
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        if (showModal) {
-          setShowModal(false);
-        } else if (showAddCategoryModal) {
-          setShowAddCategoryModal(false);
-        } else if (showEditCategoryModal) {
-          setShowEditCategoryModal(false);
+      if (event.key === 'Escape' && showModal) {
+        event.stopPropagation(); // Prevent event bubbling
+        
+        // Check if form has data
+        if (hasFormData()) {
+          // Use the custom notification instead of window.confirm
+          const confirmClose = window.confirm('Are you sure you want to close? All unsaved changes will be lost.');
+          if (confirmClose) {
+            handleCloseModal();
+          }
+        } else {
+          handleCloseModal();
         }
       }
     };
 
-    document.addEventListener('keydown', handleEscapeKey);
-    return () => {
-      document.removeEventListener('keydown', handleEscapeKey);
+    // Helper function to check if form has any data
+    const hasFormData = () => {
+      return formData.question.trim() !== '' || 
+             formData.answer.trim() !== '' || 
+             formData.image !== '' || 
+             formData.audio !== '' || 
+             formData.video !== '';
     };
-  }, [showModal, showAddCategoryModal, showEditCategoryModal]);
+
+    window.addEventListener('keydown', handleEscapeKey);
+    return () => {
+      window.removeEventListener('keydown', handleEscapeKey);
+    };
+  }, [showModal, formData]);
   
   // Update the renderPagination function to use the calculation function without state changes
   const renderPagination = () => {
@@ -1740,6 +1829,47 @@ const QuestionManagement: React.FC = () => {
         </ItemsPerPageSelector>
       </PaginationContainer>
     );
+  };
+  
+  // Add this handler function in your component
+  const handleEmergencyReset = () => {
+    if (window.confirm("⚠️ EMERGENCY RESET: This will restore all original questions and discard all your changes. Are you absolutely sure?")) {
+      // Get the original default categories
+      const defaultCategories = resetToDefaultCategories();
+      
+      // Update Redux state with the defaults
+      dispatch(updateCategories(defaultCategories));
+      
+      // Clear localStorage to prevent it from overriding our reset
+      localStorage.removeItem('trivia-game-categories');
+      
+      // Track this event in Google Analytics
+      trackEvent('Admin', 'Reset Questions');
+      
+      // Show confirmation
+      alert('All questions have been reset to factory defaults.');
+      
+      // Play sound for feedback
+      playSound('button-click');
+    }
+  };
+  
+  // Add a function to handle crop completion
+  const handleCropComplete = (croppedImageUrl: string) => {
+    setFormData({
+      ...formData,
+      image: croppedImageUrl
+    });
+    setShowImageCropper(false);
+  };
+  
+  // Add a function to handle crop cancellation
+  const handleCropCancel = () => {
+    setShowImageCropper(false);
+    setFormData({
+      ...formData,
+      image: originalImageUrl
+    });
   };
   
   return (
@@ -1972,12 +2102,15 @@ const QuestionManagement: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={handleCloseModal}
+            onClick={(e) => {
+              // Prevent the modal from closing when clicking the overlay
+              e.stopPropagation();
+            }}
           >
             <ModalContent
-              onClick={e => e.stopPropagation()}
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
+              onClick={(e) => e.stopPropagation()}
             >
               <ModalHeader>
                 <ModalTitle>{modalMode === 'add' ? 'Add New Question' : 'Edit Question'}</ModalTitle>
@@ -2059,14 +2192,46 @@ const QuestionManagement: React.FC = () => {
               </FormGroup>
               
               <FormGroup>
-                <FormLabel>Image URL (optional)</FormLabel>
+                <FormLabel>Image (optional)</FormLabel>
                 <FormInput
                   name="image"
                   value={formData.image || ''}
                   onChange={handleFormChange}
                   placeholder="https://example.com/image.jpg"
                 />
-                {formData.image && <MediaPreview type="image" src={formData.image} />}
+                <div style={{ marginTop: '8px' }}>
+                  <label htmlFor="file-upload" style={{ cursor: 'pointer', background: '#f0f0f0', padding: '8px 12px', borderRadius: '4px', display: 'inline-block' }}>
+                    Or upload image file
+                  </label>
+                  <input
+                    id="file-upload"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        const file = e.target.files[0];
+                        setSelectedFile(file);
+                        
+                        // Create local URL for the file
+                        const localUrl = URL.createObjectURL(file);
+                        setOriginalImageUrl(localUrl);
+                        setShowImageCropper(true);
+                      }
+                    }}
+                  />
+                </div>
+                
+                {formData.image && !showImageCropper && (
+                  <MediaPreview type="image" src={formData.image} />
+                )}
+                {showImageCropper && (
+                  <ImageCropper
+                    imageUrl={originalImageUrl}
+                    onCropComplete={handleCropComplete}
+                    onCancel={handleCropCancel}
+                  />
+                )}
               </FormGroup>
               
               <FormGroup>
@@ -2296,6 +2461,17 @@ const QuestionManagement: React.FC = () => {
         </CategoryList>
       </CategoriesSection>
       
+      <Button
+        onClick={handleEmergencyReset}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        style={{ 
+          backgroundColor: '#d00000',
+          color: 'white'
+        }}
+      >
+        🔄 Emergency Reset
+      </Button>
     </Container>
   );
 };

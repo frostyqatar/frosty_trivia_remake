@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { RootState } from '../../store';
-import { selectCategory, deselectCategory } from '../../store/gameSlice';
+import { selectCategory, deselectCategory, toggleMusic } from '../../store/gameSlice';
 import { BidirectionalText } from '../../utils/textUtils';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
 import { clearSavedGame } from '../../utils/storageUtils';
@@ -32,7 +32,7 @@ const CounterText = styled.div`
 
 const CategoriesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 16px;
   width: 100%;
 `;
@@ -50,6 +50,7 @@ const CategoryCard = styled(motion.div)<{ selected: boolean }>`
   transition: all 0.2s ease;
   box-shadow: ${props => props.selected ? '0 6px 12px rgba(52, 152, 219, 0.3)' : '0 4px 8px rgba(0, 0, 0, 0.1)'};
   height: 120px;
+  overflow: hidden;
 `;
 
 const CategoryIcon = styled.div`
@@ -60,6 +61,34 @@ const CategoryIcon = styled.div`
 const CategoryName = styled.div`
   font-weight: bold;
   text-align: center;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+`;
+
+const ActionBar = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const MuteButton = styled.button`
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 8px;
+  color: #7f8c8d;
+  transition: all 0.2s;
+  
+  &:hover {
+    color: #3498db;
+    transform: scale(1.1);
+  }
 `;
 
 const CategorySelector: React.FC = () => {
@@ -73,6 +102,8 @@ const CategorySelector: React.FC = () => {
   const selectedCategories = useSelector((state: RootState) => 
     state.selectedCategories || []
   );
+  
+  const musicEnabled = useSelector((state: RootState) => state.musicEnabled);
   
   const { playSound } = useSoundEffects();
   
@@ -89,28 +120,49 @@ const CategorySelector: React.FC = () => {
     // Use setTimeout to give the user time to read the notification
     setTimeout(() => {
       clearSavedGame();
+      localStorage.clear();
+      window.location.reload();
     }, 2000);
   };
   
   const handleCategoryClick = (categoryId: string) => {
     playSound('button-click');
     
+    console.log('Current selected categories:', selectedCategories);
+    console.log('Attempting to select/deselect category:', categoryId);
+    
     if (selectedCategories.includes(categoryId)) {
       dispatch(deselectCategory(categoryId));
-    } else if (selectedCategories.length < 6) {
+      console.log('Deselected category:', categoryId);
+    } else if (selectedCategories.length < 8) {
       dispatch(selectCategory(categoryId));
+      console.log('Selected category:', categoryId);
+    } else {
+      console.warn('Cannot select more categories - max limit reached');
     }
+  };
+
+  const handleToggleSound = () => {
+    dispatch(toggleMusic());
+    playSound('button-click');
   };
   
   return (
     <Container>
-      <Title>📚 اختر الفئات (٣-٦)</Title>
-      <CounterText>اختر الفئات: {selectedCategories.length}/6</CounterText>
+      <Title>📚 اختر الفئات (١-٨)</Title>
+      <CounterText>اختر الفئات: {selectedCategories.length}/8</CounterText>
       
-      {/* Add a reset button for debugging */}
-      <button onClick={handleEmergencyReset} style={{ marginBottom: '16px' }}>
-        Emergency Reset
-      </button>
+      <ActionBar>
+        {/* Add mute button */}
+        <MuteButton onClick={handleToggleSound}>
+          {musicEnabled ? '🔊' : '🔇'}
+        </MuteButton>
+        
+        {/* Add a reset button for debugging */}
+        <button onClick={handleEmergencyReset}>
+          Emergency Reset
+        </button>
+      </ActionBar>
       
       <CategoriesGrid>
         {categories && categories.length > 0 ? (
