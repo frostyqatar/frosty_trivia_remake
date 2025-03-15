@@ -7,12 +7,14 @@ import {
   dismissPlayer,
   returnPlayer,
   setPointsMultiplier,
-  awardPoints
+  awardPoints,
+  setActiveTeam
 } from '../store/gameSlice';
 import { RootState } from '../store';
 import { AbilityType, TeamIndex, GamePhase, Player } from '../types/game.types';
 import { useSoundEffects } from './useSoundEffects';
 import { showNotification } from '../components/common/GameNotification';
+import { trackGameEvent } from '../services/analytics';
 
 export const useAbilities = () => {
   const dispatch = useDispatch();
@@ -26,19 +28,19 @@ export const useAbilities = () => {
     dispatch(startCooldown({ 
       teamIndex: 0, 
       abilityType: 'electric', 
-      duration: 20000 
+      duration: 200000 // 20 minutes (was 20000)
     }));
     dispatch(startCooldown({ 
       teamIndex: 1, 
       abilityType: 'electric', 
-      duration: 20000 
+      duration: 200000 // 20 minutes (was 20000)
     }));
     
-    // Auto end cooldown after 20 seconds
+    // Auto end cooldown after 20 minutes
     setTimeout(() => {
       dispatch(endCooldown({ teamIndex: 0, abilityType: 'electric' }));
       dispatch(endCooldown({ teamIndex: 1, abilityType: 'electric' }));
-    }, 20000);
+    }, 200000); // 20 minutes (was 20000)
   }, [dispatch]);
   
   const triggerAbility = useCallback((
@@ -47,35 +49,26 @@ export const useAbilities = () => {
   ) => {
     const team = game.teams[teamIndex];
     
-    // Special handling for electric shock - can be used anytime
+    // Special handling for electric shock - can be used only once per game now
     if (abilityType === 'electric') {
       if (!team || !team.abilities || !team.abilities[abilityType]) {
         showNotification('Ability not available');
         return false;
       }
       
-      // Check if ability is on cooldown
-      if (team.abilities[abilityType].cooldown && 
-          team.abilities[abilityType].cooldownStart !== undefined) {
-        const elapsed = Date.now() - (team.abilities[abilityType].cooldownStart || 0);
-        const cooldown = team.abilities[abilityType].cooldown || 0;
-        
-        if (elapsed < cooldown) {
-          // Still on cooldown
-          const remainingSeconds = Math.ceil((cooldown - elapsed) / 1000);
-          showNotification(`Ability on cooldown: ${remainingSeconds}s remaining`);
-          return false;
-        }
+      // Check if ability has already been used
+      if (team.abilities[abilityType].used) {
+        showNotification('Electric shock already used this game');
+        return false;
       }
       
       // Play appropriate sound
       playSound(`ability-${abilityType}`);
       
-      // Start cooldown timer - 20 seconds
-      dispatch(startCooldown({ 
+      // Mark ability as used (instead of setting cooldown)
+      dispatch(activateAbilityAction({ 
         teamIndex, 
-        abilityType, 
-        duration: 20000 
+        abilityType 
       }));
       
       // Electric shock the opposing team - reduce points by 300-500
@@ -97,9 +90,7 @@ export const useAbilities = () => {
       });
       window.dispatchEvent(shockEvent);
       
-      // Show notification
-      showNotification(`⚡ ${team.name} used Electric Shock on ${opposingTeam?.name || 'opposing team'}! -${pointsReduction} points!`);
-      
+      // No need to return the function for handling cooldown anymore
       return true;
     }
     
@@ -139,28 +130,33 @@ export const useAbilities = () => {
         break;
         
       case 'google':
-        // Open Google search in new tab
+        // Change auto-search to manual search notification
         if (game.currentQuestion) {
-          const searchQuery = encodeURIComponent(game.currentQuestion.question.question);
-          window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
-          showNotification('Google search opened in new tab');
+          // No longer automatically opening the search
+          // window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
+          showNotification('🔍 You have 25 seconds to search on Google for the answer!');
+          
+          // Start a timer to notify when the search time is over
+          setTimeout(() => {
+            showNotification('⏱️ Google search time is over!');
+          }, 25000);
         }
         break;
         
       case 'dismiss':
         if (gamePhase !== 'question') {
           playSound('button-click');
-          showNotification('Dismiss ability can only be used during a question!');
+          showNotification('Block ability can only be used during a question!');
           return false;
         }
 
         if (team.abilities.dismiss.used) {
           playSound('button-click');
-          showNotification('Dismiss ability already used!');
+          showNotification('Block ability already used!');
           return false;
         }
 
-        // Change to dispatch activateAbilityAction first
+        // Mark ability as used
         dispatch(activateAbilityAction({ 
           teamIndex, 
           abilityType: 'dismiss'
@@ -168,29 +164,18 @@ export const useAbilities = () => {
         
         playSound('ability-dismiss');
         
-        // Get opposing team index properly
+        // Get opposing team index
         const opposingTeamIndex = teamIndex === 0 ? 1 : 0;
         const opposingTeam = game.teams[opposingTeamIndex];
         
-        if (opposingTeam && opposingTeam.players) {
-          // Filter to get only active players
-          const activePlayers = opposingTeam.players.filter((p: Player) => !p.dismissed);
-          
-          if (activePlayers.length > 0) {
-            // Randomly select a player
-            const randomIndex = Math.floor(Math.random() * activePlayers.length);
-            const playerToRemove = activePlayers[randomIndex];
-            
-            dispatch(dismissPlayer({ 
-              teamIndex: opposingTeamIndex, // Make sure this is the OPPOSING team index
-              playerId: playerToRemove.id 
-            }));
-            
-            showNotification(`${playerToRemove.name} from ${game.teams[opposingTeamIndex].name} has been dismissed for this question!`);
-          } else {
-            showNotification("No eligible players to dismiss!");
-          }
-        }
+        // Block the entire opposing team from answering this question
+        dispatch({
+          type: 'game/blockTeamFromAnswering',
+          payload: { teamIndex: opposingTeamIndex }
+        });
+        
+        // Show notification about team being blocked
+        showNotification(`🚫 ${opposingTeam.name} has been blocked from answering this question!`);
         break;
     }
     
@@ -215,9 +200,29 @@ export const useAbilities = () => {
     return handleReturnAfterQuestion;
   }, [dispatch]);
   
+  const switchTeam = useCallback(() => {
+    // Get current active team index
+    const currentTeamIndex = game.activeTeamIndex || 0;
+    
+    // Switch to the other team
+    const nextTeamIndex = currentTeamIndex === 0 ? 1 : 0;
+    
+    // Play a sound for the switch
+    playSound('button-click');
+    
+    // Dispatch the action to switch teams
+    dispatch(setActiveTeam(nextTeamIndex));
+    
+    // Show notification about team switching
+    showNotification(`🔁 Switching to ${game.teams[nextTeamIndex].name}'s turn`);
+    
+    return true;
+  }, [dispatch, game, playSound]);
+  
   return {
     activateAbility: triggerAbility,
     dismissOpponentPlayer,
-    initializeElectricCooldown
+    initializeElectricCooldown,
+    switchTeam
   };
 }; 

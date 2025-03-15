@@ -55,18 +55,22 @@ const CategoryCard = styled(motion.div)<{ selected: boolean }>`
 
 const CategoryIcon = styled.div`
   font-size: 32px;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 `;
 
 const CategoryName = styled.div`
   font-weight: bold;
   text-align: center;
   width: 100%;
+  margin-top: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
+  line-height: 1.3;
+  min-height: 40px;
+  color: currentColor;
 `;
 
 const ActionBar = styled.div`
@@ -176,7 +180,7 @@ const CategorySelector: React.FC = () => {
             >
               <CategoryIcon>{category.icon}</CategoryIcon>
               <CategoryName>
-                <BidirectionalText text={category.name} />
+                <BidirectionalText text={category.name || 'Unnamed Category'} />
               </CategoryName>
             </CategoryCard>
           ))

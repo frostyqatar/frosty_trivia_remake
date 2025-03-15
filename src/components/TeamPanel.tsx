@@ -379,17 +379,13 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
           </AbilityButton>
           
           <AbilityButton 
-            isUsed={false} // Electric can be used multiple times
-            isCooldown={electricCooldown > 0}
-            disabled={electricCooldown > 0}
-            whileHover={electricCooldown === 0 ? { scale: 1.05 } : {}}
-            whileTap={electricCooldown === 0 ? { scale: 0.95 } : {}}
-            onClick={() => electricCooldown === 0 && handleAbilityClick('electric')}
+            isUsed={team.abilities.electric.used}
+            disabled={team.abilities.electric.used}
+            whileHover={!team.abilities.electric.used ? { scale: 1.05 } : {}}
+            whileTap={!team.abilities.electric.used ? { scale: 0.95 } : {}}
+            onClick={() => !team.abilities.electric.used && handleAbilityClick('electric')}
           >
             ⚡
-            {electricCooldown > 0 && (
-              <CooldownOverlay cooldownProgress={electricCooldown} />
-            )}
           </AbilityButton>
         </AbilitiesGrid>
       </AbilitiesSection>

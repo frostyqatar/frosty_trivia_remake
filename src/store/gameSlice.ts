@@ -46,6 +46,11 @@ const gameSlice = createSlice({
       state.gamePhase = 'question';
       state.timer.remaining = 30;
       state.timer.duration = 30;
+      
+      // Reset blocked status for both teams when selecting a new question
+      state.teams.forEach(team => {
+        team.blockedFromAnswering = false;
+      });
     },
     
     awardPoints: (state, action: PayloadAction<{
@@ -281,6 +286,15 @@ const gameSlice = createSlice({
         console.error('Failed to save categories to localStorage:', e);
       }
     },
+    
+    blockTeamFromAnswering: (state, action: PayloadAction<{ teamIndex: TeamIndex }>) => {
+      const { teamIndex } = action.payload;
+      
+      // Set a flag to indicate this team is blocked for the current question
+      state.teams[teamIndex].blockedFromAnswering = true;
+      
+      // This flag should be reset when moving to the next question
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(resetGame, (state) => {
@@ -327,6 +341,7 @@ export const {
   setActiveTeam,
   setBothTeamsTimedOut,
   updateCategories,
+  blockTeamFromAnswering,
 } = gameSlice.actions;
 
 export const resetGame = createAction('game/resetGame');

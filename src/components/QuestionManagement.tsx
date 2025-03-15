@@ -1615,7 +1615,7 @@ const QuestionManagement: React.FC = () => {
       setEditCategoryName('');
       setEditCategoryIcon('');
       
-      alert('Category updated successfully!');
+      
     }
   };
   

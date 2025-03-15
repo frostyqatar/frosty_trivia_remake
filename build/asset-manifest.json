@@ -1,15 +1,15 @@
 {
   "files": {
     "main.css": "/frosty_trivia_remake/static/css/main.2746923a.css",
-    "main.js": "/frosty_trivia_remake/static/js/main.5d6a06cf.js",
+    "main.js": "/frosty_trivia_remake/static/js/main.c34fe1c0.js",
     "static/js/488.8fd71efa.chunk.js": "/frosty_trivia_remake/static/js/488.8fd71efa.chunk.js",
     "index.html": "/frosty_trivia_remake/index.html",
     "main.2746923a.css.map": "/frosty_trivia_remake/static/css/main.2746923a.css.map",
-    "main.5d6a06cf.js.map": "/frosty_trivia_remake/static/js/main.5d6a06cf.js.map",
+    "main.c34fe1c0.js.map": "/frosty_trivia_remake/static/js/main.c34fe1c0.js.map",
     "488.8fd71efa.chunk.js.map": "/frosty_trivia_remake/static/js/488.8fd71efa.chunk.js.map"
   },
   "entrypoints": [
     "static/css/main.2746923a.css",
-    "static/js/main.5d6a06cf.js"
+    "static/js/main.c34fe1c0.js"
   ]
 }

@@ -42,6 +42,7 @@ export interface Team {
   players: Player[];
   abilities: Record<AbilityType, Ability>;
   pointsMultiplier: number;
+  blockedFromAnswering?: boolean;
 }
 
 export interface TimerState {

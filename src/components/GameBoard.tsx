@@ -7,20 +7,31 @@ import { setGamePhase } from '../store/gameSlice';
 import { BidirectionalText } from '../utils/textUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { Category, Question } from '../types/game.types';
+import { useAbilities } from '../hooks/useAbilities';
 
 const BoardContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 0 16px;
 `;
 
 const CategoryContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px;
-  margin-bottom: 30px;
+  margin-bottom: 40px;
+  width: 100%;
+  
+  @media (max-width: 1100px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const CategoryCard = styled(motion.div)`
@@ -73,56 +84,9 @@ const CategoryIcon = styled.div`
 const QuestionGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 12px;
+  gap: 16px;
   width: 100%;
-`;
-
-const EndGameButton = styled(motion.button)`
-  background-color: #ff6b6b;
-  color: white;
-  border: none;
-  padding: 12px 20px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 30px;
-  cursor: pointer;
-  margin: 30px auto 10px;
-  box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
-  display: block;
-  
-  &:hover {
-    background-color: #ff5252;
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(255, 107, 107, 0.4);
-  }
-`;
-
-// First, let's define a proper interface for our QuestionCard props
-interface QuestionCardProps {
-  categoryId: string;
-  questionIndex: number;
-  question: Question;
-  answered: boolean;
-}
-
-// Then update the QuestionCard component to use these props
-const QuestionCard = styled(motion.div)<QuestionCardProps>`
-  background-color: ${props => props.answered ? '#f1f1f1' : '#8c52ff'};
-  color: ${props => props.answered ? '#aaa' : 'white'};
-  border-radius: 8px;
-  padding: 14px 10px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  font-size: 22px;
-  font-weight: 700;
-  cursor: ${props => props.answered ? 'default' : 'pointer'};
-  transition: all 0.2s ease;
-  
-  &:hover {
-    transform: ${props => props.answered ? 'none' : 'translateY(-5px)'};
-    box-shadow: ${props => props.answered ? 'none' : '0 8px 15px rgba(0, 0, 0, 0.1)'};
-  }
+  margin-top: 10px;
 `;
 
 const ProgressBar = styled.div`
@@ -162,14 +126,82 @@ const cardVariants = {
   }
 };
 
+const TeamTurnIndicator = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  font-size: 32px;
+  font-weight: bold;
+  text-align: center;
+  border: 3px solid black;
+  border-radius: 12px;
+  padding: 12px 20px;
+  background-color: white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  max-width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+`;
+
+const SwitchTeamButton = styled(motion.button)`
+  background-color: #39c0ee;
+  border: none;
+  color: white;
+  font-size: 28px;
+  cursor: pointer;
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  border-radius: 8px;
+  
+  &:hover {
+    background-color: #2aaad6;
+  }
+`;
+
+// First, let's define a proper interface for our QuestionCard props
+interface QuestionCardProps {
+  categoryId: string;
+  questionIndex: number;
+  question: Question;
+  answered: boolean;
+}
+
+// Then update the QuestionCard component to use these props
+const QuestionCard = styled(motion.div)<QuestionCardProps>`
+  background-color: ${props => props.answered ? '#f1f1f1' : '#8c52ff'};
+  color: white;
+  border-radius: 8px;
+  padding: 14px 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: ${props => props.answered ? 'default' : 'pointer'};
+  transition: all 0.2s ease;
+  min-height: 50px;
+  
+  &:hover {
+    transform: ${props => props.answered ? 'none' : 'translateY(-5px)'};
+    box-shadow: ${props => props.answered ? 'none' : '0 8px 15px rgba(0, 0, 0, 0.1)'};
+  }
+`;
+
 const GameBoard: React.FC = () => {
   const dispatch = useDispatch();
-  const { categories, selectedCategories } = useSelector((state: RootState) => ({
+  const { categories, selectedCategories, teams, activeTeamIndex } = useSelector((state: RootState) => ({
     categories: state.categories,
     selectedCategories: state.selectedCategories,
+    teams: state.teams,
+    activeTeamIndex: state.activeTeamIndex || 0,
   }));
   
   const { playSound } = useSoundEffects();
+  const { switchTeam } = useAbilities();
   
   // Filter categories that are selected
   const displayCategories = categories.filter(
@@ -309,6 +341,19 @@ const GameBoard: React.FC = () => {
         <Progress percent={completionPercent} />
       </ProgressBar>
       
+      <TeamTurnIndicator>
+        Current Team Turn: {teams[activeTeamIndex]?.name || `Team ${activeTeamIndex + 1}`} (
+        <SwitchTeamButton
+          onClick={switchTeam}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+          aria-label="Switch team turn"
+        >
+          🔄
+        </SwitchTeamButton>
+        )
+      </TeamTurnIndicator>
+      
       <CategoryContainer>
         {displayCategories.map((category: Category) => (
           <CategoryCard 
@@ -328,14 +373,6 @@ const GameBoard: React.FC = () => {
           </CategoryCard>
         ))}
       </CategoryContainer>
-      
-      <EndGameButton
-        onClick={handleEndGame}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        إنهاء اللعبة
-      </EndGameButton>
     </BoardContainer>
   );
 };

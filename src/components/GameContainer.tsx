@@ -22,37 +22,50 @@ const Container = styled.div`
   min-height: 100vh;
   position: relative;
   background-color: #f2edf9;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpattern id='pattern-21' patternUnits='userSpaceOnUse' width='16' height='16'%3E%3Ccircle cx='0' cy='8' r='3' stroke='%238c52ff20' fill='none' /%3E%3Ccircle cx='16' cy='8' r='3' stroke='%238c52ff20' fill='none' /%3E%3Ccircle cx='8' cy='0' r='3' stroke='%238c52ff20' fill='none' /%3E%3Ccircle cx='8' cy='16' r='3' stroke='%238c52ff20' fill='none' /%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23pattern-21)' /%3E%3C/svg%3E");
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 `;
 
 const GameContent = styled.div`
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  flex-direction: row;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
   flex-grow: 1;
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
   width: 100%;
-`;
-
-const TeamsContainer = styled.div`
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  margin-bottom: 20px;
-  gap: 20px;
   
-  @media (max-width: 768px) {
+  @media (max-width: 1100px) {
     flex-direction: column;
   }
 `;
 
-const ContentContainer = styled(motion.div)`
-  width: 100%;
+const TeamsContainer = styled.div`
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  width: 320px;
+  gap: 30px;
+  margin-left: 20px;
+  margin-top: 250px;
+  
+  @media (max-width: 1100px) {
+    flex-direction: row;
+    width: 100%;
+    margin-left: 0;
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+`;
+
+const ContentContainer = styled(motion.div)`
+  flex: 1;
+  max-width: calc(100% - 300px);
+  
+  @media (max-width: 1100px) {
+    max-width: 100%;
+  }
 `;
 
 const ControlsBar = styled.div`
@@ -124,6 +137,49 @@ const ClockText = styled.span`
 const TeamActiveText = styled.span`
   color: #fff;
   font-weight: bold;
+`;
+
+const EndGameButtonContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  width: 320px;
+  
+  @media (max-width: 1100px) {
+    width: 100%;
+    margin-top: 0;
+  }
+`;
+
+const EndGameButton = styled(motion.button)`
+  background-color: #ff6464;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 30px;
+  cursor: pointer;
+  width: 100%;
+  
+  &:hover {
+    background-color: #ff5252;
+  }
+`;
+
+const GameTitle = styled.div`
+  font-size: 28px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  @media (max-width: 768px) {
+    font-size: 24px;
+  }
 `;
 
 const GameContainer: React.FC = () => {
@@ -287,39 +343,14 @@ const GameContainer: React.FC = () => {
           />
         </AudioControlsContainer>
         
+        <GameTitle>Frosty Trivia ☃️</GameTitle>
+        
         <MusicButton onClick={() => setShowSnow(!showSnow)}>
           {showSnow ? '❄️' : '☀️'}
         </MusicButton>
-        
-        {gamePhase !== 'question' && (
-          <TeamClock>
-            <ClockIcon>⏱️</ClockIcon>
-            <ClockText>
-              <span style={{ opacity: 0.7 }}>Current Turn: </span>
-              <TeamActiveText>{teams[activeTeamIndex]?.name || '?'}</TeamActiveText>
-              <span style={{ fontSize: '12px', opacity: 0.7, marginLeft: '5px' }}>(Team {activeTeamIndex + 1})</span>
-            </ClockText>
-          </TeamClock>
-        )}
       </ControlsBar>
       
       <GameContent>
-        <TeamsContainer>
-          <TeamPanel 
-            team={teams[0]} 
-            teamIndex={0} 
-            isActive={activeTeamIndex === 0}
-            isShocked={shockedTeam === 0}
-          />
-          
-          <TeamPanel 
-            team={teams[1]} 
-            teamIndex={1} 
-            isActive={activeTeamIndex === 1}
-            isShocked={shockedTeam === 1}
-          />
-        </TeamsContainer>
-        
         <ContentContainer>
           <AnimatePresence mode="wait">
             <motion.div
@@ -334,6 +365,34 @@ const GameContainer: React.FC = () => {
             </motion.div>
           </AnimatePresence>
         </ContentContainer>
+        
+        <TeamsContainer>
+          <TeamPanel 
+            team={teams[0]} 
+            teamIndex={0} 
+            isActive={activeTeamIndex === 0}
+            isShocked={shockedTeam === 0}
+          />
+          
+          <TeamPanel 
+            team={teams[1]} 
+            teamIndex={1} 
+            isActive={activeTeamIndex === 1}
+            isShocked={shockedTeam === 1}
+          />
+          
+          {gamePhase === 'playing' && (
+            <EndGameButtonContainer>
+              <EndGameButton
+                onClick={() => dispatch(setGamePhase('end'))}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                إنهاء اللعبة
+              </EndGameButton>
+            </EndGameButtonContainer>
+          )}
+        </TeamsContainer>
       </GameContent>
     </Container>
   );

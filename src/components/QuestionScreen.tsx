@@ -3,20 +3,19 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RootState } from '../store';
-import { pauseTimer, revealAnswer, returnToBoard, startTimer, tickTimer, resetTimer, setActiveTeam, resetGame, awardPoints, setBothTeamsTimedOut, setGamePhase } from '../store/gameSlice';
+import { pauseTimer, revealAnswer, returnToBoard, startTimer, tickTimer, resetTimer, setActiveTeam, resetGame, awardPoints, setBothTeamsTimedOut, setGamePhase, setVolume } from '../store/gameSlice';
 import { BidirectionalText } from '../utils/textUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { showNotification } from '../utils/notificationUtils';
 import { store } from '../store';
 import AnswerReveal from './AnswerReveal';
 import { TeamIndex } from '../types/game.types';
+import { useAbilities } from '../hooks/useAbilities';
 
 const QuestionContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
   background-color: white;
   border-radius: 24px;
   box-shadow: 0 10px 30px rgba(140, 82, 255, 0.15);
@@ -24,65 +23,105 @@ const QuestionContainer = styled.div`
 `;
 
 const QuestionHeader = styled.div`
-  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background: linear-gradient(135deg, #8c52ff 0%, #5e17eb 100%);
   color: white;
-  padding: 20px 24px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+  padding: 16px 24px;
 `;
 
-const QuestionProgress = styled.div`
-  font-weight: 700;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  
-  &::before {
-    content: '❓';
-    font-size: 18px;
-  }
+const CategoryTitle = styled.div`
+  font-size: 24px;
+  font-weight: bold;
+  flex-grow: 1;
 `;
 
-const BookmarkButton = styled.button`
-  background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+const PointsDisplay = styled.div`
+  background-color: white;
+  color: #8c52ff;
+  font-size: 28px;
+  font-weight: bold;
+  padding: 8px 16px;
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-left: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
-  }
+`;
+
+const ContentWrapper = styled.div`
+  display: flex;
+  padding: 0;
+  width: 100%;
 `;
 
 const QuestionContent = styled.div`
+  flex: 1;
   padding: 32px;
-  width: 100%;
+`;
+
+const ButtonsColumn = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 32px 24px;
+  background-color: #f8f5ff;
+  border-left: 1px solid #e6e0f0;
+`;
+
+const ActionButton = styled(motion.button)`
+  background-color: ${props => props.className === 'reveal' ? '#8c52ff' : '#3498db'};
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  min-width: 180px;
+  
+  &:hover {
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+`;
+
+const ButtonIcon = styled.div`
+  font-size: 24px;
+  margin-bottom: 8px;
+`;
+
+const ButtonText = styled.div`
+  text-align: center;
 `;
 
 const QuestionText = styled.div`
   font-size: 28px;
-  font-weight: 600;
-  text-align: center;
-  line-height: 1.5;
-  margin-bottom: 36px;
-  color: #333;
-  padding: 32px;
-  background-color: #f8f5ff;
+  font-weight: bold;
+  line-height: 1.4;
+  margin-bottom: 32px;
+  color: #2c3e50;
+`;
+
+const ImageContainer = styled.div`
+  max-width: 100%;
   border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(140, 82, 255, 0.1);
-  border-left: 5px solid #8c52ff;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  margin-top: 24px;
+  
+  img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
 `;
 
 const TimerSection = styled.div`
@@ -147,82 +186,6 @@ const TeamInfo = styled.div`
   box-shadow: 0 2px 8px rgba(140, 82, 255, 0.15);
   width: fit-content;
   margin: 0 auto 24px;
-`;
-
-const ButtonsContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-top: 32px;
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
-  }
-`;
-
-const ActionButton = styled(motion.button)`
-  background: linear-gradient(135deg, #8c52ff 0%, #7b44e0 100%);
-  color: white;
-  border: none;
-  padding: 16px;
-  border-radius: 16px;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  box-shadow: 0 4px 12px rgba(140, 82, 255, 0.3);
-  transition: all 0.2s ease;
-  
-  &:hover {
-    box-shadow: 0 6px 15px rgba(140, 82, 255, 0.4);
-  }
-  
-  &:disabled {
-    background: linear-gradient(135deg, #cccccc, #aaaaaa);
-    cursor: not-allowed;
-    box-shadow: none;
-  }
-`;
-
-const RevealButton = styled(ActionButton)`
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
-  
-  &:hover {
-    box-shadow: 0 6px 15px rgba(255, 107, 107, 0.4);
-  }
-`;
-
-const BottomControls = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 30px;
-  background: linear-gradient(to right, #f8f8f8, #f0f0f0);
-  padding: 18px 24px;
-  border-top: 1px solid #eee;
-  border-radius: 0 0 24px 24px;
-`;
-
-const ControlStats = styled.div`
-  display: flex;
-  gap: 18px;
-`;
-
-const StatItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  color: #555;
-  font-weight: 600;
-  background: white;
-  padding: 8px 12px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
 `;
 
 const TimerActions = styled.div`
@@ -325,6 +288,21 @@ const YouTubeEmbed = ({ url }: { url: string }) => {
   );
 };
 
+const Button = styled(motion.button)`
+  background-color: #8c52ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  
+  &:disabled {
+    background-color: #d1d1d1;
+    cursor: not-allowed;
+  }
+`;
+
 const QuestionScreen: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
@@ -334,6 +312,13 @@ const QuestionScreen: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { switchTeam } = useAbilities();
+  const { categoryId, questionIndex, question } = useSelector((state: RootState) => state.currentQuestion);
+  const [imageError, setImageError] = useState(false);
+  const { musicEnabled, volume } = useSelector((state: RootState) => ({
+    musicEnabled: state.musicEnabled,
+    volume: state.volume
+  }));
   
   // Add this function to handle audio ended event
   const handleAudioEnded = useCallback(() => {
@@ -342,12 +327,22 @@ const QuestionScreen: React.FC = () => {
   }, []);
   
   // Get state from Redux
-  const { currentQuestion, timer, teams, activeTeamIndex, answerRevealed } = useSelector((state: RootState) => ({
+  const {
+    currentQuestion,
+    timer,
+    teams,
+    activeTeamIndex,
+    answerRevealed,
+    gamePhase
+  } = useSelector((state: RootState) => ({
     currentQuestion: state.currentQuestion,
     timer: state.timer,
     teams: state.teams,
     activeTeamIndex: state.activeTeamIndex || 0,
-    answerRevealed: state.answerRevealed
+    answerRevealed: state.answerRevealed,
+    gamePhase: state.gamePhase,
+    musicEnabled: state.musicEnabled,
+    volume: state.volume
   }));
   
   // Initialize timer with active team when component mounts
@@ -362,7 +357,7 @@ const QuestionScreen: React.FC = () => {
   useEffect(() => {
     if (currentTimerTeam !== null) {
       dispatch(resetTimer()); // Reset first
-      dispatch(startTimer());
+      dispatch(startTimer(60));
       
       // Set up interval for timer
       const interval = setInterval(() => {
@@ -424,23 +419,14 @@ const QuestionScreen: React.FC = () => {
     setOtherTeamFinished(false);
     setBothTeamsFinished(false);
     dispatch(resetTimer());
-    dispatch(startTimer());
+    dispatch(startTimer(60));
     dispatch(setBothTeamsTimedOut(false));
   };
 
   // Answer actions
   const handleRevealAnswer = () => {
-    playSound('answer-reveal');
-    console.log("Revealing answer. Current active team:", activeTeamIndex);
-    
-    // Switch to the other team immediately when revealing answer
-    const nextTeamIndex = activeTeamIndex === 0 ? 1 : 0;
-    console.log(`Switching from team ${activeTeamIndex} to team ${nextTeamIndex} on reveal`);
-    dispatch(setActiveTeam(nextTeamIndex));
-    
+    playSound('button-click');
     dispatch(revealAnswer());
-    dispatch(pauseTimer());
-    dispatch(setGamePhase('answer'));
   };
   
   const handleReturnToBoard = () => {
@@ -450,10 +436,10 @@ const QuestionScreen: React.FC = () => {
   
   // Redirect if no question is selected
   useEffect(() => {
-    if (!currentQuestion) {
+    if (!question) {
       dispatch(returnToBoard({ markAsAnswered: false }));
     }
-  }, [currentQuestion, dispatch]);
+  }, [question, dispatch]);
   
   // Move the logging useEffect up before any returns
   useEffect(() => {
@@ -469,8 +455,8 @@ const QuestionScreen: React.FC = () => {
   useEffect(() => {
     let newAudioElement: HTMLAudioElement | null = null;
     
-    if (currentQuestion?.question?.audio) {
-      newAudioElement = new Audio(currentQuestion.question.audio);
+    if (question?.audio) {
+      newAudioElement = new Audio(question.audio);
       setAudioElement(newAudioElement);
       
       // Add event listeners
@@ -493,7 +479,7 @@ const QuestionScreen: React.FC = () => {
         audioElement.src = '';
       }
     };
-  }, [currentQuestion?.question?.audio, handleAudioEnded]);
+  }, [question?.audio, handleAudioEnded]);
 
   // Control audio playback
   const playAudio = useCallback(() => {
@@ -503,26 +489,59 @@ const QuestionScreen: React.FC = () => {
     }
   }, [audioElement]);
 
-  // Add a button or trigger to play audio when needed
-  // For example:
+  // Remove or modify the existing auto-play effect for audio
   useEffect(() => {
-    // Auto-play audio when question is shown
-    if (audioElement && currentQuestion) {
-      playAudio();
+    // Do NOT auto-play audio when question is shown
+    // Only set up the audio element, but don't play it automatically
+    if (audioElement && question) {
+      // Configure the audio but don't auto-play
+      audioElement.volume = 0.5;
     }
-  }, [audioElement, currentQuestion, playAudio]);
-  
-  // Add this effect to handle video lifecycle
+  }, [audioElement, question]);
+
+  // Add this new effect to handle background music control when media plays/pauses
   useEffect(() => {
-    // This ensures video persists and doesn't unexpectedly disappear
-    if (currentQuestion?.question?.video && videoRef.current) {
+    const handleMediaPlay = () => {
+      // Mute background music when media starts playing
+      dispatch(setVolume(0)); // Or use some other method to mute background music
+    };
+    
+    const handleMediaPause = () => {
+      // Allow background music to be resumed when media is paused
+      dispatch(setVolume(1)); // Or restore to previous volume level
+    };
+    
+    // Get all audio and video elements in the question
+    const mediaElements = document.querySelectorAll('audio, video');
+    
+    // Add event listeners to each media element
+    mediaElements.forEach(element => {
+      element.addEventListener('play', handleMediaPlay);
+      element.addEventListener('pause', handleMediaPause);
+      element.addEventListener('ended', handleMediaPause);
+    });
+    
+    // Cleanup function
+    return () => {
+      mediaElements.forEach(element => {
+        element.removeEventListener('play', handleMediaPlay);
+        element.removeEventListener('pause', handleMediaPause);
+        element.removeEventListener('ended', handleMediaPause);
+      });
+    };
+  }, [dispatch, question]);
+
+  // Update video handling to ensure it still autoplays
+  useEffect(() => {
+    if (question?.video && videoRef.current) {
       // Setup the video element
       const videoElement = videoRef.current;
       
-      // Ensure it's visible
+      // Ensure it's visible and autoplay is enabled
       videoElement.style.display = 'block';
+      videoElement.autoplay = true;
       
-      // Add event listeners for debugging
+      // Event listeners for debugging
       const handleVideoError = (e: any) => {
         console.error('Video error:', e);
       };
@@ -534,11 +553,11 @@ const QuestionScreen: React.FC = () => {
         videoElement.removeEventListener('error', handleVideoError);
       };
     }
-  }, [currentQuestion?.question?.video]);
+  }, [question?.video]);
   
   // Add the effect here, along with other hooks at the top level
   useEffect(() => {
-    if (currentQuestion && currentQuestion.question.audio) {
+    if (question && question.audio) {
       // Find any audio elements and prevent autoplay
       const audioElements = document.querySelectorAll('audio');
       audioElements.forEach(audioElement => {
@@ -546,21 +565,20 @@ const QuestionScreen: React.FC = () => {
         audioElement.preload = 'none';
       });
     }
-  }, [currentQuestion]);
+  }, [question]);
   
   // Right after your early return if no question (around line 304),
   // add another early return if the answer has been revealed
-  if (answerRevealed && currentQuestion) {
+  if (answerRevealed && question) {
     // Render AnswerReveal component for the current question
     return <AnswerReveal />;
   }
   
   // Return early if no question
-  if (!currentQuestion) {
+  if (!question) {
     return null;
   }
   
-  const { categoryId, questionIndex, question } = currentQuestion;
   const timerPercent = (timer.remaining / timer.duration) * 100;
   const timerTeam = currentTimerTeam !== null ? teams[currentTimerTeam] : null;
   const questionCount = 10; // This should come from your state
@@ -650,6 +668,20 @@ const QuestionScreen: React.FC = () => {
     // Rest of your media rendering code for images and audio...
   };
   
+  // When processing an answer attempt
+  const handleTeamAnswer = (teamIndex: TeamIndex) => {
+    const team = teams[teamIndex];
+    
+    // Check if the team is blocked from answering
+    if (team.blockedFromAnswering) {
+      showNotification(`${team.name} is blocked from answering this question!`);
+      playSound('button-click');
+      return;
+    }
+    
+    // Rest of the answer handling logic...
+  };
+  
   return (
     <AnimatePresence>
       <motion.div
@@ -660,136 +692,118 @@ const QuestionScreen: React.FC = () => {
       >
         <QuestionContainer>
           <QuestionHeader>
-          
-            
+            <CategoryTitle>{question.category}</CategoryTitle>
+            <PointsDisplay>{question.value} نقطة</PointsDisplay>
           </QuestionHeader>
           
-          <QuestionContent>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-            >
+          <ContentWrapper>
+            <QuestionContent>
               <QuestionText>
                 <BidirectionalText text={question.question} />
               </QuestionText>
-            </motion.div>
-            
-            {currentQuestion.question.image || currentQuestion.question.video || currentQuestion.question.audio ? (
-              <MediaContainer>
-                {currentQuestion.question.image && (
-                  <QuestionImage 
-                    src={currentQuestion.question.image} 
-                    alt="Question illustration" 
+              
+              {question.image && !imageError && (
+                <ImageContainer>
+                  <img 
+                    src={question.image} 
+                    alt="Question" 
+                    onError={() => setImageError(true)}
+                  />
+                </ImageContainer>
+              )}
+              
+              {question.video && renderMedia()}
+              
+              {question.audio && (
+                <AudioContainer>
+                  <QuestionAudio 
+                    controls
+                    preload="none"
                     onError={(e) => {
                       e.currentTarget.style.display = 'none';
-                      console.error('Error loading image:', currentQuestion.question.image);
+                      console.error('Error loading audio:', question.audio);
                     }}
-                  />
-                )}
-                
-                {currentQuestion.question.video && renderMedia()}
-                
-                {currentQuestion.question.audio && (
-                  <AudioContainer>
-                    <QuestionAudio 
-                      controls
-                      preload="none"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        console.error('Error loading audio:', currentQuestion.question.audio);
-                      }}
-                    >
-                      <source src={currentQuestion.question.audio} />
-                      Your browser does not support the audio tag.
-                    </QuestionAudio>
-                  </AudioContainer>
-                )}
-              </MediaContainer>
-            ) : null}
+                  >
+                    <source src={question.audio} />
+                    Your browser does not support the audio tag.
+                  </QuestionAudio>
+                </AudioContainer>
+              )}
+            </QuestionContent>
             
-            <TimerSection>
-              <TimerContainer>
-                <TimerLabel>
-                  <span>⏱️ Time Remaining</span>
-                  <TimerDisplay $isTimeUp={timer.remaining <= 0}>
-                    {timer.remaining > 0 ? `00:${timer.remaining.toString().padStart(2, '0')}` : '00:00'}
-                  </TimerDisplay>
-                </TimerLabel>
-                <TimerTrack>
-                  <TimerProgress 
-                    $percent={timerPercent}
-                    $isTimeUp={timer.remaining <= 0}
-                  />
-                </TimerTrack>
-              </TimerContainer>
-            
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-              >
-                <TeamInfo>
-                  {!bothTeamsFinished && currentTimerTeam !== null && (
-                    <>
-                      <span>⏱️</span>
-                      <span>{teams[currentTimerTeam]?.name}'s turn</span>
-                    </>
-                  )}
-                  {bothTeamsFinished && (
-                    <span>⏰ Both teams out of time!</span>
-                  )}
-                  <TimerActions>
-              <IconButton 
-                onClick={handleSkipTimer}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                ⏩
-              </IconButton>
-              <IconButton 
-                onClick={handleRestartTimers}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                🔄
-              </IconButton>
-        
-            </TimerActions>
-                </TeamInfo>
-              </motion.div>
-            </TimerSection>
-            
-            <ButtonsContainer>
-              <RevealButton
+            <ButtonsColumn>
+              <ActionButton 
+                className="reveal"
                 onClick={handleRevealAnswer}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                🔍 Reveal Answer
-              </RevealButton>
-              
-              <ActionButton
-                onClick={handleReturnToBoard}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                🏠 Return to Board
+                <ButtonIcon>👁️</ButtonIcon>
+                <ButtonText>إظهار الإجابة</ButtonText>
               </ActionButton>
-            </ButtonsContainer>
-          </QuestionContent>
+              
+              <ActionButton 
+                className="skip"
+                onClick={handleSkipTimer}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <ButtonIcon>⏩</ButtonIcon>
+                <ButtonText>تخطي السؤال</ButtonText>
+              </ActionButton>
+            </ButtonsColumn>
+          </ContentWrapper>
           
-          <BottomControls>
-            <ControlStats>
-              <StatItem>
-                <span></span>
-                <span>{question.value} points</span>
-              </StatItem>
-  
-            </ControlStats>
-            
-            
-          </BottomControls>
+          <TimerSection>
+            <TimerContainer>
+              <TimerLabel>
+                <span>⏱️ Time Remaining</span>
+                <TimerDisplay $isTimeUp={timer.remaining <= 0}>
+                  {timer.remaining > 0 ? `00:${timer.remaining.toString().padStart(2, '0')}` : '00:00'}
+                </TimerDisplay>
+              </TimerLabel>
+              <TimerTrack>
+                <TimerProgress 
+                  $percent={timerPercent}
+                  $isTimeUp={timer.remaining <= 0}
+                />
+              </TimerTrack>
+            </TimerContainer>
+          
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.4 }}
+            >
+              <TeamInfo>
+                {!bothTeamsFinished && currentTimerTeam !== null && (
+                  <>
+                    <span>⏱️</span>
+                    <span>{teams[currentTimerTeam]?.name}'s turn</span>
+                  </>
+                )}
+                {bothTeamsFinished && (
+                  <span>⏰ Both teams out of time!</span>
+                )}
+                <TimerActions>
+                  <IconButton 
+                    onClick={handleSkipTimer}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    ⏩
+                  </IconButton>
+                  <IconButton 
+                    onClick={handleRestartTimers}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                  >
+                    🔄
+                  </IconButton>
+                </TimerActions>
+              </TeamInfo>
+            </motion.div>
+          </TimerSection>
         </QuestionContainer>
       </motion.div>
     </AnimatePresence>
