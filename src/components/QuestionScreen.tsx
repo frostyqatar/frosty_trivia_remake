@@ -15,13 +15,13 @@ import { useAbilities } from '../hooks/useAbilities';
 const QuestionContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 100%;
-  max-width: 900px;
-  margin: 0 auto;
   background-color: white;
   border-radius: 24px;
   box-shadow: 0 10px 30px rgba(140, 82, 255, 0.15);
   overflow: hidden;
+  width: 100%;
+  max-width: 1230px;
+  margin: 0 auto;
 `;
 
 const QuestionHeader = styled.div`
@@ -68,30 +68,47 @@ const BookmarkButton = styled.button`
 `;
 
 const QuestionContent = styled.div`
+  display: flex;
+  flex-direction: column;
   padding: 32px;
-  width: 100%;
+  position: relative;
+  
+  @media (min-width: 1024px) {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-areas: 
+      "question"
+      "media"
+      "timer"
+      "buttons";
+    gap: 24px;
+  }
 `;
 
-const QuestionText = styled.div`
-  font-size: 28px;
-  font-weight: 700;
-  margin-bottom: 32px;
+const QuestionTextContainer = styled.div`
+  font-size: 32px;
+  line-height: 1.4;
+  margin-bottom: 24px;
   text-align: center;
-  max-width: 800px;
-  line-height: 1.5;
+  width: 100%;
+  padding: 16px;
+  color: #333;
+  font-weight: 500;
   
-  .emoji {
-    font-size: 36px;
-    margin: 0 4px;
-    display: inline-block;
+  @media (max-width: 768px) {
+    font-size: 28px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 24px;
   }
 `;
 
 const TimerSection = styled.div`
-  margin: 32px 0;
-  padding: 20px;
-  background: #f8f8f8;
-  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 32px;
+  grid-area: timer;
 `;
 
 const TimerContainer = styled.div`
@@ -152,13 +169,14 @@ const TeamInfo = styled.div`
 `;
 
 const ButtonsContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  margin-top: 32px;
-
-  @media (max-width: 600px) {
-    grid-template-columns: 1fr;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 16px;
+  grid-area: buttons;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
   }
 `;
 
@@ -217,14 +235,14 @@ const StatItem = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 24px; /* Increased font size for prominence */
-  color: #333; /* Darker color for better visibility */
-  font-weight: bold; /* Made font bold */
-  background: #f8f8f8; /* Light background for better contrast */
-  padding: 16px 20px; /* Increased padding for a bigger box */
-  border-radius: 16px; /* More rounded corners */
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Enhanced shadow for depth */
-  border: 2px solid #8c52ff; /* Added border for prominence */
+  font-size: 24px;
+  color: #333;
+  font-weight: bold;
+  background: #f8f8f8;
+  padding: 16px 20px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 2px solid #8c52ff;
 `;
 
 const TimerActions = styled.div`
@@ -254,14 +272,15 @@ const IconButton = styled(motion.button)`
   }
 `;
 
-// Add these styled components for media support
 const MediaContainer = styled.div`
-  margin: 20px 0;
-  width: 100%;
   display: flex;
-  justify-content: center;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  width: 100%;
+  grid-area: media;
+  padding: 0;
 `;
 
 const QuestionImage = styled.img`
@@ -297,14 +316,11 @@ const QuestionAudio = styled.audio`
   width: 100%;
 `;
 
-// Add this function to detect YouTube URLs
 const isYouTubeUrl = (url: string) => {
   return url.includes('youtube.com') || url.includes('youtu.be');
 };
 
-// Add this component for YouTube embeds
 const YouTubeEmbed = ({ url }: { url: string }) => {
-  // Extract video ID from YouTube URL
   const getYouTubeId = (url: string) => {
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url.match(regExp);
@@ -342,6 +358,14 @@ const Button = styled(motion.button)`
   }
 `;
 
+const EmojiSpan = styled.span`
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
+  font-size: 1.3em;
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 2px;
+`;
+
 const QuestionScreen: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
@@ -353,13 +377,10 @@ const QuestionScreen: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const { switchTeam } = useAbilities();
   
-  // Add this function to handle audio ended event
   const handleAudioEnded = useCallback(() => {
     console.log('Audio playback ended');
-    // Add any behavior you want when audio finishes
   }, []);
   
-  // Get state from Redux
   const { currentQuestion, timer, teams, activeTeamIndex, answerRevealed, gamePhase } = useSelector((state: RootState) => ({
     currentQuestion: state.currentQuestion,
     timer: state.timer,
@@ -369,7 +390,6 @@ const QuestionScreen: React.FC = () => {
     gamePhase: state.gamePhase
   }));
   
-  // Initialize timer with active team when component mounts
   useEffect(() => {
     if (currentTimerTeam === null) {
       console.log("Starting timer with activeTeamIndex:", activeTeamIndex);
@@ -377,18 +397,15 @@ const QuestionScreen: React.FC = () => {
     }
   }, [activeTeamIndex, currentTimerTeam]);
   
-  // Start timer when component mounts or currentTimerTeam changes
   useEffect(() => {
     if (currentTimerTeam !== null) {
-      dispatch(resetTimer()); // Reset first
+      dispatch(resetTimer());
       dispatch(startTimer(60));
       
-      // Set up interval for timer
       const interval = setInterval(() => {
         dispatch(tickTimer());
       }, 1000);
       
-      // Clean up on unmount
       return () => {
         clearInterval(interval);
         dispatch(pauseTimer());
@@ -396,50 +413,41 @@ const QuestionScreen: React.FC = () => {
     }
   }, [dispatch, currentTimerTeam]);
   
-  // Handle timer completion for the current team
   useEffect(() => {
     if (timer.remaining <= 0 && timer.isRunning === false && currentTimerTeam !== null && !bothTeamsFinished) {
-      // When timer runs out for the current team
       const otherTeam = currentTimerTeam === 0 ? 1 : 0;
       
       if (otherTeamFinished) {
-        // Both teams have finished their turn
         setBothTeamsFinished(true);
         dispatch(setBothTeamsTimedOut(true));
       } else {
         console.log(`Timer finished for team ${currentTimerTeam}, switching to team ${otherTeam}`);
-        // Switch to the other team
         setCurrentTimerTeam(otherTeam);
         setOtherTeamFinished(true);
       }
     }
   }, [timer.remaining, timer.isRunning, currentTimerTeam, bothTeamsFinished, otherTeamFinished, dispatch]);
 
-  // Update handleSkipTimer to work with the active team concept
   const handleSkipTimer = () => {
     playSound('button-click');
     
-    // If both teams already timed out, do nothing
     if (bothTeamsFinished) return;
     
-    // If first team's turn, switch to second team
     if (!otherTeamFinished && currentTimerTeam !== null) {
       const otherTeam = currentTimerTeam === 0 ? 1 : 0;
       setCurrentTimerTeam(otherTeam);
       setOtherTeamFinished(true);
-      dispatch(resetTimer()); // Reset timer for other team
+      dispatch(resetTimer());
     } else {
-      // If second team's turn, finish completely
       setBothTeamsFinished(true);
       dispatch(setBothTeamsTimedOut(true));
       dispatch(pauseTimer());
     }
   };
   
-  // Reset both timers
   const handleRestartTimers = () => {
     playSound('button-click');
-    setCurrentTimerTeam(activeTeamIndex as TeamIndex); // Start with active team
+    setCurrentTimerTeam(activeTeamIndex as TeamIndex);
     setOtherTeamFinished(false);
     setBothTeamsFinished(false);
     dispatch(resetTimer());
@@ -447,12 +455,10 @@ const QuestionScreen: React.FC = () => {
     dispatch(setBothTeamsTimedOut(false));
   };
 
-  // Answer actions
   const handleRevealAnswer = () => {
     playSound('answer-reveal');
     console.log("Revealing answer. Current active team:", activeTeamIndex);
     
-    // Switch to the other team immediately when revealing answer
     const nextTeamIndex = activeTeamIndex === 0 ? 1 : 0;
     console.log(`Switching from team ${activeTeamIndex} to team ${nextTeamIndex} on reveal`);
     dispatch(setActiveTeam(nextTeamIndex));
@@ -467,24 +473,20 @@ const QuestionScreen: React.FC = () => {
     dispatch(returnToBoard({ markAsAnswered: false }));
   };
   
-  // Redirect if no question is selected
   useEffect(() => {
     if (!currentQuestion) {
       dispatch(returnToBoard({ markAsAnswered: false }));
     }
   }, [currentQuestion, dispatch]);
   
-  // Move the logging useEffect up before any returns
   useEffect(() => {
     console.log("Active Team Index changed to:", activeTeamIndex);
   }, [activeTeamIndex]);
   
-  // Add debugging to confirm the active team at component mount
   useEffect(() => {
     console.log("QuestionScreen mounted. Active team index:", activeTeamIndex);
   }, []);
   
-  // Handle audio loading and cleanup
   useEffect(() => {
     let newAudioElement: HTMLAudioElement | null = null;
     
@@ -492,10 +494,8 @@ const QuestionScreen: React.FC = () => {
       newAudioElement = new Audio(currentQuestion.question.audio);
       setAudioElement(newAudioElement);
       
-      // Add event listeners
       newAudioElement.addEventListener('ended', handleAudioEnded);
       
-      // Clean up function for when component unmounts or effect re-runs
       return () => {
         if (newAudioElement) {
           newAudioElement.pause();
@@ -505,7 +505,6 @@ const QuestionScreen: React.FC = () => {
       };
     }
     
-    // Clean up previous audio if no new audio is provided
     return () => {
       if (audioElement) {
         audioElement.pause();
@@ -514,47 +513,36 @@ const QuestionScreen: React.FC = () => {
     };
   }, [currentQuestion?.question?.audio, handleAudioEnded]);
 
-  // Control audio playback
   const playAudio = useCallback(() => {
     if (audioElement) {
-      audioElement.volume = 0.5; // Set volume (0-1)
+      audioElement.volume = 0.5;
       audioElement.play().catch(e => console.error("Error playing audio:", e));
     }
   }, [audioElement]);
 
-  // Remove or modify the existing auto-play effect for audio
   useEffect(() => {
-    // Do NOT auto-play audio when question is shown
-    // Only set up the audio element, but don't play it automatically
     if (audioElement && currentQuestion) {
-      // Configure the audio but don't auto-play
       audioElement.volume = 0.5;
     }
   }, [audioElement, currentQuestion]);
 
-  // Add this new effect to handle background music control when media plays/pauses
   useEffect(() => {
     const handleMediaPlay = () => {
-      // Mute background music when media starts playing
-      dispatch(setVolume(0)); // Or use some other method to mute background music
+      dispatch(setVolume(0));
     };
     
     const handleMediaPause = () => {
-      // Allow background music to be resumed when media is paused
-      dispatch(setVolume(1)); // Or restore to previous volume level
+      dispatch(setVolume(1));
     };
     
-    // Get all audio and video elements in the question
     const mediaElements = document.querySelectorAll('audio, video');
     
-    // Add event listeners to each media element
     mediaElements.forEach(element => {
       element.addEventListener('play', handleMediaPlay);
       element.addEventListener('pause', handleMediaPause);
       element.addEventListener('ended', handleMediaPause);
     });
     
-    // Cleanup function
     return () => {
       mediaElements.forEach(element => {
         element.removeEventListener('play', handleMediaPlay);
@@ -564,34 +552,27 @@ const QuestionScreen: React.FC = () => {
     };
   }, [dispatch, currentQuestion]);
 
-  // Update video handling to ensure it still autoplays
   useEffect(() => {
     if (currentQuestion?.question?.video && videoRef.current) {
-      // Setup the video element
       const videoElement = videoRef.current;
       
-      // Ensure it's visible and autoplay is enabled
       videoElement.style.display = 'block';
       videoElement.autoplay = true;
       
-      // Event listeners for debugging
       const handleVideoError = (e: any) => {
         console.error('Video error:', e);
       };
       
       videoElement.addEventListener('error', handleVideoError);
       
-      // Cleanup
       return () => {
         videoElement.removeEventListener('error', handleVideoError);
       };
     }
   }, [currentQuestion?.question?.video]);
   
-  // Add the effect here, along with other hooks at the top level
   useEffect(() => {
     if (currentQuestion && currentQuestion.question.audio) {
-      // Find any audio elements and prevent autoplay
       const audioElements = document.querySelectorAll('audio');
       audioElements.forEach(audioElement => {
         audioElement.autoplay = false;
@@ -600,14 +581,10 @@ const QuestionScreen: React.FC = () => {
     }
   }, [currentQuestion]);
   
-  // Right after your early return if no question (around line 304),
-  // add another early return if the answer has been revealed
   if (answerRevealed && currentQuestion) {
-    // Render AnswerReveal component for the current question
     return <AnswerReveal />;
   }
   
-  // Return early if no question
   if (!currentQuestion) {
     return null;
   }
@@ -615,35 +592,27 @@ const QuestionScreen: React.FC = () => {
   const { categoryId, questionIndex, question } = currentQuestion;
   const timerPercent = (timer.remaining / timer.duration) * 100;
   const timerTeam = currentTimerTeam !== null ? teams[currentTimerTeam] : null;
-  const questionCount = 10; // This should come from your state
+  const questionCount = 10;
   const currentQuestionNumber = questionIndex + 1;
   
   const renderMedia = () => {
     if (question.video) {
-      // Extract the video ID if it's a YouTube URL
       let videoSrc = question.video;
       let videoId = '';
       
-      // Check if it's a YouTube URL
       if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {
-        // Extract video ID from various YouTube URL formats
         if (videoSrc.includes('youtube.com/watch')) {
-          // Format: https://www.youtube.com/watch?v=VIDEO_ID
           const urlParams = new URLSearchParams(new URL(videoSrc).search);
           videoId = urlParams.get('v') || '';
         } else if (videoSrc.includes('youtu.be')) {
-          // Format: https://youtu.be/VIDEO_ID
           videoId = videoSrc.split('/').pop() || '';
         } else if (videoSrc.includes('youtube.com/embed')) {
-          // Format: https://www.youtube.com/embed/VIDEO_ID
           videoId = videoSrc.split('/').pop() || '';
         }
         
         if (videoId) {
-          // Create embed URL with autoplay parameter but without mute
           videoSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
           
-          // Return iframe with script to set volume after loading
           return (
             <MediaContainer>
               <iframe
@@ -657,7 +626,6 @@ const QuestionScreen: React.FC = () => {
                 allowFullScreen
               ></iframe>
               <script dangerouslySetInnerHTML={{ __html: `
-                // Initialize YouTube API
                 var tag = document.createElement('script');
                 tag.src = "https://www.youtube.com/iframe_api";
                 var firstScriptTag = document.getElementsByTagName('script')[0];
@@ -665,12 +633,10 @@ const QuestionScreen: React.FC = () => {
                 
                 var player;
                 
-                // When YouTube API is ready
                 window.onYouTubeIframeAPIReady = function() {
                   player = new YT.Player('youtube-player', {
                     events: {
                       'onReady': function(event) {
-                        // Set volume to 10%
                         event.target.setVolume(10);
                         event.target.playVideo();
                       }
@@ -683,7 +649,6 @@ const QuestionScreen: React.FC = () => {
         }
       }
       
-      // For non-YouTube videos, show regular iframe
       return (
         <MediaContainer>
           <iframe
@@ -699,21 +664,17 @@ const QuestionScreen: React.FC = () => {
       );
     }
     
-    // Rest of your media rendering code for images and audio...
   };
   
-  // When processing an answer attempt
   const handleTeamAnswer = (teamIndex: TeamIndex) => {
     const team = teams[teamIndex];
     
-    // Check if the team is blocked from answering
     if (team.blockedFromAnswering) {
       showNotification(`${team.name} is blocked from answering this question!`);
       playSound('button-click');
       return;
     }
     
-    // Rest of the answer handling logic...
   };
   
   return (
@@ -741,16 +702,16 @@ const QuestionScreen: React.FC = () => {
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.4 }}
+              style={{ gridArea: 'question' }}
             >
-              <QuestionText>
-                {currentQuestion?.question?.question?.split(/([\p{Emoji}])/u).map((part: string, i: number) => {
-                  // Check if the part is an emoji
-                  const isEmoji = /\p{Emoji}/u.test(part);
+              <QuestionTextContainer>
+                {currentQuestion?.question?.question?.split(/((?:\p{Emoji}|\p{Emoji_Presentation}|\p{Emoji_Modifier}|\p{Emoji_Modifier_Base}|\p{Emoji_Component})+)/u).map((part: string, i: number) => {
+                  const isEmoji = /(?:\p{Emoji}|\p{Emoji_Presentation}|\p{Emoji_Modifier}|\p{Emoji_Modifier_Base}|\p{Emoji_Component})+/u.test(part);
                   return isEmoji ? 
-                    <span key={i} className="emoji">{part}</span> : 
-                    <span key={i}>{part}</span>;
+                    <EmojiSpan key={i}>{part}</EmojiSpan> : 
+                    <BidirectionalText key={i} text={part} />
                 })}
-              </QuestionText>
+              </QuestionTextContainer>
             </motion.div>
             
             {currentQuestion.question.image || currentQuestion.question.video || currentQuestion.question.audio ? (

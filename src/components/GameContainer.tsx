@@ -48,7 +48,7 @@ const TeamsContainer = styled.div`
   width: 490px;
   gap: 45px;
   margin-left: 40px;
-  margin-top: 170px;
+  margin-top: 50px;
   
   @media (max-width: 1100px) {
     flex-direction: row;

@@ -337,9 +337,7 @@ const GameBoard: React.FC = () => {
 
   return (
     <BoardContainer as={motion.div} variants={containerVariants} initial="hidden" animate="visible">
-      <ProgressBar>
-        <Progress percent={completionPercent} />
-      </ProgressBar>
+     
       
       <TeamTurnIndicator>
         Current Team Turn: {teams[activeTeamIndex]?.name || `Team ${activeTeamIndex + 1}`} (
