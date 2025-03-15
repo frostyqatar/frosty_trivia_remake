@@ -1,13 +1,13 @@
 import React, { useRef, useEffect } from 'react';
-import styled from 'styled-components';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch, useSelector } from 'react-redux';
-import { Team, AbilityType, TeamIndex } from '../types/game.types';
+import styled from 'styled-components';
+import { motion } from 'framer-motion';
+import { Team, TeamIndex, AbilityType } from '../types/game.types';
 import { awardPoints } from '../store/gameSlice';
-import { useAbilities } from '../hooks/useAbilities';
 import { RootState } from '../store';
+import { useAbilities } from '../hooks/useAbilities';
 import { useSoundEffects } from '../hooks/useSoundEffects';
-import Lightning, { updateTeamPosition, updateAvatarPosition } from './effects/Lightning';
+import Lightning, { updateTeamPosition } from './effects/Lightning';
 import CatLoader from './effects/CatLoader';
 
 interface TeamPanelProps {
@@ -20,16 +20,21 @@ interface TeamPanelProps {
 const TeamContainer = styled(motion.div)<{ isActive: boolean, isShocked: boolean }>`
   display: flex;
   flex-direction: column;
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
   border-radius: 24px;
   padding: 32px;
-  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 25px rgba(0, 153, 204, 0.15);
   transition: all 0.3s ease;
-  border: ${props => props.isActive ? '4px solid #8c52ff' : '1px solid #e0e0e0'};
+  border: ${props => props.isActive ? '4px solid #0099cc' : '2px solid rgba(102, 212, 255, 0.3)'};
   position: relative;
   overflow: hidden;
   min-width: 390px;
   flex: 1;
+  
+  &:hover {
+    box-shadow: 0 15px 30px rgba(0, 153, 204, 0.2);
+  }
 `;
 
 const ActiveTeamIndicator = styled.div`
@@ -38,7 +43,7 @@ const ActiveTeamIndicator = styled.div`
   left: 0;
   width: 100%;
   height: 8px;
-  background-color: #8c52ff;
+  background: linear-gradient(90deg, #0099cc 0%, #66d4ff 100%);
 `;
 
 const TeamHeader = styled.div`
@@ -57,7 +62,8 @@ const TeamAvatar = styled.div`
   width: 80px;
   height: 80px;
   border-radius: 50%;
-  background-color: #f5f0ff;
+  background-color: rgba(102, 212, 255, 0.15);
+  box-shadow: 0 4px 15px rgba(0, 153, 204, 0.1);
 `;
 
 const TeamInfo = styled.div`
@@ -80,8 +86,8 @@ const TeamScore = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #8c52ff;
-  text-shadow: 0px 3px 4px rgba(140, 82, 255, 0.25);
+  color: #0099cc;
+  text-shadow: 0px 3px 4px rgba(0, 153, 204, 0.25);
 `;
 
 const ScoreAdjustButton = styled(motion.button)`
@@ -91,9 +97,12 @@ const ScoreAdjustButton = styled(motion.button)`
   cursor: pointer;
   padding: 0 10px;
   opacity: 0.7;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  color: #0099cc;
   
   &:hover {
     opacity: 1;
+    transform: scale(1.1);
   }
 `;
 
@@ -120,19 +129,26 @@ const AbilityButton = styled(motion.button)<AbilityButtonProps>`
   border-radius: 8px;
   border: none;
   cursor: ${props => props.isUsed ? 'not-allowed' : 'pointer'};
-  opacity: ${props => props.isUsed ? 0.5 : 1};
+  opacity: ${props => props.isUsed ? 0.8 : 1};
   background-color: ${props => {
-    if (props.isUsed) return '#e0e0e0';
-    if (props.isActive) return '#ffcb2d';
-    if (props.isCooldown) return '#ff6b6b';
-    return '#f0f0f0';
+    if (props.isUsed) return '#ff5252';
+    if (props.isActive) return '#66d4ff';
+    if (props.isCooldown) return '#ff9e80';
+    return '#0099cc';
   }};
-  color: ${props => props.isUsed ? '#999' : '#333'};
+  color: ${props => props.isUsed ? 'white' : 'white'};
   position: relative;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    transform: ${props => props.isUsed ? 'none' : 'translateY(-2px)'};
+    box-shadow: ${props => props.isUsed ? '0 4px 10px rgba(0, 0, 0, 0.1)' : '0 6px 15px rgba(0, 0, 0, 0.15)'};
+  }
 `;
 
 const CooldownOverlay = styled.div<{cooldownProgress: number}>`
@@ -145,27 +161,21 @@ const CooldownOverlay = styled.div<{cooldownProgress: number}>`
   transition: height 1s linear;
 `;
 
-const PlayersSection = styled.div`
-  margin-top: 20px;
-`;
-
 const PlayersList = styled.div`
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 8px;
 `;
 
-interface PlayerItemProps {
-  isDismissed: boolean;
-}
-
-const PlayerItem = styled.div<PlayerItemProps>`
-  padding: 6px 12px;
-  background-color: ${props => props.isDismissed ? '#f0f0f0' : '#f5f0ff'};
-  color: ${props => props.isDismissed ? '#999' : '#333'};
-  border-radius: 20px;
-  font-size: 14px;
+const PlayerItem = styled.div<{ isDismissed: boolean }>`
+  padding: 8px 12px;
+  background-color: ${props => props.isDismissed ? 'rgba(241, 241, 241, 0.6)' : 'rgba(102, 212, 255, 0.15)'};
+  border-radius: 8px;
+  color: ${props => props.isDismissed ? '#999' : '#0f5e87'};
   text-decoration: ${props => props.isDismissed ? 'line-through' : 'none'};
+  font-weight: 500;
+  font-size: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 `;
 
 // Shock animation
@@ -181,9 +191,6 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
   const dispatch = useDispatch();
   const { activateAbility } = useAbilities();
   const { playSound } = useSoundEffects();
-  
-  // Track cooldown for electric ability
-  const [electricCooldown, setElectricCooldown] = React.useState(0);
   
   const gamePhase = useSelector((state: RootState) => state.gamePhase);
   
@@ -206,7 +213,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
     // Track avatar position separately
     if (avatarRef.current) {
       const rect = avatarRef.current.getBoundingClientRect();
-      updateAvatarPosition(teamIndex, {
+      updateTeamPosition(teamIndex, {
         x: rect.left,
         y: rect.top,
         width: rect.width,
@@ -228,7 +235,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
       
       if (avatarRef.current) {
         const rect = avatarRef.current.getBoundingClientRect();
-        updateAvatarPosition(teamIndex, {
+        updateTeamPosition(teamIndex, {
           x: rect.left,
           y: rect.top,
           width: rect.width,
@@ -246,40 +253,15 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
     };
   }, [teamIndex]);
   
-  React.useEffect(() => {
-    if (team?.abilities?.electric) {
-      const cooldownTimer = setInterval(() => {
-        const ability = team.abilities.electric;
-        if (ability && ability.cooldown && ability.cooldownStart !== undefined) {
-          const elapsed = Date.now() - ability.cooldownStart;
-          const cooldown = ability.cooldown;
-          
-          if (cooldown > 0) {
-            const remaining = Math.max(0, cooldown - elapsed);
-            setElectricCooldown(remaining / cooldown * 100);
-            
-            if (remaining <= 0) {
-              clearInterval(cooldownTimer);
-              setElectricCooldown(0);
-            }
-          } else {
-            setElectricCooldown(0);
-          }
-        } else {
-          setElectricCooldown(0);
-        }
-      }, 100);
-      
-      return () => clearInterval(cooldownTimer);
-    }
-  }, [team?.abilities?.electric]);
-  
   const handleAbilityClick = (abilityType: AbilityType) => {
     activateAbility(teamIndex, abilityType);
   };
   
   const handleAdjustScore = (amount: number) => {
-    playSound('button-click');
+    // Play the team award sound
+    playSound('team-award');
+    
+    // Award points directly without delay
     dispatch(awardPoints({ 
       teamIndex: teamIndex as TeamIndex, 
       points: amount 
@@ -391,19 +373,6 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
           </AbilityButton>
         </AbilitiesGrid>
       </AbilitiesSection>
-      
-      <PlayersSection>
-        <PlayersList>
-          {team.players && team.players.map(player => (
-            <PlayerItem 
-              key={player.id} 
-              isDismissed={player.dismissed === true}
-            >
-              {player.name}
-            </PlayerItem>
-          ))}
-        </PlayersList>
-      </PlayersSection>
     </TeamContainer>
   );
 };

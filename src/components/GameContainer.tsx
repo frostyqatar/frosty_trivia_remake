@@ -21,8 +21,8 @@ const Container = styled.div`
   flex-direction: column;
   min-height: 100vh;
   position: relative;
-  background-color: #f2edf9;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3E%3Cpattern id='pattern-21' patternUnits='userSpaceOnUse' width='16' height='16'%3E%3Ccircle cx='0' cy='8' r='3' stroke='%238c52ff20' fill='none' /%3E%3Ccircle cx='16' cy='8' r='3' stroke='%238c52ff20' fill='none' /%3E%3Ccircle cx='8' cy='0' r='3' stroke='%238c52ff20' fill='none' /%3E%3Ccircle cx='8' cy='16' r='3' stroke='%238c52ff20' fill='none' /%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23pattern-21)' /%3E%3C/svg%3E");
+  background-color: #e6f7ff;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpattern id='pattern-waves' patternUnits='userSpaceOnUse' width='20' height='20'%3E%3Cpath d='M0,10 Q5,5 10,10 T20,10' stroke='%2366d4ff20' fill='none' /%3E%3Cpath d='M0,15 Q5,10 10,15 T20,15' stroke='%2366d4ff20' fill='none' /%3E%3Cpath d='M0,5 Q5,0 10,5 T20,5' stroke='%2366d4ff20' fill='none' /%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23pattern-waves)' /%3E%3C/svg%3E");
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 `;
 
@@ -30,10 +30,10 @@ const GameContent = styled.div`
   display: flex;
   flex-direction: row;
   align-items: flex-start;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 20px;
   flex-grow: 1;
-  max-width: 1500px;
+  max-width: 1800px;
   margin: 0 auto;
   width: 100%;
   
@@ -45,9 +45,9 @@ const GameContent = styled.div`
 const TeamsContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 490px;
+  width: 420px;
   gap: 45px;
-  margin-left: 40px;
+  margin-left: 15px;
   margin-top: 50px;
   
   @media (max-width: 1100px) {
@@ -72,8 +72,9 @@ const ControlsBar = styled.div`
   display: flex;
   justify-content: space-between;
   padding: 16px 24px;
-  background-color: #8c52ff;
+  background: linear-gradient(135deg, #0099cc 0%, #66d4ff 100%);
   color: white;
+  box-shadow: 0 4px 15px rgba(0, 153, 204, 0.3);
 `;
 
 const MusicButton = styled.button`
@@ -152,7 +153,7 @@ const EndGameButtonContainer = styled.div`
 `;
 
 const EndGameButton = styled(motion.button)`
-  background-color: #ff6464;
+  background: linear-gradient(135deg, #ff6464 0%, #ff5252 100%);
   color: white;
   border: none;
   padding: 12px 20px;
@@ -161,9 +162,16 @@ const EndGameButton = styled(motion.button)`
   border-radius: 30px;
   cursor: pointer;
   width: 100%;
+  box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
+  transition: all 0.2s ease;
   
   &:hover {
-    background-color: #ff5252;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
+  }
+  
+  &:active {
+    transform: translateY(1px);
   }
 `;
 

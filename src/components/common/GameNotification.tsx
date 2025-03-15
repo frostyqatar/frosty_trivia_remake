@@ -4,25 +4,44 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const NotificationContainer = styled(motion.div)`
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 402px;
+  left: 487px;
+  width: 898px;
+  height: 148px;
+  /* Redundant but included for clarity */
+  bottom: 550px;
+  right: 1385px;
+  
+  /* Remove transform as we're using absolute positioning */
+  transform: none;
+  
+  /* Ensure dimensions are strictly enforced */
+  min-width: 898px;
+  max-width: 898px;
+  min-height: 148px;
+  max-height: 148px;
+  
+  /* Keep styling */
   background-color: #34495e;
   color: white;
   padding: 20px 30px;
   border-radius: 12px;
   z-index: 1000;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
-  max-width: 80%;
-  width: auto;
   text-align: center;
   font-size: 22px;
   font-weight: 500;
   border: 2px solid #2ecc71;
-  margin: 0 auto;
+  margin: 0;
   overflow-wrap: break-word;
   word-wrap: break-word;
   hyphens: auto;
+  overflow: hidden;
+  
+  /* Display settings for content */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 export const showNotification = (message: string, duration = 4000): void => {

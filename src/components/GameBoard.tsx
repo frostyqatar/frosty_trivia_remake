@@ -13,9 +13,11 @@ const BoardContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 1500px;
+  margin: 0;
   padding: 0 16px;
+  justify-content: flex-start;
+  align-self: flex-start;
 `;
 
 const CategoryContainer = styled.div`
@@ -35,24 +37,28 @@ const CategoryContainer = styled.div`
 `;
 
 const CategoryCard = styled(motion.div)`
-  background-color: white;
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 6px 20px rgba(0, 153, 204, 0.15);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
   padding-bottom: 12px;
+  border: 2px solid rgba(102, 212, 255, 0.3);
+  transition: all 0.2s ease;
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 25px rgba(0, 153, 204, 0.25);
+    border-color: rgba(102, 212, 255, 0.5);
   }
 `;
 
 const CategoryHeader = styled.div`
-  background-color: #8c52ff;
+  background: linear-gradient(135deg, #0099cc 0%, #66d4ff 100%);
   color: white;
   padding: 16px 8px;
   text-align: center;
@@ -83,10 +89,12 @@ const CategoryIcon = styled.div`
 
 const QuestionGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 12px;
   width: 100%;
   margin-top: 10px;
+  padding: 0 10px 10px 10px;
 `;
 
 const ProgressBar = styled.div`
@@ -102,7 +110,7 @@ const ProgressBar = styled.div`
 const Progress = styled.div<{ percent: number }>`
   height: 100%;
   width: ${props => props.percent}%;
-  background-color: #8c52ff;
+  background: linear-gradient(90deg, #0099cc 0%, #66d4ff 100%);
   border-radius: 10px;
   transition: width 0.5s ease-in-out;
 `;
@@ -134,18 +142,20 @@ const TeamTurnIndicator = styled.div`
   font-size: 32px;
   font-weight: bold;
   text-align: center;
-  border: 3px solid black;
+  border: 3px solid rgba(0, 153, 204, 0.3);
   border-radius: 12px;
   padding: 12px 20px;
-  background-color: white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background-color: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 6px 20px rgba(0, 153, 204, 0.15);
   max-width: 80%;
   margin-left: auto;
   margin-right: auto;
+  color: #0f5e87;
 `;
 
 const SwitchTeamButton = styled(motion.button)`
-  background-color: #39c0ee;
+  background: linear-gradient(135deg, #0099cc 0%, #66d4ff 100%);
   border: none;
   color: white;
   font-size: 28px;
@@ -156,9 +166,16 @@ const SwitchTeamButton = styled(motion.button)`
   justify-content: center;
   padding: 8px;
   border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 153, 204, 0.2);
+  transition: all 0.2s ease;
   
   &:hover {
-    background-color: #2aaad6;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 153, 204, 0.3);
+  }
+  
+  &:active {
+    transform: translateY(1px);
   }
 `;
 
@@ -172,8 +189,10 @@ interface QuestionCardProps {
 
 // Then update the QuestionCard component to use these props
 const QuestionCard = styled(motion.div)<QuestionCardProps>`
-  background-color: ${props => props.answered ? '#f1f1f1' : '#8c52ff'};
-  color: white;
+  background: ${props => props.answered ? 
+    'rgba(241, 241, 241, 0.9)' : 
+    'linear-gradient(135deg, #0099cc 0%, #66d4ff 100%)'};
+  color: ${props => props.answered ? '#999' : 'white'};
   border-radius: 8px;
   padding: 14px 10px;
   display: flex;
@@ -184,10 +203,15 @@ const QuestionCard = styled(motion.div)<QuestionCardProps>`
   cursor: ${props => props.answered ? 'default' : 'pointer'};
   transition: all 0.2s ease;
   min-height: 50px;
+  box-shadow: ${props => props.answered ? 
+    'none' : 
+    '0 4px 8px rgba(0, 153, 204, 0.15)'};
   
   &:hover {
     transform: ${props => props.answered ? 'none' : 'translateY(-5px)'};
-    box-shadow: ${props => props.answered ? 'none' : '0 8px 15px rgba(0, 0, 0, 0.1)'};
+    box-shadow: ${props => props.answered ? 
+      'none' : 
+      '0 8px 15px rgba(0, 153, 204, 0.25)'};
   }
 `;
 
@@ -293,32 +317,41 @@ const GameBoard: React.FC = () => {
       };
     });
     
-    // Render a card for each point value
-    return pointValues.map(value => {
-      const questionData = questionsByValue[value];
-      
-      // If there's no question for this value, show empty slot
-      if (!questionData) {
+    // Create pairs of point values: [100,200], [300,400], [500]
+    const pointValuePairs = [
+      [100, 200],
+      [300, 400],
+      [500]
+    ];
+    
+    // Render cards for each pair of point values
+    return pointValuePairs.flatMap(pair => {
+      return pair.map(value => {
+        const questionData = questionsByValue[value];
+        
+        // If there's no question for this value, show empty slot
+        if (!questionData) {
+          return (
+            <EmptyQuestionSlot key={`${category.id}-${value}`}>
+              {value}
+            </EmptyQuestionSlot>
+          );
+        }
+        
+        // Otherwise render the question card
         return (
-          <EmptyQuestionSlot key={`${category.id}-${value}`}>
+          <QuestionCard
+            key={`${category.id}-${value}`}
+            categoryId={category.id}
+            questionIndex={questionData.index}
+            question={questionData.question}
+            answered={questionData.question.answered}
+            onClick={() => handleSelectQuestion(category.id, questionData.index)}
+          >
             {value}
-          </EmptyQuestionSlot>
+          </QuestionCard>
         );
-      }
-      
-      // Otherwise render the question card
-      return (
-        <QuestionCard
-          key={`${category.id}-${value}`}
-          categoryId={category.id}
-          questionIndex={questionData.index}
-          question={questionData.question}
-          answered={questionData.question.answered}
-          onClick={() => handleSelectQuestion(category.id, questionData.index)}
-        >
-          {value}
-        </QuestionCard>
-      );
+      });
     });
   };
 
@@ -340,16 +373,16 @@ const GameBoard: React.FC = () => {
      
       
       <TeamTurnIndicator>
-        Current Team Turn: {teams[activeTeamIndex]?.name || `Team ${activeTeamIndex + 1}`} (
+        Current Team Turn: {teams[activeTeamIndex]?.name || `Team ${activeTeamIndex + 1}`} 
         <SwitchTeamButton
           onClick={switchTeam}
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           aria-label="Switch team turn"
         >
-          🔄
+          بدل الدور
         </SwitchTeamButton>
-        )
+      
       </TeamTurnIndicator>
       
       <CategoryContainer>

@@ -456,16 +456,18 @@ const QuestionScreen: React.FC = () => {
   };
 
   const handleRevealAnswer = () => {
+    // Play sound first before state updates to ensure it plays reliably
     playSound('answer-reveal');
-    console.log("Revealing answer. Current active team:", activeTeamIndex);
     
-    const nextTeamIndex = activeTeamIndex === 0 ? 1 : 0;
-    console.log(`Switching from team ${activeTeamIndex} to team ${nextTeamIndex} on reveal`);
-    dispatch(setActiveTeam(nextTeamIndex));
+    // Switch active team before revealing answer
+    dispatch(setActiveTeam(activeTeamIndex === 0 ? 1 : 0));
     
+    // Then go to answer screen
+    dispatch(setGamePhase('answer'));
     dispatch(revealAnswer());
     dispatch(pauseTimer());
-    dispatch(setGamePhase('answer'));
+    
+    console.log(`Switching from team ${activeTeamIndex} to ${activeTeamIndex === 0 ? 1 : 0}`);
   };
   
   const handleReturnToBoard = () => {

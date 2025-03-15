@@ -27,19 +27,11 @@ export interface Ability {
   cooldownStart?: number;
 }
 
-export interface Player {
-  name: string;
-  avatar?: string;
-  id: string;
-  dismissed?: boolean;
-}
-
 export interface Team {
   id: string;
   name: string;
   avatar: string;
   score: number;
-  players: Player[];
   abilities: Record<AbilityType, Ability>;
   pointsMultiplier: number;
   blockedFromAnswering?: boolean;

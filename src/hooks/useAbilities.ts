@@ -4,17 +4,28 @@ import {
   activateAbility as activateAbilityAction,
   startCooldown, 
   endCooldown, 
-  dismissPlayer,
-  returnPlayer,
   setPointsMultiplier,
   awardPoints,
   setActiveTeam
 } from '../store/gameSlice';
 import { RootState } from '../store';
-import { AbilityType, TeamIndex, GamePhase, Player } from '../types/game.types';
+import { AbilityType, TeamIndex, GamePhase } from '../types/game.types';
 import { useSoundEffects } from './useSoundEffects';
 import { showNotification } from '../components/common/GameNotification';
 import { trackGameEvent } from '../services/analytics';
+
+// Google Search Timer Event
+export interface GoogleSearchTimerEvent {
+  isActive: boolean;
+  teamName: string;
+}
+
+export const triggerGoogleSearchTimer = (isActive: boolean, teamName: string) => {
+  const event = new CustomEvent('google-search-timer', {
+    detail: { isActive, teamName }
+  });
+  window.dispatchEvent(event);
+};
 
 export const useAbilities = () => {
   const dispatch = useDispatch();
@@ -28,12 +39,14 @@ export const useAbilities = () => {
     dispatch(startCooldown({ 
       teamIndex: 0, 
       abilityType: 'electric', 
-      duration: 200000 // 20 minutes (was 20000)
+      duration: 200000, // 20 minutes (was 20000)
+      skipAnimation: true // Add this to skip animation
     }));
     dispatch(startCooldown({ 
       teamIndex: 1, 
       abilityType: 'electric', 
-      duration: 200000 // 20 minutes (was 20000)
+      duration: 200000, // 20 minutes (was 20000)
+      skipAnimation: true // Add this to skip animation
     }));
     
     // Auto end cooldown after 20 minutes
@@ -84,6 +97,9 @@ export const useAbilities = () => {
         points: -pointsReduction 
       }));
       
+      // Show notification about the electric shock
+      showNotification(`⚡ ${team.name} used Electric Shock! ${game.teams[opposingTeamIndex].name} lost ${pointsReduction} points!`);
+      
       // Dispatch custom event for the animation
       const shockEvent = new CustomEvent('electricShock', { 
         detail: { teamIndex: opposingTeamIndex } 
@@ -130,17 +146,16 @@ export const useAbilities = () => {
         break;
         
       case 'google':
-        // Change auto-search to manual search notification
-        if (game.currentQuestion) {
-          // No longer automatically opening the search
-          // window.open(`https://www.google.com/search?q=${searchQuery}`, '_blank');
-          showNotification('🔍 You have 25 seconds to search on Google for the answer!');
-          
-          // Start a timer to notify when the search time is over
-          setTimeout(() => {
-            showNotification('⏱️ Google search time is over!');
-          }, 25000);
-        }
+        // Show initial notification
+        showNotification(`🔍 ${team.name} is using Google search!`);
+        
+        // Trigger the Google search timer
+        triggerGoogleSearchTimer(true, team.name);
+        
+        // Start a timer to notify when the search time is over
+        setTimeout(() => {
+          showNotification('⏱️ Google search time is over!');
+        }, 25000);
         break;
         
       case 'dismiss':
@@ -182,24 +197,6 @@ export const useAbilities = () => {
     return true;
   }, [dispatch, game, playSound]);
   
-  const dismissOpponentPlayer = useCallback((
-    teamIndex: TeamIndex, 
-    playerId: string
-  ) => {
-    dispatch(dismissPlayer({ teamIndex, playerId }));
-    
-    // Auto-return the player after one question
-    const handleReturnAfterQuestion = () => {
-      const opposingTeamIndex = teamIndex === 0 ? 1 : 0;
-      dispatch(returnPlayer({ 
-        teamIndex: opposingTeamIndex, 
-        playerId 
-      }));
-    };
-    
-    return handleReturnAfterQuestion;
-  }, [dispatch]);
-  
   const switchTeam = useCallback(() => {
     // Get current active team index
     const currentTeamIndex = game.activeTeamIndex || 0;
@@ -221,7 +218,6 @@ export const useAbilities = () => {
   
   return {
     activateAbility: triggerAbility,
-    dismissOpponentPlayer,
     initializeElectricCooldown,
     switchTeam
   };

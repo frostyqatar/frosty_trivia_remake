@@ -205,7 +205,8 @@ const AnswerReveal: React.FC = () => {
   const { question } = currentQuestion;
   
   const handleAwardPoints = (teamIndex: 0 | 1) => {
-    playSound('button-click');
+    // Play the new team award sound
+    playSound('team-award');
     
     // Award points to the team that answered correctly
     dispatch(awardPoints({ 
@@ -221,6 +222,7 @@ const AnswerReveal: React.FC = () => {
   };
   
   const handleReturnToBoard = () => {
+    // Play sound first before state changes
     playSound('button-click');
     
     // Team already switched when revealing answer, so no need to switch again
@@ -231,6 +233,7 @@ const AnswerReveal: React.FC = () => {
   };
   
   const handleNoPoints = () => {
+    // Play sound first before state changes
     playSound('button-click');
     
     // Return to the board and mark the question as answered

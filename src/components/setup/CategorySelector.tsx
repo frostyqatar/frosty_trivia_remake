@@ -14,43 +14,76 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   margin-bottom: 32px;
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 20px;
+  border-radius: 16px;
+  background-color: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(4px);
+  z-index: 1;
 `;
 
 const Title = styled.h2`
   margin-bottom: 16px;
-  color: #2c3e50;
+  color: #0f5e87;
   font-size: 24px;
   text-align: center;
+  font-weight: 700;
+  position: relative;
+  z-index: 1;
 `;
 
 const CounterText = styled.div`
   margin-bottom: 16px;
   font-size: 18px;
-  color: #7f8c8d;
+  color: #0f5e87;
   text-align: center;
+  position: relative;
+  z-index: 1;
 `;
 
 const CategoriesGrid = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 16px;
   width: 100%;
+  position: relative;
+  z-index: 1;
 `;
 
 const CategoryCard = styled(motion.div)<{ selected: boolean }>`
-  background-color: ${props => props.selected ? '#3498db' : '#ecf0f1'};
-  color: ${props => props.selected ? 'white' : '#2c3e50'};
+  background: ${props => props.selected 
+    ? 'linear-gradient(135deg, #0099cc 0%, #66d4ff 100%)' 
+    : 'rgba(255, 255, 255, 0.9)'};
+  color: ${props => props.selected ? 'white' : '#0f5e87'};
   padding: 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: ${props => props.selected ? '0 6px 12px rgba(52, 152, 219, 0.3)' : '0 4px 8px rgba(0, 0, 0, 0.1)'};
-  height: 120px;
+  backdrop-filter: blur(8px);
+  border: 2px solid ${props => props.selected 
+    ? 'rgba(255, 255, 255, 0.3)' 
+    : 'rgba(102, 212, 255, 0.3)'};
+  box-shadow: ${props => props.selected 
+    ? '0 6px 20px rgba(0, 153, 204, 0.25)' 
+    : '0 4px 15px rgba(0, 153, 204, 0.15)'};
+  height: 130px;
   overflow: hidden;
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 153, 204, 0.25);
+    border-color: ${props => props.selected 
+      ? 'rgba(255, 255, 255, 0.5)' 
+      : 'rgba(102, 212, 255, 0.5)'};
+  }
 `;
 
 const CategoryIcon = styled.div`
@@ -78,6 +111,8 @@ const ActionBar = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  position: relative;
+  z-index: 1;
 `;
 
 const MuteButton = styled.button`
@@ -86,12 +121,35 @@ const MuteButton = styled.button`
   font-size: 24px;
   cursor: pointer;
   padding: 8px;
-  color: #7f8c8d;
+  color: #0f5e87;
   transition: all 0.2s;
   
   &:hover {
-    color: #3498db;
+    color: #0099cc;
     transform: scale(1.1);
+  }
+`;
+
+// Style the emergency reset button
+const EmergencyResetButton = styled.button`
+  background: linear-gradient(135deg, #ff6464 0%, #ff5252 100%);
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
+  }
+  
+  &:active {
+    transform: translateY(1px);
   }
 `;
 
@@ -163,9 +221,9 @@ const CategorySelector: React.FC = () => {
         </MuteButton>
         
         {/* Add a reset button for debugging */}
-        <button onClick={handleEmergencyReset}>
+        <EmergencyResetButton onClick={handleEmergencyReset}>
           Emergency Reset
-        </button>
+        </EmergencyResetButton>
       </ActionBar>
       
       <CategoriesGrid>

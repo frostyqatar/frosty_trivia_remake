@@ -92,8 +92,9 @@ const gameSlice = createSlice({
       teamIndex: TeamIndex;
       abilityType: AbilityType;
       duration: number;
+      skipAnimation?: boolean;
     }>) => {
-      const { teamIndex, abilityType, duration } = action.payload;
+      const { teamIndex, abilityType, duration, skipAnimation } = action.payload;
       const team = state.teams[teamIndex];
       
       if (team && team.abilities && team.abilities[abilityType]) {
@@ -102,7 +103,7 @@ const gameSlice = createSlice({
       }
       
       // For electric ability, dispatch a custom event to trigger UI animation
-      if (abilityType === 'electric') {
+      if (abilityType === 'electric' && !skipAnimation) {
         // This will be handled by event listeners in components
         const event = new CustomEvent('electricShock', { 
           detail: { teamIndex } 
@@ -177,31 +178,6 @@ const gameSlice = createSlice({
       state.selectedCategories = state.selectedCategories.filter(id => id !== action.payload);
     },
     
-    dismissPlayer: (state, action: PayloadAction<{
-      teamIndex: TeamIndex;
-      playerId: string;
-    }>) => {
-      const { teamIndex, playerId } = action.payload;
-      const opposingTeamIndex = teamIndex === 0 ? 1 : 0;
-      const player = state.teams[opposingTeamIndex].players.find(p => p.id === playerId);
-      
-      if (player) {
-        player.dismissed = true;
-      }
-    },
-    
-    returnPlayer: (state, action: PayloadAction<{
-      teamIndex: TeamIndex;
-      playerId: string;
-    }>) => {
-      const { teamIndex, playerId } = action.payload;
-      const player = state.teams[teamIndex].players.find(p => p.id === playerId);
-      
-      if (player) {
-        player.dismissed = false;
-      }
-    },
-    
     revealAnswer: (state) => {
       if (state.currentQuestion) {
         // Set the answerRevealed flag to true
@@ -228,13 +204,6 @@ const gameSlice = createSlice({
       state.currentQuestion = null;
       state.gamePhase = 'playing';
       state.answerRevealed = false;
-      
-      // Reset dismissed state for all players - do this directly instead of creating a new array
-      state.teams.forEach(team => {
-        team.players.forEach(player => {
-          player.dismissed = false;
-        });
-      });
     },
     
     setPointsMultiplier: (state, action: PayloadAction<{
@@ -333,8 +302,6 @@ export const {
   tickTimer,
   selectCategory,
   deselectCategory,
-  dismissPlayer,
-  returnPlayer,
   revealAnswer,
   returnToBoard,
   setPointsMultiplier,

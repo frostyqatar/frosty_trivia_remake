@@ -5,6 +5,7 @@ import { store, persistor } from './store';
 import GameContainer from './components/GameContainer';
 import GameNotification from './components/common/GameNotification';
 import GlobalStyle from './styles/GlobalStyle';
+import GoogleSearchTimerWrapper from './components/GoogleSearchTimerWrapper';
 import './App.css';
 import { initGA, pageView } from './services/analytics';
 
@@ -21,6 +22,7 @@ const App: React.FC = () => {
         <GlobalStyle />
         <GameContainer />
         <GameNotification />
+        <GoogleSearchTimerWrapper />
       </PersistGate>
     </Provider>
   );
