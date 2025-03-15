@@ -213,18 +213,18 @@ const ControlStats = styled.div`
   display: flex;
   gap: 18px;
 `;
-
 const StatItem = styled.div`
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
-  color: #555;
-  font-weight: 600;
-  background: white;
-  padding: 8px 12px;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  font-size: 24px; /* Increased font size for prominence */
+  color: #333; /* Darker color for better visibility */
+  font-weight: bold; /* Made font bold */
+  background: #f8f8f8; /* Light background for better contrast */
+  padding: 16px 20px; /* Increased padding for a bigger box */
+  border-radius: 16px; /* More rounded corners */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* Enhanced shadow for depth */
+  border: 2px solid #8c52ff; /* Added border for prominence */
 `;
 
 const TimerActions = styled.div`
@@ -726,7 +726,13 @@ const QuestionScreen: React.FC = () => {
       >
         <QuestionContainer>
           <QuestionHeader>
-          
+          <ControlStats>
+              <StatItem>
+                <span></span>
+                <span>{question.value} points</span>
+              </StatItem>
+  
+            </ControlStats>
             
           </QuestionHeader>
           

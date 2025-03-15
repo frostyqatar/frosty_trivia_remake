@@ -45,10 +45,10 @@ const GameContent = styled.div`
 const TeamsContainer = styled.div`
   display: flex;
   flex-direction: column;
-  width: 320px;
-  gap: 30px;
-  margin-left: 20px;
-  margin-top: 250px;
+  width: 490px;
+  gap: 45px;
+  margin-left: 40px;
+  margin-top: 170px;
   
   @media (max-width: 1100px) {
     flex-direction: row;
@@ -143,7 +143,7 @@ const EndGameButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   margin-top: 20px;
-  width: 320px;
+  width: 490px;
   
   @media (max-width: 1100px) {
     width: 100%;

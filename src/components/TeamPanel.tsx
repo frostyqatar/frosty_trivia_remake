@@ -21,14 +21,14 @@ const TeamContainer = styled(motion.div)<{ isActive: boolean, isShocked: boolean
   display: flex;
   flex-direction: column;
   background-color: white;
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+  border-radius: 24px;
+  padding: 32px;
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease;
-  border: 2px solid ${props => props.isActive ? '#8c52ff' : 'transparent'};
+  border: ${props => props.isActive ? '4px solid #8c52ff' : '1px solid #e0e0e0'};
   position: relative;
   overflow: hidden;
-  min-width: 250px;
+  min-width: 390px;
   flex: 1;
 `;
 
@@ -37,7 +37,7 @@ const ActiveTeamIndicator = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 6px;
+  height: 8px;
   background-color: #8c52ff;
 `;
 
@@ -50,12 +50,12 @@ const TeamHeader = styled.div`
 
 const TeamAvatar = styled.div`
   position: relative;
-  font-size: 36px;
+  font-size: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 60px;
-  height: 60px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   background-color: #f5f0ff;
 `;
@@ -67,27 +67,29 @@ const TeamInfo = styled.div`
 
 const TeamName = styled.h2`
   margin: 0;
-  font-size: 22px;
+  font-size: 30px;
   color: #333;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
   font-weight: 600;
 `;
 
 const TeamScore = styled.div`
-  font-size: 32px;
+  font-size: 56px;
   font-weight: bold;
-  margin: 8px 0;
+  margin: 20px 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #8c52ff;
+  text-shadow: 0px 3px 4px rgba(140, 82, 255, 0.25);
 `;
 
 const ScoreAdjustButton = styled(motion.button)`
   background: none;
   border: none;
-  font-size: 24px;
+  font-size: 28px;
   cursor: pointer;
-  padding: 0 8px;
+  padding: 0 10px;
   opacity: 0.7;
   
   &:hover {
