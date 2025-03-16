@@ -10,6 +10,14 @@ const GoogleSearchTimerWrapper: React.FC = () => {
   useEffect(() => {
     const handleGoogleSearchTimer = (event: CustomEvent<GoogleSearchTimerEvent>) => {
       const { isActive, teamName } = event.detail;
+      
+      // If timer is being deactivated (e.g., when answer is revealed)
+      if (!isActive && teamName === '') {
+        // Hide any active notification by showing an empty notification with 0 duration
+        const notificationEvent = new CustomEvent('hide-all-notifications');
+        window.dispatchEvent(notificationEvent);
+      }
+      
       setIsActive(isActive);
       setTeamName(teamName);
     };

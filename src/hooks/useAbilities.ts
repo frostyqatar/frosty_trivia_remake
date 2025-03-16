@@ -14,6 +14,9 @@ import { useSoundEffects } from './useSoundEffects';
 import { showNotification } from '../components/common/GameNotification';
 import { trackGameEvent } from '../services/analytics';
 
+// Global variable to store the search timeout ID
+let googleSearchTimeoutId: number | null = null;
+
 // Google Search Timer Event
 export interface GoogleSearchTimerEvent {
   isActive: boolean;
@@ -25,6 +28,12 @@ export const triggerGoogleSearchTimer = (isActive: boolean, teamName: string) =>
     detail: { isActive, teamName }
   });
   window.dispatchEvent(event);
+  
+  // Clear any existing timeout when deactivating timer
+  if (!isActive && googleSearchTimeoutId) {
+    clearTimeout(googleSearchTimeoutId);
+    googleSearchTimeoutId = null;
+  }
 };
 
 export const useAbilities = () => {
@@ -116,7 +125,7 @@ export const useAbilities = () => {
       return false;
     }
     
-    // Check if ability is available
+    // Skip if the ability has already been used
     if (!team || !team.abilities || 
         (team.abilities[abilityType] && team.abilities[abilityType].used)) {
       showNotification('Ability already used');
@@ -152,9 +161,16 @@ export const useAbilities = () => {
         // Trigger the Google search timer
         triggerGoogleSearchTimer(true, team.name);
         
-        // Start a timer to notify when the search time is over
-        setTimeout(() => {
-          showNotification('⏱️ Google search time is over!');
+        // Clear any existing timeout first
+        if (googleSearchTimeoutId) {
+          clearTimeout(googleSearchTimeoutId);
+        }
+        
+        // Start a timer to end the Google search (but don't show a notification)
+        googleSearchTimeoutId = window.setTimeout(() => {
+          // End the Google search timer silently
+          triggerGoogleSearchTimer(false, '');
+          googleSearchTimeoutId = null;
         }, 25000);
         break;
         

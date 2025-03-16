@@ -4,6 +4,7 @@ import { PersistGate } from 'redux-persist/integration/react';
 import { store, persistor } from './store';
 import GameContainer from './components/GameContainer';
 import GameNotification from './components/common/GameNotification';
+import WelcomeMessage from './components/common/WelcomeMessage';
 import GlobalStyle from './styles/GlobalStyle';
 import GoogleSearchTimerWrapper from './components/GoogleSearchTimerWrapper';
 import './App.css';
@@ -23,6 +24,7 @@ const App: React.FC = () => {
         <GameContainer />
         <GameNotification />
         <GoogleSearchTimerWrapper />
+        <WelcomeMessage />
       </PersistGate>
     </Provider>
   );

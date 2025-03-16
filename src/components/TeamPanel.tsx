@@ -258,8 +258,8 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
   };
   
   const handleAdjustScore = (amount: number) => {
-    // Play the team award sound
-    playSound('team-award');
+    // Play the button click sound
+    playSound('button-click');
     
     // Award points directly without delay
     dispatch(awardPoints({ 
@@ -359,7 +359,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
             whileTap={!team.abilities.dismiss.used ? { scale: 0.95 } : {}}
             onClick={() => !team.abilities.dismiss.used && handleAbilityClick('dismiss')}
           >
-            👋
+            ⛔
           </AbilityButton>
           
           <AbilityButton 

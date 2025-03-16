@@ -24,6 +24,7 @@ const initialState: GameState = {
   },
   volume: 0.7,
   musicEnabled: true,
+  effectsEnabled: true,
   activeTeamIndex: 0,
   answerRevealed: false,
 };
@@ -131,6 +132,10 @@ const gameSlice = createSlice({
     
     toggleMusic: (state) => {
       state.musicEnabled = !state.musicEnabled;
+    },
+    
+    toggleEffects: (state) => {
+      state.effectsEnabled = !state.effectsEnabled;
     },
     
     setVolume: (state, action: PayloadAction<number>) => {
@@ -269,19 +274,45 @@ const gameSlice = createSlice({
     builder.addCase(resetGame, (state) => {
       // Reset to initial state but preserve original categories
       const preservedCategories = JSON.parse(JSON.stringify(state.categories)).map((cat: Category) => {
-        // Reset answered flag for all questions
-        cat.questions = cat.questions.map(q => ({...q, answered: false}));
-        return cat;
+        // Reset answered flag for all questions AND shuffle them
+        const shuffledQuestions = [...cat.questions]
+          .map(q => ({...q, answered: false}))
+          .sort(() => Math.random() - 0.5); // Simple shuffle algorithm
+        
+        return {
+          ...cat,
+          questions: shuffledQuestions
+        };
       });
+      
+      // Preserve sound settings
+      const preservedVolume = state.volume;
+      const preservedMusicEnabled = state.musicEnabled;
+      const preservedEffectsEnabled = state.effectsEnabled;
       
       // Reset the state 
       Object.assign(state, initialState);
       
-      // Restore the categories with reset questions
+      // Restore the preserved settings
+      state.volume = preservedVolume;
+      state.musicEnabled = preservedMusicEnabled;
+      state.effectsEnabled = preservedEffectsEnabled;
+      
+      // Restore the categories with reset and shuffled questions
       state.categories = preservedCategories;
       
       // Explicitly set game phase
       state.gamePhase = 'setup';
+      
+      // Clear selected categories to force user to select again
+      state.selectedCategories = [];
+      
+      // Update localStorage to ensure persistence of shuffled questions
+      try {
+        localStorage.setItem('trivia-game-categories', JSON.stringify(preservedCategories));
+      } catch (e) {
+        console.error('Failed to save shuffled categories to localStorage:', e);
+      }
     });
   },
 });
@@ -295,6 +326,7 @@ export const {
   endCooldown,
   setGamePhase,
   toggleMusic,
+  toggleEffects,
   setVolume,
   startTimer,
   pauseTimer,

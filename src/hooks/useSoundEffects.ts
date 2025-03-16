@@ -47,8 +47,11 @@ const SOUND_URLS: Record<SoundType, string> = {
 // Keep references to active playing sounds
 const activeSounds: Record<string, HTMLAudioElement[]> = {};
 
-// Create pre-loaded audio elements for critical sounds to avoid delays
-const preloadedSounds: Record<string, HTMLAudioElement> = {};
+// Create pre-loaded audio elements for all sounds to avoid delays
+const preloadedSounds: Record<string, HTMLAudioElement[]> = {};
+
+// Sound loading status tracking
+const soundLoadStatus: Record<string, boolean> = {};
 
 // Create a singleton background music player that persists across screens
 const backgroundMusicPlayer = new Audio(SOUND_URLS['background-music']);
@@ -69,6 +72,9 @@ if (typeof window !== 'undefined') {
       if (soundsInitialized && !musicInitialized) {
         initializeBackgroundMusic();
       }
+      
+      // Eagerly preload all sounds after user interaction
+      preloadAllSounds();
       
       // Remove event listeners once we've captured interaction
       userInteractionEvents.forEach(event => {
@@ -112,6 +118,19 @@ function createAudioElement(soundType: string): HTMLAudioElement | null {
   try {
     const audio = new Audio(SOUND_URLS[soundType as SoundType]);
     audio.preload = 'auto';
+    
+    // Mark this sound as loading
+    soundLoadStatus[soundType] = false;
+    
+    // Listen for the loaded event
+    audio.addEventListener('canplaythrough', () => {
+      soundLoadStatus[soundType] = true;
+      console.log(`Sound "${soundType}" loaded successfully`);
+    });
+    
+    // Force loading
+    audio.load();
+    
     return audio;
   } catch (e) {
     console.error(`Error creating audio element for ${soundType}:`, e);
@@ -119,24 +138,31 @@ function createAudioElement(soundType: string): HTMLAudioElement | null {
   }
 }
 
-// Preload critical sounds with proper error handling
-function preloadCriticalSounds() {
+// Preload ALL sounds with proper error handling
+function preloadAllSounds() {
   if (soundsInitialized) return;
   
-  const criticalSounds = [
-    'button-click',
-    'question-reveal',
-    'answer-reveal',
-    'team-award'
-  ];
-  
-  criticalSounds.forEach(soundType => {
+  // Preload all sounds defined in SOUND_URLS
+  (Object.keys(SOUND_URLS) as SoundType[]).forEach(soundType => {
+    if (soundType === 'background-music') return; // Background music is handled separately
+    
     try {
-      const audio = createAudioElement(soundType);
-      if (audio) {
-        // Ensure the sound is preloaded
-        audio.load();
-        preloadedSounds[soundType] = audio;
+      // Create multiple instances for frequently used sounds
+      const instances = soundType === 'button-click' ? 5 : 
+                       ['question-reveal', 'answer-reveal', 'team-award'].includes(soundType) ? 3 : 2;
+      
+      preloadedSounds[soundType] = [];
+      
+      for (let i = 0; i < instances; i++) {
+        const audio = createAudioElement(soundType);
+        if (audio) {
+          // Prioritize loading frequently used sounds
+          if (['button-click', 'question-reveal', 'answer-reveal'].includes(soundType)) {
+            audio.load(); // Force loading
+          }
+          
+          preloadedSounds[soundType].push(audio);
+        }
       }
     } catch (e) {
       console.error(`Error preloading ${soundType}:`, e);
@@ -144,11 +170,35 @@ function preloadCriticalSounds() {
   });
   
   soundsInitialized = true;
-  console.log('Critical sounds preloaded');
+  console.log('All sounds preloaded');
+}
+
+// Initialize sound system - start preloading critical sounds immediately
+// and preload all sounds once user interacts
+function initSoundSystem() {
+  // Immediately start preloading critical sounds
+  ['button-click', 'question-reveal', 'answer-reveal'].forEach(soundType => {
+    try {
+      const audio = createAudioElement(soundType);
+      if (audio) {
+        if (!preloadedSounds[soundType]) {
+          preloadedSounds[soundType] = [];
+        }
+        preloadedSounds[soundType].push(audio);
+      }
+    } catch (e) {
+      console.error(`Error preloading critical sound ${soundType}:`, e);
+    }
+  });
+  
+  // If user has already interacted, preload all sounds
+  if (userHasInteracted) {
+    preloadAllSounds();
+  }
 }
 
 // Initialize sound system
-preloadCriticalSounds();
+initSoundSystem();
 
 // Create a sound map with proper error handling
 const createSoundMap = (): SoundMap => {
@@ -159,8 +209,8 @@ const createSoundMap = (): SoundMap => {
     
     try {
       // Use preloaded sounds if available
-      if (preloadedSounds[soundType]) {
-        soundMap[soundType] = preloadedSounds[soundType];
+      if (preloadedSounds[soundType] && preloadedSounds[soundType].length > 0) {
+        soundMap[soundType] = preloadedSounds[soundType][0];
       } else {
         const audio = createAudioElement(soundType);
         if (audio) {
@@ -178,9 +228,10 @@ const createSoundMap = (): SoundMap => {
 export const useSoundEffects = () => {
   const soundsRef = useRef<SoundMap>({});
   const [isReady, setIsReady] = useState(false);
-  const { volume, musicEnabled } = useSelector((state: RootState) => ({
+  const { volume, musicEnabled, effectsEnabled } = useSelector((state: RootState) => ({
     volume: state.volume,
-    musicEnabled: state.musicEnabled
+    musicEnabled: state.musicEnabled,
+    effectsEnabled: state.effectsEnabled
   }));
   
   // Initialize sounds on first render
@@ -207,53 +258,49 @@ export const useSoundEffects = () => {
       if (userHasInteracted && musicEnabled && !musicInitialized) {
         initializeBackgroundMusic();
       }
-      
-      return () => {
-        // Clean up sounds on unmount
-        Object.values(soundsRef.current).forEach(audio => {
-          if (audio && audio !== backgroundMusicPlayer) {
-            try {
-              audio.pause();
-              audio.currentTime = 0;
-            } catch (e) {
-              console.error('Error cleaning up audio:', e);
-            }
-          }
-        });
-      };
     } catch (e) {
-      console.error('Error initializing sound effects:', e);
+      console.error('Error initializing sounds:', e);
     }
   }, []);
   
   // Update volume and mute status whenever it changes
   useEffect(() => {
     try {
-      // Apply volume setting to all sounds
-      Object.values(soundsRef.current).forEach(audio => {
-        if (audio) {
-          audio.volume = volume;
-          audio.muted = !musicEnabled;
-        }
-      });
-      
-      // Apply to background music player
+      // Apply volume and music setting to background music
       backgroundMusicPlayer.volume = volume;
       backgroundMusicPlayer.muted = !musicEnabled;
       
-      // Apply to active sounds
-      Object.values(activeSounds).forEach(sounds => {
-        sounds.forEach(sound => {
+      // Handle sound effects separately from background music
+      Object.entries(soundsRef.current).forEach(([key, audio]) => {
+        if (audio) {
+          audio.volume = volume;
+          
+          // Apply different mute settings based on sound type
+          if (key === 'background-music') {
+            audio.muted = !musicEnabled;
+          } else {
+            audio.muted = !effectsEnabled;
+          }
+        }
+      });
+      
+      // Also update preloaded sounds
+      Object.entries(preloadedSounds).forEach(([key, audioArray]) => {
+        audioArray.forEach(sound => {
           if (sound) {
             sound.volume = volume;
-            sound.muted = !musicEnabled;
+            if (key === 'background-music') {
+              sound.muted = !musicEnabled;
+            } else {
+              sound.muted = !effectsEnabled;
+            }
           }
         });
       });
     } catch (e) {
-      console.error('Error updating volume settings:', e);
+      console.error('Error updating sound settings:', e);
     }
-  }, [volume, musicEnabled]);
+  }, [volume, musicEnabled, effectsEnabled]);
   
   // Handle music toggling
   useEffect(() => {
@@ -261,12 +308,12 @@ export const useSoundEffects = () => {
       if (musicEnabled) {
         if (userHasInteracted && !musicInitialized) {
           initializeBackgroundMusic();
-        } else if (backgroundMusicPlayer.paused && musicInitialized) {
+        } else if (userHasInteracted && backgroundMusicPlayer.paused) {
           backgroundMusicPlayer.play().catch(e => {
             console.error('Error resuming background music:', e);
           });
         }
-      } else if (backgroundMusicPlayer && !backgroundMusicPlayer.paused) {
+      } else {
         backgroundMusicPlayer.pause();
       }
     } catch (e) {
@@ -274,81 +321,93 @@ export const useSoundEffects = () => {
     }
   }, [musicEnabled]);
   
-  // Play sound function with improved reliability
+  // Play sound function
   const playSound = useCallback((soundType: SoundType) => {
-    // Skip if no user interaction yet - but don't show warnings to reduce console noise
-    if (!userHasInteracted && soundType !== 'button-click') {
-      // Silent fail for autoplay restrictions
+    // Check if sounds are ready and user has interacted
+    if (!isReady || !userHasInteracted) return;
+    
+    // Skip playing if effects are disabled (for non-music sounds)
+    if (!effectsEnabled && soundType !== 'background-music') return;
+    
+    // Skip playing if music is disabled (for background music)
+    if (!musicEnabled && soundType === 'background-music') return;
+    
+    // Special case for background music
+    if (soundType === 'background-music') {
+      if (musicEnabled && userHasInteracted) {
+        if (!musicInitialized) {
+          initializeBackgroundMusic();
+        } else if (backgroundMusicPlayer.paused) {
+          backgroundMusicPlayer.play().catch(() => {});
+        }
+      }
       return;
     }
     
-    try {
-      // Update user interaction state for button clicks
-      if (soundType === 'button-click') {
-        userHasInteracted = true;
-      }
-      
-      // Special case for background music
-      if (soundType === 'background-music') {
-        if (musicEnabled && userHasInteracted) {
-          if (!musicInitialized) {
-            initializeBackgroundMusic();
-          } else if (backgroundMusicPlayer.paused) {
-            backgroundMusicPlayer.play().catch(() => {});
-          }
-        }
-        return;
-      }
-      
-      // Don't play non-critical sounds when muted
-      if (!musicEnabled && soundType !== 'button-click') {
-        return;
-      }
-      
-      // Skip question-reveal if noreveal param is in URL
-      if (soundType === 'question-reveal' && window.location.search.includes('noreveal')) {
-        return;
-      }
-      
-      // All sounds now get a new instance for reliable, immediate playback
-      // This prevents random delayed sound playback
-      try {
-        // Get sound URL directly from our constant mapping
-        const soundUrl = SOUND_URLS[soundType];
-        if (!soundUrl) return;
-        
-        // Create a fresh instance for immediate playback
-        const soundClone = new Audio(soundUrl);
-        soundClone.volume = volume;
-        soundClone.muted = !musicEnabled;
-        
-        // Track cleanup for special sounds
-        if (['victory', 'winner-celebration'].includes(soundType)) {
-          if (!activeSounds[soundType]) {
-            activeSounds[soundType] = [];
-          }
-          
-          activeSounds[soundType].push(soundClone);
-          
-          // Clean up on sound end
-          soundClone.addEventListener('ended', () => {
-            if (activeSounds[soundType]) {
-              activeSounds[soundType] = activeSounds[soundType].filter(s => s !== soundClone);
-            }
-          });
-        }
-        
-        // Play immediately with highest priority - no timeouts
-        soundClone.play().catch(() => {
-          // Silent fail for autoplay restrictions - no console spam
-        });
-      } catch (e) {
-        // Silent fail to prevent console spam
-      }
-    } catch (e) {
-      // Silent fail
+    // Skip question-reveal if noreveal param is in URL
+    if (soundType === 'question-reveal' && window.location.search.includes('noreveal')) {
+      return;
     }
-  }, [volume, musicEnabled]);
-  
+
+    try {
+      // Try to get a preloaded sound from the pool
+      let soundToPlay: HTMLAudioElement | null = null;
+      
+      if (preloadedSounds[soundType] && preloadedSounds[soundType].length > 0) {
+        // Find an audio element that's not currently playing
+        soundToPlay = preloadedSounds[soundType].find(audio => 
+          audio.paused || audio.ended
+        ) || null;
+        
+        // If all are playing, clone the first one
+        if (!soundToPlay && preloadedSounds[soundType][0]) {
+          soundToPlay = preloadedSounds[soundType][0].cloneNode(true) as HTMLAudioElement;
+        }
+      }
+      
+      // Fallback to the sound map if no preloaded sound is available
+      if (!soundToPlay) {
+        const sound = soundsRef.current[soundType];
+        if (!sound) return;
+        
+        // Clone the sound to allow multiple plays
+        soundToPlay = sound.cloneNode(true) as HTMLAudioElement;
+      }
+      
+      if (soundToPlay) {
+        // Apply volume and mute settings
+        soundToPlay.volume = volume;
+        
+        // Apply mute settings based on sound type
+        if (soundType === 'background-music' as SoundType) {
+          soundToPlay.muted = !musicEnabled;
+        } else {
+          soundToPlay.muted = !effectsEnabled;
+        }
+        
+        // Play the sound with error handling - use catch to handle autoplay restrictions gracefully
+        soundToPlay.play().catch(error => {
+          console.error(`Error playing sound ${soundType}:`, error);
+        });
+        
+        // Track active sounds for cleanup
+        if (!activeSounds[soundType]) {
+          activeSounds[soundType] = [];
+        }
+        activeSounds[soundType].push(soundToPlay);
+        
+        // Clean up when sound finishes
+        soundToPlay.onended = () => {
+          const index = activeSounds[soundType]?.indexOf(soundToPlay!);
+          if (index !== -1) {
+            activeSounds[soundType].splice(index, 1);
+          }
+        };
+      }
+    } catch (error) {
+      console.error(`Error playing sound ${soundType}:`, error);
+    }
+  }, [volume, musicEnabled, effectsEnabled, isReady]);
+
   return { playSound };
 }; 

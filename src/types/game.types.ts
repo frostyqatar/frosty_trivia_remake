@@ -57,6 +57,7 @@ export interface GameState {
   timer: TimerState;
   volume: number;
   musicEnabled: boolean;
+  effectsEnabled: boolean;
   activeTeamIndex: TeamIndex;
   answerRevealed: boolean;
 }

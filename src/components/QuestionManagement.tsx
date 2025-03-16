@@ -16,6 +16,8 @@ import ImageCropper from './common/ImageCropper';
 // Import the new function
 import { importQuestionsFromCSV } from '../utils/csvImport';
 import { trackGameEvent } from '../services/analytics';
+// Import SoundControls
+
 
 // Temporary local implementation until module resolution is fixed
 const trackEvent = (category: string, action: string, label?: string, value?: number) => {
@@ -152,7 +154,7 @@ const SearchInput = styled.input`
   padding: 12px 20px;
   border-radius: 12px;
   border: 1px solid #e0e0e0;
-  width: 300px;
+  width: 100%;
   font-size: 16px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
   transition: all 0.2s ease;
@@ -634,15 +636,24 @@ const CategoryCard = styled.div`
   flex-direction: column;
   position: relative;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  cursor: pointer;
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
   }
   
-  & > * + * {
-    margin-top: 12px;
+  &:hover::after {
+    content: "Click to view questions";
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    font-size: 12px;
+    color: #0099cc;
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 4px 8px;
+    border-radius: 4px;
   }
 `;
 
@@ -883,6 +894,34 @@ const BatchSelect = styled.select`
   }
 `;
 
+// Add a styled component for the sound controls container
+const SoundControlsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  margin-right: 16px;
+`;
+
+// Add these styled component definitions after the other styled components and before the QuestionManagement component
+
+const SearchBar = styled.div`
+  display: flex;
+  width: 100%;
+  margin-bottom: 20px;
+  position: relative;
+`;
+
+const SearchButton = styled.button`
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #666;
+  cursor: pointer;
+`;
+
 const QuestionManagement: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
@@ -973,17 +1012,31 @@ const QuestionManagement: React.FC = () => {
   
   // Add this function to calculate pagination data without modifying state
   const calculatePagination = () => {
-    // Get all questions and apply search filter if needed
+    // Get all questions from all categories in a flat array
     let filteredQuestions = flattenQuestions();
     
+    // Apply search filter
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
-      filteredQuestions = filteredQuestions.filter(q => 
-        q.question.toLowerCase().includes(lowerQuery) || 
-        q.answer.toLowerCase().includes(lowerQuery) ||
-        q.categoryName.toLowerCase().includes(lowerQuery)
-      );
+      
+      // Special filters for category:name
+      if (lowerQuery.startsWith('category:')) {
+        const categoryName = lowerQuery.substring(9).trim().toLowerCase();
+        filteredQuestions = filteredQuestions.filter(q => 
+          q.categoryName.toLowerCase().includes(categoryName)
+        );
+      } else {
+        // Regular search across all fields
+        filteredQuestions = filteredQuestions.filter(q => 
+          q.question.toLowerCase().includes(lowerQuery) || 
+          q.answer.toLowerCase().includes(lowerQuery) ||
+          q.categoryName.toLowerCase().includes(lowerQuery)
+        );
+      }
     }
+    
+    // Apply sorting
+    filteredQuestions = sortQuestions(filteredQuestions);
     
     // Calculate pagination
     const totalItems = filteredQuestions.length;
@@ -1012,7 +1065,7 @@ const QuestionManagement: React.FC = () => {
       // Update displayed questions
       setDisplayedQuestions(paginatedQuestions);
     }
-  }, [currentPage, searchQuery, itemsPerPage, categories]);
+  }, [currentPage, searchQuery, itemsPerPage, categories, sortBy, sortDirection]);
   
   // Ensure the form submission correctly adds questions
   const handleSubmit = () => {
@@ -1220,6 +1273,15 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleExportCSV = () => {
+    // Prompt for password using browser's prompt dialog
+    const enteredPassword = prompt("Enter the export password:");
+    
+    // Check if password is correct
+    if (enteredPassword !== "LcCxMx") {
+      alert("Incorrect password. Export cancelled.");
+      return;
+    }
+    
     // Prepare data for CSV export with all media fields
     const csvData = flattenQuestions().map(q => ({
       category: q.categoryName,
@@ -1327,9 +1389,21 @@ const QuestionManagement: React.FC = () => {
   
   // Add handler for batch size change
   const handleBatchSizeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const newSize = parseInt(e.target.value);
-    setBatchSize(newSize);
-    setDisplayedQuestions(flattenQuestions().slice(0, newSize));
+    const value = e.target.value;
+    
+    // Handle "all" as a special case
+    if (value === 'all') {
+      const totalQuestions = flattenQuestions().length;
+      setBatchSize(totalQuestions);
+      setItemsPerPage(totalQuestions > 0 ? totalQuestions : 1000000); // Use a very high number or actual count
+    } else {
+      const newSize = parseInt(value);
+      setBatchSize(newSize);
+      setItemsPerPage(newSize);
+    }
+    
+    // Reset to first page when changing batch size
+    setCurrentPage(1);
   };
   
   // Add handler for new category
@@ -1520,6 +1594,15 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleExportAllData = () => {
+    // Prompt for password using browser's prompt dialog
+    const enteredPassword = prompt("Enter the export password:");
+    
+    // Check if password is correct
+    if (enteredPassword !== "LcCxMx") {
+      alert("Incorrect password. Export cancelled.");
+      return;
+    }
+    
     try {
       // Create a downloadable JSON file with all categories data
       const dataStr = JSON.stringify(categories, null, 2);
@@ -1534,6 +1617,64 @@ const QuestionManagement: React.FC = () => {
     } catch (e) {
       console.error('Error exporting data:', e);
       alert('Error exporting data. See console for details.');
+    }
+  };
+  
+  const handleExportAsTypeScript = () => {
+    // Prompt for password using browser's prompt dialog
+    const enteredPassword = prompt("Enter the export password:");
+    
+    // Check if password is correct
+    if (enteredPassword !== "LcCxMx") {
+      alert("Incorrect password. Export cancelled.");
+      return;
+    }
+    
+    try {
+      // Create clean copy of categories without the 'answered' property 
+      // which is not needed in the source file and removed when embedding
+      const cleanedCategories = categories.map((category: Category) => {
+        return {
+          id: category.id,
+          name: category.name,
+          icon: category.icon,
+          questions: category.questions.map((q: Question) => ({
+            value: q.value,
+            question: q.question,
+            answer: q.answer,
+            image: q.image || undefined,
+            audio: q.audio || undefined,
+            video: q.video || undefined
+          }))
+        };
+      });
+      
+      // Format the data as TypeScript code
+      const tsCode = `import { Category } from '../types/game.types';\n\n` +
+        `export const categories: Category[] = ${JSON.stringify(cleanedCategories, null, 2)};\n\n` +
+        `export const getInitialCategories = (): Category[] => {\n` +
+        `  return JSON.parse(JSON.stringify(categories));\n` +
+        `};\n\n` +
+        `export const resetToDefaultCategories = (): Category[] => {\n` +
+        `  return JSON.parse(JSON.stringify(categories));\n` +
+        `};\n`;
+      
+      // Create a downloadable TS file
+      const dataUri = 'data:text/typescript;charset=utf-8,'+ encodeURIComponent(tsCode);
+      const exportFileName = `questions-${new Date().toISOString().split('T')[0]}.ts`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileName);
+      linkElement.click();
+      
+      // Track export event
+      trackGameEvent.exportQuestions(
+        cleanedCategories.reduce((sum: number, cat: Category) => sum + cat.questions.length, 0)
+      );
+    } catch (e) {
+      console.error('Error exporting as TypeScript:', e);
+      alert('Error exporting as TypeScript. See console for details.');
     }
   };
   
@@ -1655,8 +1796,8 @@ const QuestionManagement: React.FC = () => {
       const generatedContent = response.data.candidates[0].content.parts[0].text;
       
       // Simple parsing assuming format "Question: ... Answer: ..."
-      const questionMatch = generatedContent.match(/Question:(.+?)(?=Answer:)/s);
-      const answerMatch = generatedContent.match(/Answer:(.+)/s);
+      const questionMatch = generatedContent.match(/Question:([\s\S]+?)(?=Answer:)/);
+      const answerMatch = generatedContent.match(/Answer:([\s\S]+)/);
       
       const generatedQuestion = questionMatch ? questionMatch[1].trim() : '';
       const generatedAnswer = answerMatch ? answerMatch[1].trim() : '';
@@ -1872,6 +2013,22 @@ const QuestionManagement: React.FC = () => {
     });
   };
   
+  // Add a function to handle clicking on a category to view its questions
+  const handleViewCategoryQuestions = (categoryId: string) => {
+    // Get the category name for the search
+    const categoryName = categories.find((c: Category) => c.id === categoryId)?.name || '';
+    
+    // Update the search query to reflect that we're viewing a specific category
+    // This will trigger the useEffect that recalculates pagination
+    setSearchQuery(`category:${categoryName}`);
+    
+    // Reset to the first page
+    setCurrentPage(1);
+    
+    // Scroll to the questions section
+    document.querySelector('.question-table')?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
@@ -1882,27 +2039,20 @@ const QuestionManagement: React.FC = () => {
       <Content>
         <ActionBar>
           <ButtonGroup>
-           <Button 
+            <Button 
               onClick={handleReturnToSetup}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               ← Back to Setup
             </Button>
-           <ImportButton 
+            <ImportButton 
               onClick={handleImportClick}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               📥 Import CSV
             </ImportButton>
-            <Button 
-              onClick={handleExportCSV}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              📤 Export CSV
-            </Button>
             <FileInput 
               type="file" 
               ref={fileInputRef} 
@@ -1910,19 +2060,20 @@ const QuestionManagement: React.FC = () => {
               onChange={handleImportCSV} 
             />
             <Button 
+              onClick={handleExportCSV}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              📤 Export CSV
+            </Button>
+            <Button 
               onClick={() => handleOpenModal('add')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               ➕ Add Question
             </Button>
-            <Button 
-              onClick={() => setShowAddCategoryModal(true)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              ➕ Add Category
-            </Button>
+      
             <Button 
               onClick={handleSaveToLocalStorage}
               whileHover={{ scale: 1.05 }}
@@ -1930,7 +2081,7 @@ const QuestionManagement: React.FC = () => {
             >
               💾 Save Edits to Browser
             </Button>
-           
+            
             <Button
               onClick={handleToggleSelectMode}
               whileHover={{ scale: 1.05 }}
@@ -1939,30 +2090,35 @@ const QuestionManagement: React.FC = () => {
             >
               {selectMode ? '❌ Cancel Selection' : '✓ Select Questions'}
             </Button>
-             
-             <Button 
-        onClick={handleForceReload}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-      >
-        🔄 Force Reload Questions
-      </Button>
-      
-     
-        <Button 
-          onClick={handleExportAllData}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          💾 Export All Data
-        </Button>
-        <SearchInput 
-              type="text" 
-              placeholder="Search questions..." 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-     <DangerButtonGroup>
+              
+            <Button 
+              onClick={handleForceReload}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              🔄 Force Reload Questions
+            </Button>
+            
+            <Button 
+              onClick={handleExportAllData}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              💾 Export All Data
+            </Button>
+            
+            <Button 
+              onClick={handleExportAsTypeScript}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              📋 Export as TypeScript
+            </Button>
+            
+         
+          </ButtonGroup>
+          
+          <DangerButtonGroup>
             {selectMode && selectedQuestions.length > 0 && (
               <DangerButton
                 onClick={handleDeleteSelected}
@@ -1980,16 +2136,26 @@ const QuestionManagement: React.FC = () => {
               ⚠️ Delete All Questions
             </DangerButton>
           </DangerButtonGroup>
-          </ButtonGroup>
-          
-         
-          
-       
         </ActionBar>
+        
+        <SearchBar>
+          <SearchInput
+            type="text"
+            placeholder="Search questions, answers, or categories..."
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setCurrentPage(1); // Reset to first page on search
+            }}
+          />
+        </SearchBar>
         
         <BatchSizeSelector>
           <BatchSelectLabel>Questions per page:</BatchSelectLabel>
-          <BatchSelect value={batchSize} onChange={handleBatchSizeChange}>
+          <BatchSelect 
+            value={typeof batchSize === 'number' && batchSize > 1000 ? 'all' : batchSize} 
+            onChange={handleBatchSizeChange}
+          >
             <option value={10}>10</option>
             <option value={20}>20</option>
             <option value={50}>50</option>
@@ -1997,53 +2163,49 @@ const QuestionManagement: React.FC = () => {
             <option value={200}>200</option>
             <option value={500}>500</option>
             <option value={1000}>1000</option>
+            <option value="all">All</option>
           </BatchSelect>
         </BatchSizeSelector>
         
         {displayedQuestions.length > 0 ? (
           <>
-            <Table>
+            <Table className="question-table">
               <thead>
                 <TableRow>
-                  {selectMode && <TableHeader style={{ width: '40px' }}></TableHeader>}
-                  <TableHeader>
-                    <TableRow>
-                      {selectMode && (
-                        <TableHeaderCell style={{ width: '50px' }}>
-                          <input 
-                            type="checkbox" 
-                            checked={selectedQuestions.length === flattenQuestions().length}
-                            onChange={handleSelectAll}
-                          />
-                        </TableHeaderCell>
-                      )}
-                      <TableHeaderCell 
-                        onClick={() => handleSort('categoryName')}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        Category {sortBy === 'categoryName' && (sortDirection === 'asc' ? '▲' : '▼')}
-                      </TableHeaderCell>
-                      <TableHeaderCell 
-                        onClick={() => handleSort('value')}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        Value {sortBy === 'value' && (sortDirection === 'asc' ? '▲' : '▼')}
-                      </TableHeaderCell>
-                      <TableHeaderCell 
-                        onClick={() => handleSort('question')}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        Question {sortBy === 'question' && (sortDirection === 'asc' ? '▲' : '▼')}
-                      </TableHeaderCell>
-                      <TableHeaderCell 
-                        onClick={() => handleSort('answer')}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        Answer {sortBy === 'answer' && (sortDirection === 'asc' ? '▲' : '▼')}
-                      </TableHeaderCell>
-                      <TableHeaderCell style={{ width: '120px' }}>Actions</TableHeaderCell>
-                    </TableRow>
-                  </TableHeader>
+                  {selectMode && (
+                    <TableHeaderCell style={{ width: '50px' }}>
+                      <input 
+                        type="checkbox" 
+                        checked={selectedQuestions.length === flattenQuestions().length}
+                        onChange={handleSelectAll}
+                      />
+                    </TableHeaderCell>
+                  )}
+                  <TableHeaderCell 
+                    onClick={() => handleSort('categoryName')}
+                    style={{ cursor: 'pointer', width: '20%' }}
+                  >
+                    Category {sortBy === 'categoryName' && (sortDirection === 'asc' ? '▲' : '▼')}
+                  </TableHeaderCell>
+                  <TableHeaderCell 
+                    onClick={() => handleSort('value')}
+                    style={{ cursor: 'pointer', width: '10%' }}
+                  >
+                    Value {sortBy === 'value' && (sortDirection === 'asc' ? '▲' : '▼')}
+                  </TableHeaderCell>
+                  <TableHeaderCell 
+                    onClick={() => handleSort('question')}
+                    style={{ cursor: 'pointer', width: '30%' }}
+                  >
+                    Question {sortBy === 'question' && (sortDirection === 'asc' ? '▲' : '▼')}
+                  </TableHeaderCell>
+                  <TableHeaderCell 
+                    onClick={() => handleSort('answer')}
+                    style={{ cursor: 'pointer', width: '30%' }}
+                  >
+                    Answer {sortBy === 'answer' && (sortDirection === 'asc' ? '▲' : '▼')}
+                  </TableHeaderCell>
+                  <TableHeaderCell style={{ width: '10%' }}>Actions</TableHeaderCell>
                 </TableRow>
               </thead>
               <tbody>
@@ -2436,21 +2598,51 @@ const QuestionManagement: React.FC = () => {
       
       <CategoriesSection>
         <CategoriesHeader>Category Management</CategoriesHeader>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+          <Button 
+            onClick={handleReturnToSetup}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            ← Back to Setup
+          </Button>
+          <Button 
+            onClick={() => setShowAddCategoryModal(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            ➕ Add Category
+          </Button>
+        </div>
         <CategoryList>
           {categories.map((category: Category) => (
-            <CategoryCard key={category.id}>
-              <CategoryIcon>{category.icon}</CategoryIcon>
+            <CategoryCard 
+              key={category.id}
+              onClick={(e) => {
+                // Only trigger if not clicking on edit or delete buttons
+                if (!(e.target as HTMLElement).closest('button')) {
+                  handleViewCategoryQuestions(category.id);
+                }
+              }}
+            >
+              <CategoryIcon>{category.icon || '❓'}</CategoryIcon>
               <CategoryName>{category.name}</CategoryName>
               <CategoryInfo>{category.questions.length} questions</CategoryInfo>
               <CategoryEditButton 
-                onClick={() => handleOpenEditCategoryModal(category)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleOpenEditCategoryModal(category);
+                }}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
                 ✏️
               </CategoryEditButton>
               <CategoryDeleteButton 
-                onClick={() => handleDeleteCategory(category.id)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteCategory(category.id);
+                }}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >

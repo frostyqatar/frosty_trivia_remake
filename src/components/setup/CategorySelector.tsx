@@ -2,13 +2,14 @@ import React, { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
+import { selectCategory, deselectCategory } from '../../store/gameSlice';
 import { RootState } from '../../store';
-import { selectCategory, deselectCategory, toggleMusic } from '../../store/gameSlice';
-import { BidirectionalText } from '../../utils/textUtils';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
-import { clearSavedGame } from '../../utils/storageUtils';
 import { showNotification } from '../../components/common/GameNotification';
+import { clearSavedGame } from '../../utils/storageUtils';
 import { Category } from '../../types/game.types';
+
+import { BidirectionalText } from '../../utils/textUtils';
 
 const Container = styled.div`
   display: flex;
@@ -26,14 +27,21 @@ const Container = styled.div`
   z-index: 1;
 `;
 
-const Title = styled.h2`
+const TitleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 16px;
-  color: #0f5e87;
-  font-size: 24px;
-  text-align: center;
-  font-weight: 700;
   position: relative;
   z-index: 1;
+`;
+
+const Title = styled.h2`
+  color: #0f5e87;
+  font-size: 24px;
+  font-weight: 700;
+  position: relative;
+  margin-right: 16px;
 `;
 
 const CounterText = styled.div`
@@ -108,29 +116,13 @@ const CategoryName = styled.div`
 
 const ActionBar = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   margin-bottom: 20px;
   position: relative;
   z-index: 1;
 `;
 
-const MuteButton = styled.button`
-  background: none;
-  border: none;
-  font-size: 24px;
-  cursor: pointer;
-  padding: 8px;
-  color: #0f5e87;
-  transition: all 0.2s;
-  
-  &:hover {
-    color: #0099cc;
-    transform: scale(1.1);
-  }
-`;
-
-// Style the emergency reset button
 const EmergencyResetButton = styled.button`
   background: linear-gradient(135deg, #ff6464 0%, #ff5252 100%);
   color: white;
@@ -164,8 +156,6 @@ const CategorySelector: React.FC = () => {
   const selectedCategories = useSelector((state: RootState) => 
     state.selectedCategories || []
   );
-  
-  const musicEnabled = useSelector((state: RootState) => state.musicEnabled);
   
   const { playSound } = useSoundEffects();
   
@@ -203,24 +193,16 @@ const CategorySelector: React.FC = () => {
       console.warn('Cannot select more categories - max limit reached');
     }
   };
-
-  const handleToggleSound = () => {
-    dispatch(toggleMusic());
-    playSound('button-click');
-  };
   
   return (
     <Container>
-      <Title>📚 اختر الفئات (١-٨)</Title>
+      <TitleContainer>
+        <Title>📚 اختر الفئات (١-٨)</Title>
+        
+      </TitleContainer>
       <CounterText>اختر الفئات: {selectedCategories.length}/8</CounterText>
       
       <ActionBar>
-        {/* Add mute button */}
-        <MuteButton onClick={handleToggleSound}>
-          {musicEnabled ? '🔊' : '🔇'}
-        </MuteButton>
-        
-        {/* Add a reset button for debugging */}
         <EmergencyResetButton onClick={handleEmergencyReset}>
           Emergency Reset
         </EmergencyResetButton>
@@ -250,4 +232,4 @@ const CategorySelector: React.FC = () => {
   );
 };
 
-export default CategorySelector; 
+export default CategorySelector;

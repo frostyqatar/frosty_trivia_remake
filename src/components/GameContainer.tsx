@@ -15,6 +15,9 @@ import { useSoundEffects } from '../hooks/useSoundEffects';
 import { toggleMusic, setVolume, setGamePhase } from '../store/gameSlice';
 import { useAbilities } from '../hooks/useAbilities';
 import QuestionManagement from './QuestionManagement';
+import Legend from './effects/Legend';
+import SoundControls from './common/SoundControls';
+import CursorStars from './effects/CursorStars';
 
 const Container = styled.div`
   display: flex;
@@ -326,30 +329,10 @@ const GameContainer: React.FC = () => {
         />
       )}
       
+      <CursorStars active={true} hideDefaultCursor={false} />
+      
       <ControlsBar>
-        <AudioControlsContainer
-          onMouseEnter={() => setShowVolumeSlider(true)}
-          onMouseLeave={() => {
-            setTimeout(() => setShowVolumeSlider(false), 1000);
-          }}
-        >
-          <MusicButton onClick={handleToggleMusic}>
-            {musicEnabled ? '🔊' : '🔇'}
-          </MusicButton>
-          
-          <VolumeSlider
-            type="range"
-            min="0"
-            max="100"
-            value={volume * 100}
-            onChange={handleVolumeChange}
-            style={{
-              opacity: showVolumeSlider ? 1 : 0,
-              visibility: showVolumeSlider ? 'visible' : 'hidden',
-              transitionDelay: showVolumeSlider ? '0s' : '0.5s'
-            }}
-          />
-        </AudioControlsContainer>
+        <SoundControls />
         
         <GameTitle>Frosty Trivia ☃️</GameTitle>
         
@@ -402,6 +385,17 @@ const GameContainer: React.FC = () => {
           )}
         </TeamsContainer>
       </GameContent>
+      
+      <Legend />
+      
+      {gamePhase === 'setup' && (
+        <Snowfall 
+          speed={[0.5, 1.5]} 
+          wind={[-0.5, 0.5]} 
+          radius={[0.5, 1.5]} 
+          snowflakeCount={200}
+        />
+      )}
     </Container>
   );
 };
