@@ -27,6 +27,7 @@ const initialState: GameState = {
   effectsEnabled: true,
   activeTeamIndex: 0,
   answerRevealed: false,
+  shockedTeam: null,
 };
 
 const gameSlice = createSlice({
@@ -269,9 +270,22 @@ const gameSlice = createSlice({
       
       // This flag should be reset when moving to the next question
     },
+    
+    setActiveTeamIndex: (state, action: PayloadAction<TeamIndex>) => {
+      state.activeTeamIndex = action.payload;
+    },
+    
+    setShockedTeam: (state, action: PayloadAction<TeamIndex | null>) => {
+      state.shockedTeam = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(resetGame, (state) => {
+      // Save sound settings before reset
+      const savedVolume = state.volume;
+      const savedMusicEnabled = state.musicEnabled;
+      const savedEffectsEnabled = state.effectsEnabled;
+      
       // Reset to initial state but preserve original categories
       const preservedCategories = JSON.parse(JSON.stringify(state.categories)).map((cat: Category) => {
         // Reset answered flag for all questions AND shuffle them
@@ -285,18 +299,13 @@ const gameSlice = createSlice({
         };
       });
       
-      // Preserve sound settings
-      const preservedVolume = state.volume;
-      const preservedMusicEnabled = state.musicEnabled;
-      const preservedEffectsEnabled = state.effectsEnabled;
-      
       // Reset the state 
       Object.assign(state, initialState);
       
-      // Restore the preserved settings
-      state.volume = preservedVolume;
-      state.musicEnabled = preservedMusicEnabled;
-      state.effectsEnabled = preservedEffectsEnabled;
+      // Restore the sound settings
+      state.volume = savedVolume;
+      state.musicEnabled = savedMusicEnabled;
+      state.effectsEnabled = savedEffectsEnabled;
       
       // Restore the categories with reset and shuffled questions
       state.categories = preservedCategories;
@@ -341,6 +350,8 @@ export const {
   setBothTeamsTimedOut,
   updateCategories,
   blockTeamFromAnswering,
+  setActiveTeamIndex,
+  setShockedTeam,
 } = gameSlice.actions;
 
 export const resetGame = createAction('game/resetGame');

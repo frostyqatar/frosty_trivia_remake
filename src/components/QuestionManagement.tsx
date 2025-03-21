@@ -1594,15 +1594,6 @@ const QuestionManagement: React.FC = () => {
   };
   
   const handleExportAllData = () => {
-    // Prompt for password using browser's prompt dialog
-    const enteredPassword = prompt("Enter the export password:");
-    
-    // Check if password is correct
-    if (enteredPassword !== "LcCxMx") {
-      alert("Incorrect password. Export cancelled.");
-      return;
-    }
-    
     try {
       // Create a downloadable JSON file with all categories data
       const dataStr = JSON.stringify(categories, null, 2);

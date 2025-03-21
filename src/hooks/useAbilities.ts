@@ -166,10 +166,9 @@ export const useAbilities = () => {
           clearTimeout(googleSearchTimeoutId);
         }
         
-        // Start a timer to end the Google search (but don't show a notification)
+        // Start a timer to notify when the search time is over
         googleSearchTimeoutId = window.setTimeout(() => {
-          // End the Google search timer silently
-          triggerGoogleSearchTimer(false, '');
+          showNotification('⏱️ Google search time is over!');
           googleSearchTimeoutId = null;
         }, 25000);
         break;

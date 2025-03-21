@@ -66,17 +66,10 @@ const GameNotification: React.FC = () => {
       }, duration);
     };
     
-    const handleHideAllNotifications = () => {
-      // Hide all notifications immediately
-      setVisible(false);
-    };
-    
     window.addEventListener('game-notification', handleNotification as EventListener);
-    window.addEventListener('hide-all-notifications', handleHideAllNotifications);
     
     return () => {
       window.removeEventListener('game-notification', handleNotification as EventListener);
-      window.removeEventListener('hide-all-notifications', handleHideAllNotifications);
     };
   }, []);
   

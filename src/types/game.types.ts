@@ -60,6 +60,7 @@ export interface GameState {
   effectsEnabled: boolean;
   activeTeamIndex: TeamIndex;
   answerRevealed: boolean;
+  shockedTeam: TeamIndex | null;
 }
 
 export type TeamIndex = 0 | 1;

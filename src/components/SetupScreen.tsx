@@ -180,22 +180,40 @@ const StartButton = styled(motion.button)`
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: all 0.6s ease;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: all 0.5s ease;
     z-index: -1;
   }
   
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, ${colors.accent}88 0%, ${colors.accentHover}88 100%);
+    opacity: 0;
+    border-radius: 50px;
+    transition: opacity 0.3s ease;
+    z-index: -2;
+  }
+  
   &:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 30px rgba(255, 126, 95, 0.5);
+    transform: translateY(-5px) scale(1.03);
+    box-shadow: 0 15px 30px rgba(255, 126, 95, 0.5), 0 0 15px rgba(255, 126, 95, 0.3);
     
     &::before {
       left: 100%;
     }
+    
+    &::after {
+      opacity: 1;
+    }
   }
   
   &:active {
-    transform: translateY(1px);
+    transform: translateY(1px) scale(0.98);
     box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
   }
   
@@ -234,22 +252,41 @@ const Button = styled(motion.button)`
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: all 0.6s ease;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: all 0.5s ease;
     z-index: -1;
   }
   
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, ${colors.primary}88 0%, ${colors.primaryLight}88 100%);
+    opacity: 0;
+    border-radius: 12px;
+    transition: opacity 0.3s ease;
+    z-index: -2;
+  }
+  
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 20px rgba(0, 153, 204, 0.3);
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 20px rgba(0, 153, 204, 0.3), 0 0 15px rgba(0, 153, 204, 0.2);
     
     &::before {
       left: 100%;
     }
+    
+    &::after {
+      opacity: 1;
+    }
   }
   
   &:active {
-    transform: translateY(1px);
+    transform: translateY(1px) scale(0.98);
+    box-shadow: 0 3px 10px rgba(0, 153, 204, 0.2);
   }
   
   &:disabled {
@@ -262,6 +299,11 @@ const Button = styled(motion.button)`
 
 const FeedbackButton = styled(Button)`
   background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%);
+  position: relative;
+  
+  &::before {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  }
 `;
 
 const ButtonContainer = styled.div`
@@ -585,8 +627,8 @@ const SetupScreen: React.FC = () => {
       {/* Header section */}
       <Header as={motion.header} variants={itemVariants}>
         <Logo>Frosty Trivia ☃️</Logo>
-        <CreatorInfo>برمجة: عبدالله الشاعر - QATAR</CreatorInfo>
-        <Subtitle>استعد لتجربة سؤال وجواب رائعة ومسلية! اختبر معلوماتك وتنافس في هذه اللعبة الجماعية المثيرة</Subtitle>
+        <CreatorInfo>برمجة:  - </CreatorInfo>
+        <Subtitle>استعد لتجربة لعبة سؤال وجواب رائعة ومسلية! اختبر معلوماتك وتنافس في هذه اللعبة الجماعية </Subtitle>
         
         <SoundControlsWrapper>
           <SoundControls />
@@ -605,16 +647,26 @@ const SetupScreen: React.FC = () => {
       <ButtonContainer as={motion.div} variants={itemVariants}>
         <FeedbackButton
           onClick={() => setIsFeedbackModalOpen(true)}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.05, y: -5 }}
+          whileTap={{ scale: 0.95, y: 2 }}
+          initial={{ boxShadow: "0 8px 15px rgba(0, 153, 204, 0.2)" }}
+          animate={{ 
+            boxShadow: ["0 8px 15px rgba(0, 153, 204, 0.2)", "0 12px 20px rgba(0, 153, 204, 0.3)", "0 8px 15px rgba(0, 153, 204, 0.2)"],
+            transition: { duration: 2, repeat: Infinity, ease: "easeInOut" }
+          }}
         >
           عطنا رايك 📝
         </FeedbackButton>
         
         <Button
           onClick={() => dispatch(setGamePhase('questionManagement'))}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.05, y: -5 }}
+          whileTap={{ scale: 0.95, y: 2 }}
+          initial={{ boxShadow: "0 8px 15px rgba(0, 153, 204, 0.2)" }}
+          animate={{ 
+            boxShadow: ["0 8px 15px rgba(0, 153, 204, 0.2)", "0 12px 20px rgba(0, 153, 204, 0.3)", "0 8px 15px rgba(0, 153, 204, 0.2)"],
+            transition: { duration: 2, repeat: Infinity, ease: "easeInOut", delay: 0.5 }
+          }}
         >
           📝 إدارة الأسئلة
         </Button>
@@ -655,18 +707,36 @@ const SetupScreen: React.FC = () => {
         <StartButton
           disabled={!isReady}
           onClick={handleStartGame}
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.08, y: -5 }}
+          whileTap={{ scale: 0.95, y: 2 }}
           animate={isReady ? {
-            boxShadow: ["0 10px 25px rgba(255, 126, 95, 0.4)", "0 10px 25px rgba(255, 126, 95, 0.7)", "0 10px 25px rgba(255, 126, 95, 0.4)"],
+            boxShadow: ["0 10px 25px rgba(255, 126, 95, 0.4)", "0 15px 35px rgba(255, 126, 95, 0.7)", "0 10px 25px rgba(255, 126, 95, 0.4)"],
+            y: [0, -5, 0],
+            scale: [1, 1.05, 1],
             transition: {
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
+              boxShadow: {
+                duration: 2,
+                repeat: Infinity,
+                ease: "easeInOut"
+              },
+              y: {
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                repeatType: "reverse"
+              },
+              scale: {
+                duration: 1.5,
+                repeat: Infinity,
+                ease: "easeInOut",
+                repeatType: "reverse"
+              }
             }
           } : {}}
         >
+          {isReady && <span style={{ position: 'absolute', top: '-15px', left: '-15px', fontSize: '28px', animation: 'spin 4s linear infinite' }}>✨</span>}
           ابدأ اللعبة
+          {isReady && <span style={{ position: 'absolute', bottom: '-15px', right: '-15px', fontSize: '28px', animation: 'spin 4s linear infinite' }}>✨</span>}
         </StartButton>
       </StartButtonContainer>
       
@@ -677,5 +747,19 @@ const SetupScreen: React.FC = () => {
     </Container>
   );
 };
+
+// Add this at the end of the file, before the export statement
+const keyframes = `
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+`;
+
+// Add the keyframes to the document
+const style = document.createElement('style');
+style.type = 'text/css';
+style.appendChild(document.createTextNode(keyframes));
+document.head.appendChild(style);
 
 export default SetupScreen; 

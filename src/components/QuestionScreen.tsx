@@ -459,12 +459,6 @@ const QuestionScreen: React.FC = () => {
     // Play sound first before state updates to ensure it plays reliably
     playSound('answer-reveal');
     
-    // Stop any active Google search timer
-    const event = new CustomEvent('google-search-timer', {
-      detail: { isActive: false, teamName: '' }
-    });
-    window.dispatchEvent(event);
-    
     // Switch active team before revealing answer
     dispatch(setActiveTeam(activeTeamIndex === 0 ? 1 : 0));
     

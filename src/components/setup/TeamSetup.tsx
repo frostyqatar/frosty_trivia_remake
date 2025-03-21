@@ -128,7 +128,6 @@ export const TeamSetup: React.FC<TeamSetupProps> = ({ teamNumber, onChange, team
   }, [teamData, teamNumber, onChange]);
   
   const handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    playSound('button-click');
     onChange({
       ...teamData,
       name: e.target.value

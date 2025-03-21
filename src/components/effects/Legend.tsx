@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const ToggleButton = styled(motion.button)`
   position: fixed;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 494px;
+  top: 450px;
+  transform: none;
   background-color: #0a4d73;
   color: white;
   border: none;
@@ -37,7 +37,7 @@ const ArrowIcon = styled.span<{ $isOpen: boolean }>`
 // Legend container with fixed positioning and slide animation
 const LegendContainer = styled(motion.div)`
   position: fixed;
-  right: 199px; /* 1920 - 1721 = 199 */
+  right: 199px;
   top: 180px;
   width: 295px;
   height: 541px;
@@ -105,15 +105,19 @@ const FeatureDescription = styled.p`
 // Animation variants
 const legendVariants = {
   open: { 
-    opacity: 1,
+    x: 0,
     transition: { 
-      duration: 0.3
+      type: "spring",
+      stiffness: 300,
+      damping: 30
     }
   },
   closed: { 
-    opacity: 0,
+    x: 295,
     transition: {
-      duration: 0.2
+      type: "spring",
+      stiffness: 300,
+      damping: 30
     }
   }
 };

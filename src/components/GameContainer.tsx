@@ -12,7 +12,7 @@ import AnswerReveal from './AnswerReveal';
 import SetupScreen from './SetupScreen';
 import EndGame from './EndGame';
 import { useSoundEffects } from '../hooks/useSoundEffects';
-import { toggleMusic, setVolume, setGamePhase } from '../store/gameSlice';
+import { toggleMusic, setVolume, setGamePhase, setActiveTeamIndex, setShockedTeam } from '../store/gameSlice';
 import { useAbilities } from '../hooks/useAbilities';
 import QuestionManagement from './QuestionManagement';
 import Legend from './effects/Legend';

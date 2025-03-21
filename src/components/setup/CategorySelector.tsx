@@ -62,41 +62,34 @@ const CategoriesGrid = styled.div`
   z-index: 1;
 `;
 
-const CategoryCard = styled(motion.div)<{ selected: boolean }>`
-  background: ${props => props.selected 
-    ? 'linear-gradient(135deg, #0099cc 0%, #66d4ff 100%)' 
-    : 'rgba(255, 255, 255, 0.9)'};
-  color: ${props => props.selected ? 'white' : '#0f5e87'};
-  padding: 16px;
-  border-radius: 12px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  backdrop-filter: blur(8px);
-  border: 2px solid ${props => props.selected 
-    ? 'rgba(255, 255, 255, 0.3)' 
-    : 'rgba(102, 212, 255, 0.3)'};
-  box-shadow: ${props => props.selected 
-    ? '0 6px 20px rgba(0, 153, 204, 0.25)' 
-    : '0 4px 15px rgba(0, 153, 204, 0.15)'};
-  height: 130px;
-  overflow: hidden;
-  
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 153, 204, 0.25);
-    border-color: ${props => props.selected 
-      ? 'rgba(255, 255, 255, 0.5)' 
-      : 'rgba(102, 212, 255, 0.5)'};
+// Add a keyframes definition for the bounce animation
+const bounceKeyframes = `
+  @keyframes bounceAnimation {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
   }
 `;
 
-const CategoryIcon = styled.div`
-  font-size: 32px;
+// Create a style element and append the keyframes
+const style = document.createElement('style');
+style.type = 'text/css';
+style.appendChild(document.createTextNode(bounceKeyframes));
+document.head.appendChild(style);
+
+// Add a styled component for the bouncing emoji
+const CategoryEmoji = styled.span<{ $selected: boolean }>`
+  font-size: 36px;
   margin-bottom: 8px;
+  display: block;
+  transition: all 0.3s ease;
+  animation: ${props => props.$selected ? 'bounceAnimation 1.5s infinite ease-in-out' : 'none'};
+  transform-origin: center;
+  
+  ${props => !props.$selected && `
+    &:hover {
+      transform: scale(1.2);
+    }
+  `}
 `;
 
 const CategoryName = styled.div`
@@ -112,6 +105,65 @@ const CategoryName = styled.div`
   line-height: 1.3;
   min-height: 40px;
   color: currentColor;
+`;
+
+const CategoryCard = styled(motion.div)<{ selected: boolean }>`
+  background-color: ${props => props.selected ? 'rgba(0, 153, 204, 0.15)' : 'rgba(255, 255, 255, 0.7)'};
+  border: 2px solid ${props => props.selected ? '#0099cc' : 'rgba(0, 153, 204, 0.1)'};
+  border-radius: 16px;
+  padding: 16px;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1/1;
+  position: relative;
+  overflow: hidden;
+  box-shadow: ${props => props.selected ? 
+    '0 8px 20px rgba(0, 153, 204, 0.3), 0 0 15px rgba(0, 153, 204, 0.2) inset' : 
+    '0 4px 8px rgba(0, 0, 0, 0.05)'
+  };
+  
+  // Add pulse glow effect for selected cards
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle, rgba(102, 212, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
+    opacity: ${props => props.selected ? 1 : 0};
+    transition: opacity 0.3s ease;
+    z-index: -1;
+    animation: ${props => props.selected ? 'pulse 2s infinite ease-in-out' : 'none'};
+  }
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
+    z-index: -2;
+  }
+  
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 153, 204, 0.2);
+    background-color: ${props => props.selected ? 'rgba(0, 153, 204, 0.2)' : 'rgba(255, 255, 255, 0.9)'};
+  }
+  
+  @keyframes pulse {
+    0% { opacity: 0.5; }
+    50% { opacity: 1; }
+    100% { opacity: 0.5; }
+  }
 `;
 
 const ActionBar = styled.div`
@@ -143,6 +195,12 @@ const EmergencyResetButton = styled.button`
   &:active {
     transform: translateY(1px);
   }
+`;
+
+const EmptyMessage = styled.div`
+  text-align: center;
+  color: #666;
+  font-size: 18px;
 `;
 
 const CategorySelector: React.FC = () => {
@@ -210,22 +268,46 @@ const CategorySelector: React.FC = () => {
       
       <CategoriesGrid>
         {categories && categories.length > 0 ? (
-          categories.map((category: Category) => (
-            <CategoryCard
-              key={category.id}
-              selected={selectedCategories.includes(category.id)}
-              onClick={() => handleCategoryClick(category.id)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <CategoryIcon>{category.icon}</CategoryIcon>
-              <CategoryName>
-                <BidirectionalText text={category.name || 'Unnamed Category'} />
-              </CategoryName>
-            </CategoryCard>
-          ))
+          categories.map((category: Category) => {
+            const isSelected = selectedCategories.includes(category.id);
+            
+            return (
+              <CategoryCard
+                key={category.id}
+                selected={isSelected}
+                onClick={() => handleCategoryClick(category.id)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <CategoryEmoji $selected={isSelected}>
+                  {category.icon || '📚'}
+                </CategoryEmoji>
+                <CategoryName>
+                  <BidirectionalText text={category.name || 'Unnamed Category'} />
+                </CategoryName>
+                {isSelected && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    style={{
+                      position: 'absolute',
+                      top: '5px',
+                      right: '5px',
+                      color: '#0099cc',
+                      fontSize: '20px'
+                    }}
+                  >
+                    ✓
+                  </motion.div>
+                )}
+              </CategoryCard>
+            );
+          })
         ) : (
-          <div>No categories available. Try resetting the game.</div>
+          <EmptyMessage>No categories available. Please add some in Question Management.</EmptyMessage>
         )}
       </CategoriesGrid>
     </Container>
