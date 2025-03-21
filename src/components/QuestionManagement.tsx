@@ -1025,6 +1025,7 @@ const CategoryEmojiPickerWrapper = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
   
   input {
     font-size: 20px;
@@ -1034,6 +1035,23 @@ const CategoryEmojiPickerWrapper = styled.div`
   
   div {
     margin-top: 5px;
+  }
+  
+  /* Override the default positioning to place emoji grid above the button for category selection */
+  div[class*='EmojiGridContainer'] {
+    bottom: calc(100% + 10px);
+    top: auto;
+    right: auto;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* Reset position when being dragged */
+    &[style*="transform"] {
+      /* This selector targets the element when it has inline transform styles (during drag) */
+      bottom: auto;
+      left: auto;
+      transform: none !important; /* Use important to override Framer Motion's inline styles */
+    }
   }
 `;
 

@@ -25,6 +25,8 @@ const TeamHeader = styled.div`
   align-items: center;
   justify-content: center;
   margin-bottom: 8px;
+  position: relative;
+  z-index: 5;
 `;
 
 const TeamAvatarPicker = styled(EmojiPickerTrigger)`
@@ -53,10 +55,51 @@ const TeamAvatarPicker = styled(EmojiPickerTrigger)`
     height: 60px;
   }
   
-  div {
+  > div {
     display: flex;
     flex-direction: column;
     align-items: center;
+  }
+  
+  /* Fix the emoji grid display */
+  div[class*='EmojiGridContainer'] {
+    width: 340px;
+    max-height: 320px;
+    position: absolute;
+    right: calc(100% + 10px);
+    top: 0;
+    transform: none;
+    z-index: 1000;
+    display: block;
+    flex-direction: column;
+    
+    /* Reset position when being dragged */
+    &[style*="transform:"] {
+      right: auto;
+      top: auto;
+      position: fixed;
+    }
+  }
+  
+  div[class*='drag-handle'] {
+    cursor: grab;
+  }
+  
+  div[class*='EmojiItem'] {
+    font-size: 28px;
+  }
+  
+  div[class*='CategoryRow'] {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  
+  div[class*='EmojiGrid'] {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 8px;
   }
 `;
 
