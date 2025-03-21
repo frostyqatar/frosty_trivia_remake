@@ -22,6 +22,7 @@ import ReactDOM from 'react-dom';
 // Import SoundControls
 import AudioTrimmer from './AudioTrimmer';
 import VideoTrimmer from './VideoTrimmer';
+import EmojiPickerTrigger from './common/EmojiPickerTrigger';
 
 // Temporary local implementation until module resolution is fixed
 const trackEvent = (category: string, action: string, label?: string, value?: number) => {
@@ -344,8 +345,8 @@ const FormSelect = styled.select`
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   font-size: 16px;
-  background-color: #fafafa;
   transition: all 0.2s ease;
+  background-color: #fafafa;
   
   &:focus {
     outline: none;
@@ -353,6 +354,76 @@ const FormSelect = styled.select`
     background-color: white;
     box-shadow: 0 0 0 3px rgba(140, 82, 255, 0.2);
   }
+`;
+
+const PointValueButtonGroup = styled.div`
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+`;
+
+const PointValueButton = styled(motion.button)<{ selected: boolean }>`
+  padding: 10px 15px;
+  border-radius: 8px;
+  border: 2px solid ${props => props.selected ? '#8c52ff' : '#e0e0e0'};
+  background-color: ${props => props.selected ? 'rgba(140, 82, 255, 0.1)' : 'white'};
+  color: ${props => props.selected ? '#8c52ff' : '#666'};
+  font-weight: ${props => props.selected ? '600' : 'normal'};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    background-color: ${props => props.selected ? 'rgba(140, 82, 255, 0.15)' : '#f5f5f5'};
+    transform: translateY(-2px);
+  }
+`;
+
+const RemoveMediaButton = styled(motion.button)`
+  background-color: #ff5252;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+`;
+
+const CreateCategoryLink = styled.button`
+  background: none;
+  border: none;
+  color: #8c52ff;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-top: 8px;
+  text-align: right;
+  padding: 5px;
+  
+  &:hover {
+    color: #7b45e8;
+  }
+`;
+
+const MediaContainer = styled.div`
+  position: relative;
+  display: block;
+  margin-top: 10px;
+  width: 100%;
+`;
+
+const StyledText = styled.p`
+  margin: 0 0 8px;
+  font-size: 14px;
+  color: #555;
 `;
 
 const ModalActions = styled.div`
@@ -570,7 +641,29 @@ const truncateText = (text: string, maxLength: number): string => {
 };
 
 const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: string }) => {
-  if (!src) return null;
+  console.log(`MediaPreview - type: ${type}, src: ${src}`);
+  
+  if (!src) {
+    console.log('MediaPreview - No src provided');
+    return null;
+  }
+  
+  if (type === 'audio') {
+    console.log('MediaPreview - Rendering audio element');
+    return (
+      <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
+        <audio 
+          controls 
+          style={{ width: '100%', display: 'block' }} 
+          src={src}
+          preload="metadata"
+          autoPlay={false}
+        >
+          Your browser does not support audio playback.
+        </audio>
+      </div>
+    );
+  }
   
   if (type === 'image') {
     return (
@@ -584,22 +677,10 @@ const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: s
     );
   }
   
-  if (type === 'audio') {
-    return (
-      <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-        <audio controls style={{ width: '100%' }}>
-          <source src={src} />
-          Your browser does not support audio playback.
-        </audio>
-      </div>
-    );
-  }
-  
   if (type === 'video') {
     return (
       <div style={{ marginTop: '12px', padding: '8px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-        <video controls style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block', margin: '0 auto' }}>
-          <source src={src} />
+        <video controls style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block', margin: '0 auto' }} src={src}>
           Your browser does not support video playback.
         </video>
       </div>
@@ -907,6 +988,14 @@ const SoundControlsContainer = styled.div`
 
 // Add these styled component definitions after the other styled components and before the QuestionManagement component
 
+const StyledInput = styled.input`
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  width: 100%;
+  font-size: 14px;
+`;
+
 const SearchBar = styled.div`
   display: flex;
   width: 100%;
@@ -924,6 +1013,28 @@ const SearchButton = styled.button`
   font-size: 18px;
   color: #666;
   cursor: pointer;
+`;
+
+const StyledTextBlock = styled.span`
+  display: block;
+  margin-bottom: 5px;
+  font-size: 14px;
+`;
+
+const CategoryEmojiPickerWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  
+  input {
+    font-size: 20px;
+    width: 70px;
+    text-align: center;
+  }
+  
+  div {
+    margin-top: 5px;
+  }
 `;
 
 const QuestionManagement: React.FC = () => {
@@ -1134,6 +1245,10 @@ const QuestionManagement: React.FC = () => {
         setFormData({...DEFAULT_FORM_DATA});
         setShowModal(false);
         
+        // Reset the URL inputs
+        setAudioUrlInput('');
+        setVideoUrlInput('');
+        
         // Manual save to localStorage for redundancy
         try {
           localStorage.setItem('trivia-game-categories', JSON.stringify(updatedCategories));
@@ -1144,19 +1259,16 @@ const QuestionManagement: React.FC = () => {
         console.log('Categories after add:', updatedCategories);
       }
     } else if (modalMode === 'edit' && editingQuestion) {
-      const { categoryId, questionIndex } = editingQuestion;
-      const categoryIndex = updatedCategories.findIndex((c: Category) => c.id === categoryId);
+      const { categoryId: originalCategoryId, questionIndex } = editingQuestion;
+      const originalCategoryIndex = updatedCategories.findIndex((c: Category) => c.id === originalCategoryId);
       
-      if (categoryIndex !== -1 && 
-          questionIndex >= 0 && 
-          questionIndex < updatedCategories[categoryIndex].questions.length) {
-        
+      if (originalCategoryIndex !== -1) {
         // Create updated question with proper types for all fields
         const updatedQuestion: Question = {
           question: formData.question,
           answer: formData.answer,
           value: parseInt(formData.value.toString(), 10),
-          answered: updatedCategories[categoryIndex].questions[questionIndex].answered,
+          answered: updatedCategories[originalCategoryIndex].questions[questionIndex].answered,
           // Explicitly handle media fields
           image: formData.image || '',
           audio: formData.audio || '',
@@ -1165,8 +1277,30 @@ const QuestionManagement: React.FC = () => {
         
         console.log('Updating question:', updatedQuestion);
         
-        // Update the question
-        updatedCategories[categoryIndex].questions[questionIndex] = updatedQuestion;
+        // Check if the category has changed
+        if (formData.categoryId !== originalCategoryId) {
+          console.log('Category changed from', originalCategoryId, 'to', formData.categoryId);
+          
+          // Find the new category
+          const newCategoryIndex = updatedCategories.findIndex((c: Category) => c.id === formData.categoryId);
+          
+          if (newCategoryIndex !== -1) {
+            // Add the question to the new category
+            updatedCategories[newCategoryIndex].questions.push(updatedQuestion);
+            
+            // Remove the question from the original category
+            updatedCategories[originalCategoryIndex].questions.splice(questionIndex, 1);
+            
+            console.log('Question moved to new category');
+          } else {
+            console.error('New category not found');
+            alert('Error: Could not find the selected category. Please try again.');
+            return;
+          }
+        } else {
+          // Update the question in the original category
+          updatedCategories[originalCategoryIndex].questions[questionIndex] = updatedQuestion;
+        }
         
         // Update Redux
         dispatch(updateCategories(updatedCategories));
@@ -1184,6 +1318,10 @@ const QuestionManagement: React.FC = () => {
         setFormData({...DEFAULT_FORM_DATA});
         setEditingQuestion(null);
         setShowModal(false);
+        
+        // Reset the URL inputs
+        setAudioUrlInput('');
+        setVideoUrlInput('');
       }
     }
     
@@ -1205,6 +1343,10 @@ const QuestionManagement: React.FC = () => {
         video: ''
       });
       setEditingQuestion(null);
+      
+      // Reset URL inputs to prevent persistence
+      setAudioUrlInput('');
+      setVideoUrlInput('');
     } else if (mode === 'edit' && question) {
       const { categoryId, questionIndex } = question;
       const category = categories.find((c: Category) => c.id === categoryId);
@@ -1452,7 +1594,6 @@ const QuestionManagement: React.FC = () => {
     setShowAddCategoryModal(false);
     setNewCategoryName('');
     setNewCategoryIcon('❓');
-    alert('Category added successfully!');
   };
   
   const handleEditQuestion = (categoryId: string, questionIndex: number) => {
@@ -2126,10 +2267,14 @@ const QuestionManagement: React.FC = () => {
   const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      console.log('Audio file selected:', file.name, file.type);
+      
       setSelectedAudioFile(file);
       
       // Create a URL for the audio file
       const audioUrl = URL.createObjectURL(file);
+      console.log('Created audio URL:', audioUrl);
+      
       setOriginalAudioUrl(audioUrl);
       
       // Update form data with audio URL
@@ -2138,8 +2283,12 @@ const QuestionManagement: React.FC = () => {
         audio: audioUrl
       });
       
+      console.log('Updated formData with audio:', audioUrl);
+      
       // Play sound for feedback
       playSound('button-click');
+    } else {
+      console.log('No audio file selected');
     }
   };
   
@@ -2162,6 +2311,38 @@ const QuestionManagement: React.FC = () => {
       // Play sound for feedback
       playSound('button-click');
     }
+  };
+
+  // State for direct URL inputs
+  const [audioUrlInput, setAudioUrlInput] = useState<string>('');
+  const [videoUrlInput, setVideoUrlInput] = useState<string>('');
+
+  // Function to handle direct audio URL input
+  const handleAudioUrlSubmit = () => {
+    if (audioUrlInput.trim() === '') return;
+    
+    // Use the URL directly
+    setFormData({
+      ...formData,
+      audio: audioUrlInput
+    });
+    
+    // Play sound for feedback
+    playSound('button-click');
+  };
+  
+  // Function to handle direct video URL input
+  const handleVideoUrlSubmit = () => {
+    if (videoUrlInput.trim() === '') return;
+    
+    // Use the URL directly
+    setFormData({
+      ...formData,
+      video: videoUrlInput
+    });
+    
+    // Play sound for feedback
+    playSound('button-click');
   };
 
   // Handler for audio trim completion
@@ -2196,6 +2377,47 @@ const QuestionManagement: React.FC = () => {
   // Handler for video trim cancellation
   const handleVideoTrimCancel = () => {
     setShowVideoTrimmer(false);
+  };
+
+  // Point value selection helper
+  const handlePointValueSelect = (value: number) => {
+    setFormData({
+      ...formData,
+      value: value
+    });
+    playSound('button-click');
+  };
+
+  // Handle removing media
+  const handleRemoveMedia = (mediaType: 'image' | 'audio' | 'video') => {
+    setFormData({
+      ...formData,
+      [mediaType]: ''
+    });
+    
+    // If we're removing the image, also reset the cropper
+    if (mediaType === 'image') {
+      setShowImageCropper(false);
+      setOriginalImageUrl('');
+    }
+    
+    // If we're removing audio/video, reset URL inputs as well
+    if (mediaType === 'audio') {
+      setAudioUrlInput('');
+      setShowAudioTrimmer(false);
+    }
+    
+    if (mediaType === 'video') {
+      setVideoUrlInput('');
+      setShowVideoTrimmer(false);
+    }
+    
+    playSound('button-click');
+  };
+
+  // Function to open category creation directly from the form
+  const handleCreateCategoryFromForm = () => {
+    setShowAddCategoryModal(true);
   };
 
   return (
@@ -2467,6 +2689,9 @@ const QuestionManagement: React.FC = () => {
                     </option>
                   ))}
                 </FormSelect>
+                <CreateCategoryLink onClick={handleCreateCategoryFromForm}>
+                  + Create New Category
+                </CreateCategoryLink>
               </FormGroup>
               
               <FormGroup>
@@ -2517,17 +2742,19 @@ const QuestionManagement: React.FC = () => {
               
               <FormGroup>
                 <FormLabel>Point Value</FormLabel>
-                <FormSelect
-                  name="value"
-                  value={formData.value}
-                  onChange={handleFormChange}
-                >
-                  <option value="100">100</option>
-                  <option value="200">200</option>
-                  <option value="300">300</option>
-                  <option value="400">400</option>
-                  <option value="500">500</option>
-                </FormSelect>
+                <PointValueButtonGroup>
+                  {[100, 200, 300, 400, 500].map((value) => (
+                    <PointValueButton
+                      key={value}
+                      selected={formData.value === value}
+                      onClick={() => handlePointValueSelect(value)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {value}
+                    </PointValueButton>
+                  ))}
+                </PointValueButtonGroup>
               </FormGroup>
               
               <FormGroup>
@@ -2562,7 +2789,16 @@ const QuestionManagement: React.FC = () => {
                 </div>
                 
                 {formData.image && !showImageCropper && (
-                  <MediaPreview type="image" src={formData.image} />
+                  <MediaContainer>
+                    <MediaPreview type="image" src={formData.image} />
+                    <RemoveMediaButton
+                      onClick={() => handleRemoveMedia('image')}
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      ✖
+                    </RemoveMediaButton>
+                  </MediaContainer>
                 )}
                 {showImageCropper && (
                   <ImageCropper
@@ -2575,25 +2811,37 @@ const QuestionManagement: React.FC = () => {
               
               <FormGroup>
                 <FormLabel>Audio URL (optional)</FormLabel>
-                <FormInput
-                  type="text"
-                  name="audio"
-                  value={formData.audio || ''}
-                  onChange={handleFormChange}
-                  placeholder="Enter audio URL"
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <label htmlFor="audio-upload" style={{ cursor: 'pointer', background: '#f0f0f0', padding: '8px 12px', borderRadius: '4px', display: 'inline-block' }}>
-                    Or upload audio file
-                  </label>
-                  <input
-                    id="audio-upload"
-                    type="file"
-                    accept="audio/*"
-                    style={{ display: 'none' }}
-                    onChange={handleAudioFileUpload}
-                  />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div>
+                    <StyledTextBlock>Upload from your device:</StyledTextBlock>
+                    <StyledInput
+                      type="file"
+                      accept="audio/*"
+                      onChange={handleAudioFileUpload}
+                    />
+                  </div>
+                  
+                  <div>
+                    <StyledTextBlock>Or use a direct URL:</StyledTextBlock>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <StyledInput
+                        type="text"
+                        placeholder="Enter audio URL"
+                        value={audioUrlInput}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAudioUrlInput(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <Button
+                        onClick={handleAudioUrlSubmit}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Use URL
+                      </Button>
+                    </div>
+                  </div>
                 </div>
+                
                 {showAudioTrimmer && formData.audio && (
                   <AudioTrimmer
                     audioUrl={formData.audio!}
@@ -2602,8 +2850,18 @@ const QuestionManagement: React.FC = () => {
                   />
                 )}
                 {formData.audio && !showAudioTrimmer && (
-                  <div>
-                    <MediaPreview type="audio" src={formData.audio} />
+                  <div style={{ marginTop: '15px' }}>
+                    <MediaContainer>
+                      <MediaPreview type="audio" src={formData.audio} />
+                      <RemoveMediaButton
+                        onClick={() => handleRemoveMedia('audio')}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        ✖
+                      </RemoveMediaButton>
+                    </MediaContainer>
+                    
                     <Button
                       onClick={() => setShowAudioTrimmer(true)}
                       whileHover={{ scale: 1.05 }}
@@ -2618,25 +2876,37 @@ const QuestionManagement: React.FC = () => {
               
               <FormGroup>
                 <FormLabel>Video URL (optional)</FormLabel>
-                <FormInput
-                  type="text"
-                  name="video"
-                  value={formData.video || ''}
-                  onChange={handleFormChange}
-                  placeholder="Enter video URL (direct file or YouTube)"
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <label htmlFor="video-upload" style={{ cursor: 'pointer', background: '#f0f0f0', padding: '8px 12px', borderRadius: '4px', display: 'inline-block' }}>
-                    Or upload video file
-                  </label>
-                  <input
-                    id="video-upload"
-                    type="file"
-                    accept="video/*"
-                    style={{ display: 'none' }}
-                    onChange={handleVideoFileUpload}
-                  />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  <div>
+                    <StyledTextBlock>Upload from your device:</StyledTextBlock>
+                    <StyledInput
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoFileUpload}
+                    />
+                  </div>
+                  
+                  <div>
+                    <StyledTextBlock>Or use a direct URL:</StyledTextBlock>
+                    <div style={{ display: 'flex', gap: '5px' }}>
+                      <StyledInput
+                        type="text"
+                        placeholder="Enter video URL"
+                        value={videoUrlInput}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVideoUrlInput(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <Button
+                        onClick={handleVideoUrlSubmit}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Use URL
+                      </Button>
+                    </div>
+                  </div>
                 </div>
+                
                 {showVideoTrimmer && formData.video && (
                   <VideoTrimmer
                     videoUrl={formData.video!}
@@ -2646,7 +2916,16 @@ const QuestionManagement: React.FC = () => {
                 )}
                 {formData.video && !showVideoTrimmer && (
                   <div>
-                    <MediaPreview type="video" src={formData.video} />
+                    <MediaContainer>
+                      <MediaPreview type="video" src={formData.video} />
+                      <RemoveMediaButton
+                        onClick={() => handleRemoveMedia('video')}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        ✖
+                      </RemoveMediaButton>
+                    </MediaContainer>
                     <Button
                       onClick={() => setShowVideoTrimmer(true)}
                       whileHover={{ scale: 1.05 }}
@@ -2699,21 +2978,29 @@ const QuestionManagement: React.FC = () => {
             
             <FormGroup>
               <FormLabel>Select Category Icon:</FormLabel>
-              <SelectedEmoji>{newCategoryIcon}</SelectedEmoji>
-              
-              <EmojiGrid>
-                {COMMON_EMOJIS.map((emoji) => (
-                  <EmojiButton
-                    key={emoji}
-                    selected={emoji === newCategoryIcon}
-                    onClick={() => setNewCategoryIcon(emoji)}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
+                <SelectedEmoji>{newCategoryIcon}</SelectedEmoji>
+                
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <CategoryEmojiPickerWrapper>
+                    <EmojiPickerTrigger 
+                      onEmojiSelected={(emoji) => setNewCategoryIcon(emoji)}
+                      currentEmoji={newCategoryIcon}
+                      label="Choose Emoji"
+                      buttonStyle={{ backgroundColor: '#f5f5f5' }}
+                    />
+                  </CategoryEmojiPickerWrapper>
+                  
+                  <Button
+                    onClick={() => setNewCategoryIcon('❓')}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{ backgroundColor: '#6c757d' }}
                   >
-                    {emoji}
-                  </EmojiButton>
-                ))}
-              </EmojiGrid>
+                    Reset
+                  </Button>
+                </div>
+              </div>
             </FormGroup>
             
             <ModalActions>
@@ -2755,21 +3042,29 @@ const QuestionManagement: React.FC = () => {
             
             <FormGroup>
               <FormLabel>Select Category Icon</FormLabel>
-              <SelectedEmoji>{editCategoryIcon}</SelectedEmoji>
-              
-              <EmojiGrid>
-                {COMMON_EMOJIS.map((emoji) => (
-                  <EmojiButton
-                    key={emoji}
-                    selected={emoji === editCategoryIcon}
-                    onClick={() => setEditCategoryIcon(emoji)}
-                    whileHover={{ scale: 1.1 }}
-                    whileTap={{ scale: 0.9 }}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px' }}>
+                <SelectedEmoji>{editCategoryIcon}</SelectedEmoji>
+                
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <CategoryEmojiPickerWrapper>
+                    <EmojiPickerTrigger 
+                      onEmojiSelected={(emoji) => setEditCategoryIcon(emoji)}
+                      currentEmoji={editCategoryIcon}
+                      label="Choose Emoji"
+                      buttonStyle={{ backgroundColor: '#f5f5f5' }}
+                    />
+                  </CategoryEmojiPickerWrapper>
+                  
+                  <Button
+                    onClick={() => setEditCategoryIcon('❓')}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    style={{ backgroundColor: '#6c757d' }}
                   >
-                    {emoji}
-                  </EmojiButton>
-                ))}
-              </EmojiGrid>
+                    Reset
+                  </Button>
+                </div>
+              </div>
             </FormGroup>
             
             <ButtonGroup>

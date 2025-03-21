@@ -141,6 +141,16 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({ videoUrl, onTrimComplete, o
   const [recorderRef, setRecorderRef] = useState<MediaRecorder | null>(null);
   const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
 
+  // Function to handle CORS for external URLs
+  const getProxiedUrl = (url: string): string => {
+    // Check if it's an external URL
+    if (url.startsWith('http') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+      // Use a CORS proxy
+      return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+
   // Initialize video element
   useEffect(() => {
     const video = videoRef.current;
@@ -168,6 +178,24 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({ videoUrl, onTrimComplete, o
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('play', () => setIsPlaying(true));
       video.removeEventListener('pause', () => setIsPlaying(false));
+    };
+  }, []);
+
+  // Handle loading errors
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    
+    const handleError = (e: Event) => {
+      console.error('Error loading video:', e);
+      setIsLoading(false);
+      alert('There was an error loading the video. This might be due to CORS restrictions.');
+    };
+    
+    video.addEventListener('error', handleError);
+    
+    return () => {
+      video.removeEventListener('error', handleError);
     };
   }, []);
 
@@ -423,9 +451,10 @@ const VideoTrimmer: React.FC<VideoTrimmerProps> = ({ videoUrl, onTrimComplete, o
       <VideoContainer>
         <video 
           ref={videoRef}
-          src={videoUrl}
+          src={getProxiedUrl(videoUrl)} 
           preload="metadata"
           controls={false}
+          crossOrigin="anonymous"
         />
       </VideoContainer>
       

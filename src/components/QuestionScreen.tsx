@@ -806,7 +806,7 @@ const QuestionScreen: React.FC = () => {
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
               >
-                🔍 Reveal Answer
+                🔍 كشف الإجابة
               </RevealButton>
               
               <ActionButton

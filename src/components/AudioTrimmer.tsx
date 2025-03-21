@@ -103,6 +103,16 @@ const AudioTrimmer: React.FC<AudioTrimmerProps> = ({ audioUrl, onTrimComplete, o
   const [isTrimming, setIsTrimming] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
 
+  // Function to handle CORS for external URLs
+  const getProxiedUrl = (url: string): string => {
+    // Check if it's an external URL
+    if (url.startsWith('http') && !url.includes('localhost') && !url.includes('127.0.0.1')) {
+      // Use a CORS proxy
+      return `https://corsproxy.io/?${encodeURIComponent(url)}`;
+    }
+    return url;
+  };
+
   // Handle audio metadata loaded
   useEffect(() => {
     const audio = audioRef.current;
@@ -145,6 +155,24 @@ const AudioTrimmer: React.FC<AudioTrimmerProps> = ({ audioUrl, onTrimComplete, o
     };
   }, [endTime, startTime]);
 
+  // Handle loading errors
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    
+    const handleError = (e: Event) => {
+      console.error('Error loading audio:', e);
+      setIsLoading(false);
+      alert('There was an error loading the audio. This might be due to CORS restrictions.');
+    };
+    
+    audio.addEventListener('error', handleError);
+    
+    return () => {
+      audio.removeEventListener('error', handleError);
+    };
+  }, []);
+
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -181,8 +209,9 @@ const AudioTrimmer: React.FC<AudioTrimmerProps> = ({ audioUrl, onTrimComplete, o
     try {
       setIsTrimming(true);
       
-      // Fetch the audio file
-      const response = await fetch(audioUrl);
+      // Fetch the audio file with CORS proxy if needed
+      const proxyUrl = getProxiedUrl(audioUrl);
+      const response = await fetch(proxyUrl);
       const arrayBuffer = await response.arrayBuffer();
       
       // Create an audio context
@@ -309,10 +338,11 @@ const AudioTrimmer: React.FC<AudioTrimmerProps> = ({ audioUrl, onTrimComplete, o
       <AudioContainer>
         <audio 
           ref={audioRef} 
-          src={audioUrl} 
+          src={getProxiedUrl(audioUrl)} 
           controls={false} 
           preload="metadata"
           style={{ width: '100%' }}
+          crossOrigin="anonymous"
         />
       </AudioContainer>
       

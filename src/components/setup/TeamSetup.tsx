@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Team, AbilityType } from '../../types/game.types';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
+import EmojiPickerTrigger from '../common/EmojiPickerTrigger';
 
 const Container = styled.div`
   background-color: rgba(255, 255, 255, 0.9);
@@ -26,17 +27,36 @@ const TeamHeader = styled.div`
   margin-bottom: 8px;
 `;
 
-const TeamAvatar = styled.div`
+const TeamAvatarPicker = styled(EmojiPickerTrigger)`
+  background: none;
+  border: none;
   font-size: 36px;
-  margin-right: 12px;
   cursor: pointer;
-  user-select: none;
+  padding: 0;
+  margin-right: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   
+  span:first-child {
+    font-size: 36px;
+  }
+  
   &:hover {
     transform: scale(1.1);
+    background: none;
+  }
+  
+  input {
+    font-size: 36px;
+    width: 80px;
+    height: 60px;
+  }
+  
+  div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
   }
 `;
 
@@ -145,9 +165,18 @@ export const TeamSetup: React.FC<TeamSetupProps> = ({ teamNumber, onChange, team
   return (
     <Container>
       <TeamHeader>
-        <TeamAvatar onClick={handleRefreshAvatar}>
-          {teamData.avatar || '😎'}
-        </TeamAvatar>
+        <TeamAvatarPicker
+          onEmojiSelected={(emoji) => {
+            playSound('button-click');
+            onChange({
+              ...teamData,
+              avatar: emoji
+            });
+          }}
+          currentEmoji={teamData.avatar || '😎'}
+          label=""
+          buttonStyle={{ background: 'none' }}
+        />
         <TeamNameInput
           value={teamData.name || ''}
           onChange={handleTeamNameChange}
