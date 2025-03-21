@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 
-const ToggleButton = styled(motion.button)`
+const ToggleButton = styled(motion.button)<{ $isOpen: boolean }>`
   position: fixed;
-  right: 494px;
+  right: ${props => props.$isOpen ? '295px' : '0'};
+  left: auto;
   top: 450px;
   transform: none;
   background-color: #0a4d73;
@@ -17,6 +18,7 @@ const ToggleButton = styled(motion.button)`
   display: flex;
   align-items: center;
   box-shadow: -2px 0 10px rgba(0, 0, 0, 0.2);
+  transition: right 0.3s ease;
   
   &:hover {
     background-color: #0b5d8a;
@@ -37,7 +39,8 @@ const ArrowIcon = styled.span<{ $isOpen: boolean }>`
 // Legend container with fixed positioning and slide animation
 const LegendContainer = styled(motion.div)`
   position: fixed;
-  right: 199px;
+  right: 0;
+  left: auto;
   top: 180px;
   width: 295px;
   height: 541px;
@@ -45,7 +48,7 @@ const LegendContainer = styled(motion.div)`
   z-index: 1000;
   pointer-events: auto;
   background-color: rgba(255, 255, 255, 0.92);
-  border-radius: 12px;
+  border-radius: 12px 0 0 12px;
   padding: 20px;
   box-shadow: -5px 0 20px rgba(0, 0, 0, 0.25);
   backdrop-filter: blur(8px);
@@ -128,6 +131,7 @@ const Legend: React.FC = () => {
   return (
     <>
       <ToggleButton
+        $isOpen={isOpen}
         onClick={() => setIsOpen(!isOpen)}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}

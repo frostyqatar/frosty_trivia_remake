@@ -553,10 +553,11 @@ const SetupScreen: React.FC = () => {
     <Container as={motion.div} initial="hidden" animate="visible" variants={containerVariants}>
       {/* Snowfall effect */}
       <Snowfall 
-        snowflakeCount={200}
-        speed={[0.5, 1.5]} 
+        snowflakeCount={300}
+        speed={[0.5, 2.0]} 
         wind={[-0.5, 0.5]} 
-        radius={[0.5, 1.5]}
+        radius={[1.0, 3.0]}
+        color="rgba(255, 255, 255, 0.9)"
         style={{
           position: 'fixed',
           width: '100vw',
@@ -627,7 +628,7 @@ const SetupScreen: React.FC = () => {
       {/* Header section */}
       <Header as={motion.header} variants={itemVariants}>
         <Logo>Frosty Trivia ☃️</Logo>
-        <CreatorInfo>برمجة:  - </CreatorInfo>
+        <CreatorInfo>برمجة عبدالله الشاعر </CreatorInfo>
         <Subtitle>استعد لتجربة لعبة سؤال وجواب رائعة ومسلية! اختبر معلوماتك وتنافس في هذه اللعبة الجماعية </Subtitle>
         
         <SoundControlsWrapper>

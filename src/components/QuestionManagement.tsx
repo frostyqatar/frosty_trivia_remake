@@ -16,8 +16,10 @@ import ImageCropper from './common/ImageCropper';
 // Import the new function
 import { importQuestionsFromCSV } from '../utils/csvImport';
 import { trackGameEvent } from '../services/analytics';
+// Import QRCode component
+import { QRCodeCanvas } from 'qrcode.react';
+import ReactDOM from 'react-dom';
 // Import SoundControls
-
 
 // Temporary local implementation until module resolution is fixed
 const trackEvent = (category: string, action: string, label?: string, value?: number) => {
@@ -990,84 +992,97 @@ const QuestionManagement: React.FC = () => {
   // Add notification state to your component if not already there
   const [notification, setNotification] = useState({ message: '', type: 'info', visible: false });
   
-  // First, update the flattenQuestions function to properly handle all questions
-  const flattenQuestions = useCallback(() => {
-    const allQuestions: any[] = [];
-    
-    categories.forEach((category: Category) => {
-      if (category.questions && Array.isArray(category.questions)) {
-        category.questions.forEach((question: Question, index: number) => {
-          allQuestions.push({
-            categoryId: category.id,
-            categoryName: category.name,
-            questionIndex: index,
-            ...question
-          });
-        });
-      }
-    });
-    
-    return allQuestions;
-  }, [categories]);
-  
-  // Add this function to calculate pagination data without modifying state
-  const calculatePagination = () => {
-    // Get all questions from all categories in a flat array
-    let filteredQuestions = flattenQuestions();
-    
-    // Apply search filter
-    if (searchQuery) {
-      const lowerQuery = searchQuery.toLowerCase();
+  // Add state for QR code generation
+  const [isGeneratingQR, setIsGeneratingQR] = useState(false);
+
+  // Helper function to generate QR code image data URL
+  // Removed the generateQRCodeDataURL function
+
+  // Add QR code generation handler
+  const handleGenerateQRCode = () => {
+    if (!formData.answer.trim()) {
+      alert('Please enter an answer text before generating a QR code.');
+      return;
+    }
+
+    setIsGeneratingQR(true);
+    try {
+      // Create a canvas element
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
       
-      // Special filters for category:name
-      if (lowerQuery.startsWith('category:')) {
-        const categoryName = lowerQuery.substring(9).trim().toLowerCase();
-        filteredQuestions = filteredQuestions.filter(q => 
-          q.categoryName.toLowerCase().includes(categoryName)
-        );
-      } else {
-        // Regular search across all fields
-        filteredQuestions = filteredQuestions.filter(q => 
-          q.question.toLowerCase().includes(lowerQuery) || 
-          q.answer.toLowerCase().includes(lowerQuery) ||
-          q.categoryName.toLowerCase().includes(lowerQuery)
-        );
+      if (!ctx) {
+        throw new Error('Could not get canvas context');
       }
+      
+      // Draw a white background
+      ctx.fillStyle = 'white';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Create temporary container to render QRCode
+      const tempContainer = document.createElement('div');
+      document.body.appendChild(tempContainer);
+      
+      // Render QR code into temporary container
+      ReactDOM.render(
+        <QRCodeCanvas 
+          value={formData.answer} 
+          size={240} 
+          level="H" 
+          includeMargin={true}
+          bgColor="#FFFFFF"
+          fgColor="#000000"
+        />, 
+        tempContainer
+      );
+      
+      // Wait a moment for the QR code to render
+      setTimeout(() => {
+        // Get rendered canvas from QRCodeCanvas
+        const qrCanvas = tempContainer.querySelector('canvas');
+        
+        if (qrCanvas) {
+          // Draw QR code onto our main canvas (centered)
+          ctx.drawImage(
+            qrCanvas, 
+            (canvas.width - qrCanvas.width) / 2, 
+            (canvas.height - qrCanvas.height) / 2
+          );
+          
+          // Convert to data URL
+          const dataURL = canvas.toDataURL('image/png');
+          
+          // Update form directly without using the cropper
+          setFormData({
+            ...formData,
+            image: dataURL,
+            question: formData.question.includes('Do not scan the qr code')
+              ? formData.question
+              : `${formData.question || ''} Do not scan the qr code`.trim()
+          });
+          
+          // Clean up
+          ReactDOM.unmountComponentAtNode(tempContainer);
+          document.body.removeChild(tempContainer);
+          
+          // Play sound for feedback
+          playSound('button-click');
+        } else {
+          throw new Error('QR code canvas not found');
+        }
+        
+        setIsGeneratingQR(false);
+      }, 100);
+      
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      alert('Failed to generate QR code. Please try again.');
+      setIsGeneratingQR(false);
     }
-    
-    // Apply sorting
-    filteredQuestions = sortQuestions(filteredQuestions);
-    
-    // Calculate pagination
-    const totalItems = filteredQuestions.length;
-    const totalPages = Math.ceil(totalItems / itemsPerPage);
-    
-    // Get current items
-    const indexOfLastItem = currentPage * itemsPerPage;
-    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-    const paginatedQuestions = filteredQuestions.slice(indexOfFirstItem, indexOfLastItem);
-    
-    return { 
-      totalPages,
-      filteredQuestions,
-      paginatedQuestions
-    };
   };
-  
-  // Update the useEffect to use the calculate function and update state
-  useEffect(() => {
-    const { totalPages, paginatedQuestions } = calculatePagination();
-    
-    // Ensure current page is valid
-    if (currentPage > totalPages && totalPages > 0) {
-      setCurrentPage(1); // Reset to first page if current page is now invalid
-    } else {
-      // Update displayed questions
-      setDisplayedQuestions(paginatedQuestions);
-    }
-  }, [currentPage, searchQuery, itemsPerPage, categories, sortBy, sortDirection]);
-  
-  // Ensure the form submission correctly adds questions
+
   const handleSubmit = () => {
     if (!formData.categoryId || formData.question.trim() === '' || formData.answer.trim() === '') {
       alert('Category, question and answer are required.');
@@ -1605,6 +1620,7 @@ const QuestionManagement: React.FC = () => {
       linkElement.setAttribute('href', dataUri);
       linkElement.setAttribute('download', exportFileDefaultName);
       linkElement.click();
+      document.body.removeChild(linkElement);
     } catch (e) {
       console.error('Error exporting data:', e);
       alert('Error exporting data. See console for details.');
@@ -1963,7 +1979,40 @@ const QuestionManagement: React.FC = () => {
     );
   };
   
-  // Add this handler function in your component
+  // Add handler for crop completion
+  const handleCropComplete = (croppedImageUrl: string) => {
+    setFormData({
+      ...formData,
+      image: croppedImageUrl
+    });
+    setShowImageCropper(false);
+  };
+  
+  // Add handler for crop cancellation
+  const handleCropCancel = () => {
+    setShowImageCropper(false);
+    setFormData({
+      ...formData,
+      image: originalImageUrl
+    });
+  };
+  
+  // Add handler for clicking on a category to view its questions
+  const handleViewCategoryQuestions = (categoryId: string) => {
+    // Get the category name for the search
+    const categoryName = categories.find((c: Category) => c.id === categoryId)?.name || '';
+    
+    // Update the search query to reflect that we're viewing a specific category
+    // This will trigger the useEffect that recalculates pagination
+    setSearchQuery(`category:${categoryName}`);
+    
+    // Reset to the first page
+    setCurrentPage(1);
+    
+    // Scroll to the questions section
+    document.querySelector('.question-table')?.scrollIntoView({ behavior: 'smooth' });
+  };
+  
   const handleEmergencyReset = () => {
     if (window.confirm("⚠️ EMERGENCY RESET: This will restore all original questions and discard all your changes. Are you absolutely sure?")) {
       // Get the original default categories
@@ -1986,39 +2035,82 @@ const QuestionManagement: React.FC = () => {
     }
   };
   
-  // Add a function to handle crop completion
-  const handleCropComplete = (croppedImageUrl: string) => {
-    setFormData({
-      ...formData,
-      image: croppedImageUrl
+  // First, update the flattenQuestions function to properly handle all questions
+  const flattenQuestions = useCallback(() => {
+    const allQuestions: any[] = [];
+    
+    categories.forEach((category: Category) => {
+      if (category.questions && Array.isArray(category.questions)) {
+        category.questions.forEach((question: Question, index: number) => {
+          allQuestions.push({
+            categoryId: category.id,
+            categoryName: category.name,
+            questionIndex: index,
+            ...question
+          });
+        });
+      }
     });
-    setShowImageCropper(false);
+    
+    return allQuestions;
+  }, [categories]);
+  
+  // Add this function to calculate pagination data without modifying state
+  const calculatePagination = () => {
+    // Get all questions from all categories in a flat array
+    let filteredQuestions = flattenQuestions();
+    
+    // Apply search filter
+    if (searchQuery) {
+      const lowerQuery = searchQuery.toLowerCase();
+      
+      // Special filters for category:name
+      if (lowerQuery.startsWith('category:')) {
+        const categoryName = lowerQuery.substring(9).trim().toLowerCase();
+        filteredQuestions = filteredQuestions.filter(q => 
+          q.categoryName.toLowerCase().includes(categoryName)
+        );
+      } else {
+        // Regular search across all fields
+        filteredQuestions = filteredQuestions.filter(q => 
+          q.question.toLowerCase().includes(lowerQuery) || 
+          q.answer.toLowerCase().includes(lowerQuery) ||
+          q.categoryName.toLowerCase().includes(lowerQuery)
+        );
+      }
+    }
+    
+    // Apply sorting
+    filteredQuestions = sortQuestions(filteredQuestions);
+    
+    // Calculate pagination
+    const totalItems = filteredQuestions.length;
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    
+    // Get current items
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const paginatedQuestions = filteredQuestions.slice(indexOfFirstItem, indexOfLastItem);
+    
+    return { 
+      totalPages,
+      filteredQuestions,
+      paginatedQuestions
+    };
   };
   
-  // Add a function to handle crop cancellation
-  const handleCropCancel = () => {
-    setShowImageCropper(false);
-    setFormData({
-      ...formData,
-      image: originalImageUrl
-    });
-  };
-  
-  // Add a function to handle clicking on a category to view its questions
-  const handleViewCategoryQuestions = (categoryId: string) => {
-    // Get the category name for the search
-    const categoryName = categories.find((c: Category) => c.id === categoryId)?.name || '';
+  // Update the useEffect to use the calculate function and update state
+  useEffect(() => {
+    const { totalPages, paginatedQuestions } = calculatePagination();
     
-    // Update the search query to reflect that we're viewing a specific category
-    // This will trigger the useEffect that recalculates pagination
-    setSearchQuery(`category:${categoryName}`);
-    
-    // Reset to the first page
-    setCurrentPage(1);
-    
-    // Scroll to the questions section
-    document.querySelector('.question-table')?.scrollIntoView({ behavior: 'smooth' });
-  };
+    // Ensure current page is valid
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(1); // Reset to first page if current page is now invalid
+    } else {
+      // Update displayed questions
+      setDisplayedQuestions(paginatedQuestions);
+    }
+  }, [currentPage, searchQuery, itemsPerPage, categories, sortBy, sortDirection]);
   
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -2035,7 +2127,7 @@ const QuestionManagement: React.FC = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              ← Back to Setup
+              ← رجوع
             </Button>
             <ImportButton 
               onClick={handleImportClick}
@@ -2327,6 +2419,14 @@ const QuestionManagement: React.FC = () => {
                   onChange={handleFormChange}
                   placeholder="Enter answer text"
                 />
+                <Button
+                  onClick={handleGenerateQRCode}
+                  disabled={isGeneratingQR || !formData.answer.trim()}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {isGeneratingQR ? '⏳ Generating QR...' : '📱 Generate QR Code حق لعبة ولا كلمة فقط!'}
+                </Button>
               </FormGroup>
               
               <FormGroup>
@@ -2595,7 +2695,7 @@ const QuestionManagement: React.FC = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            ← Back to Setup
+            ← رجوع 
           </Button>
           <Button 
             onClick={() => setShowAddCategoryModal(true)}

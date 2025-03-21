@@ -316,18 +316,22 @@ const GameContainer: React.FC = () => {
   
   return (
     <Container>
-      {showSnow && (
-        <Snowfall 
-          snowflakeCount={150}
-          style={{
-            position: 'fixed',
-            width: '100vw',
-            height: '100vh',
-            zIndex: 1,
-            pointerEvents: 'none'
-          }}
-        />
-      )}
+      <Snowfall 
+        snowflakeCount={300}
+        speed={[0.5, 2.0]}
+        wind={[-0.5, 0.5]}
+        radius={[1.0, 3.0]}
+        color="rgba(255, 255, 255, 0.9)"
+        style={{
+          position: 'fixed',
+          width: '100vw',
+          height: '100vh',
+          zIndex: 1,
+          pointerEvents: 'none',
+          opacity: showSnow ? 1 : 0,
+          transition: 'opacity 0.5s ease'
+        }}
+      />
       
       <CursorStars active={true} hideDefaultCursor={false} />
       
