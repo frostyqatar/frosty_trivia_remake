@@ -20,6 +20,8 @@ import { trackGameEvent } from '../services/analytics';
 import { QRCodeCanvas } from 'qrcode.react';
 import ReactDOM from 'react-dom';
 // Import SoundControls
+import AudioTrimmer from './AudioTrimmer';
+import VideoTrimmer from './VideoTrimmer';
 
 // Temporary local implementation until module resolution is fixed
 const trackEvent = (category: string, action: string, label?: string, value?: number) => {
@@ -986,8 +988,16 @@ const QuestionManagement: React.FC = () => {
   const [showImageCropper, setShowImageCropper] = useState(false);
   const [originalImageUrl, setOriginalImageUrl] = useState('');
   
+  // Add state for audio/video trimming
+  const [showAudioTrimmer, setShowAudioTrimmer] = useState(false);
+  const [showVideoTrimmer, setShowVideoTrimmer] = useState(false);
+  const [originalAudioUrl, setOriginalAudioUrl] = useState('');
+  const [originalVideoUrl, setOriginalVideoUrl] = useState('');
+  
   // Add state for file handling
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedAudioFile, setSelectedAudioFile] = useState<File | null>(null);
+  const [selectedVideoFile, setSelectedVideoFile] = useState<File | null>(null);
   
   // Add notification state to your component if not already there
   const [notification, setNotification] = useState({ message: '', type: 'info', visible: false });
@@ -2112,6 +2122,82 @@ const QuestionManagement: React.FC = () => {
     }
   }, [currentPage, searchQuery, itemsPerPage, categories, sortBy, sortDirection]);
   
+  // Function to handle audio file upload
+  const handleAudioFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedAudioFile(file);
+      
+      // Create a URL for the audio file
+      const audioUrl = URL.createObjectURL(file);
+      setOriginalAudioUrl(audioUrl);
+      
+      // Update form data with audio URL
+      setFormData({
+        ...formData,
+        audio: audioUrl
+      });
+      
+      // Play sound for feedback
+      playSound('button-click');
+    }
+  };
+  
+  // Function to handle video file upload
+  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSelectedVideoFile(file);
+      
+      // Create a URL for the video file
+      const videoUrl = URL.createObjectURL(file);
+      setOriginalVideoUrl(videoUrl);
+      
+      // Update form data with video URL
+      setFormData({
+        ...formData,
+        video: videoUrl
+      });
+      
+      // Play sound for feedback
+      playSound('button-click');
+    }
+  };
+
+  // Handler for audio trim completion
+  const handleAudioTrimComplete = (trimmedAudioUrl: string) => {
+    setFormData({
+      ...formData,
+      audio: trimmedAudioUrl
+    });
+    setShowAudioTrimmer(false);
+    
+    // Play sound for feedback
+    playSound('button-click');
+  };
+  
+  // Handler for audio trim cancellation
+  const handleAudioTrimCancel = () => {
+    setShowAudioTrimmer(false);
+  };
+  
+  // Handler for video trim completion
+  const handleVideoTrimComplete = (trimmedVideoUrl: string) => {
+    setFormData({
+      ...formData,
+      video: trimmedVideoUrl
+    });
+    setShowVideoTrimmer(false);
+    
+    // Play sound for feedback
+    playSound('button-click');
+  };
+  
+  // Handler for video trim cancellation
+  const handleVideoTrimCancel = () => {
+    setShowVideoTrimmer(false);
+  };
+
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
@@ -2496,8 +2582,37 @@ const QuestionManagement: React.FC = () => {
                   onChange={handleFormChange}
                   placeholder="Enter audio URL"
                 />
-                {formData.audio && (
-                  <MediaPreview type="audio" src={formData.audio} />
+                <div style={{ marginTop: '8px' }}>
+                  <label htmlFor="audio-upload" style={{ cursor: 'pointer', background: '#f0f0f0', padding: '8px 12px', borderRadius: '4px', display: 'inline-block' }}>
+                    Or upload audio file
+                  </label>
+                  <input
+                    id="audio-upload"
+                    type="file"
+                    accept="audio/*"
+                    style={{ display: 'none' }}
+                    onChange={handleAudioFileUpload}
+                  />
+                </div>
+                {showAudioTrimmer && formData.audio && (
+                  <AudioTrimmer
+                    audioUrl={formData.audio!}
+                    onTrimComplete={handleAudioTrimComplete}
+                    onCancel={handleAudioTrimCancel}
+                  />
+                )}
+                {formData.audio && !showAudioTrimmer && (
+                  <div>
+                    <MediaPreview type="audio" src={formData.audio} />
+                    <Button
+                      onClick={() => setShowAudioTrimmer(true)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ marginTop: '10px', backgroundColor: '#6c757d' }}
+                    >
+                      ✂️ Trim Audio
+                    </Button>
+                  </div>
                 )}
               </FormGroup>
               
@@ -2510,8 +2625,37 @@ const QuestionManagement: React.FC = () => {
                   onChange={handleFormChange}
                   placeholder="Enter video URL (direct file or YouTube)"
                 />
-                {formData.video && (
-                  <MediaPreview type="video" src={formData.video} />
+                <div style={{ marginTop: '8px' }}>
+                  <label htmlFor="video-upload" style={{ cursor: 'pointer', background: '#f0f0f0', padding: '8px 12px', borderRadius: '4px', display: 'inline-block' }}>
+                    Or upload video file
+                  </label>
+                  <input
+                    id="video-upload"
+                    type="file"
+                    accept="video/*"
+                    style={{ display: 'none' }}
+                    onChange={handleVideoFileUpload}
+                  />
+                </div>
+                {showVideoTrimmer && formData.video && (
+                  <VideoTrimmer
+                    videoUrl={formData.video!}
+                    onTrimComplete={handleVideoTrimComplete}
+                    onCancel={handleVideoTrimCancel}
+                  />
+                )}
+                {formData.video && !showVideoTrimmer && (
+                  <div>
+                    <MediaPreview type="video" src={formData.video} />
+                    <Button
+                      onClick={() => setShowVideoTrimmer(true)}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      style={{ marginTop: '10px', backgroundColor: '#6c757d' }}
+                    >
+                      ✂️ Trim Video
+                    </Button>
+                  </div>
                 )}
               </FormGroup>
               
@@ -2695,7 +2839,7 @@ const QuestionManagement: React.FC = () => {
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            ← رجوع 
+            ← رجوع
           </Button>
           <Button 
             onClick={() => setShowAddCategoryModal(true)}
