@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <!-- Background -->
+  <rect width="100%" height="100%" fill="#ffebeb" />
+  
+  <!-- Nintendo-inspired pattern -->
+  <g opacity="0.1">
+    <!-- Mario hat -->
+    <path d="M100,100 C120,80 150,80 170,100 C190,120 190,150 170,170 C150,190 120,190 100,170 C80,150 80,120 100,100 Z" fill="#e60012" />
+    <circle cx="135" cy="135" r="20" fill="#e60012" />
+    
+    <!-- Star -->
+    <polygon points="300,100 320,140 360,150 330,180 340,220 300,200 260,220 270,180 240,150 280,140" fill="#ffcb05" />
+    
+    <!-- Mushroom -->
+    <circle cx="450" cy="150" r="40" fill="#e60012" />
+    <circle cx="440" cy="140" r="10" fill="white" />
+    <circle cx="470" cy="140" r="10" fill="white" />
+    <rect x="430" y="170" width="40" height="30" fill="#ffebcd" />
+    
+    <!-- Question block -->
+    <rect x="550" y="120" width="60" height="60" fill="#ffcb05" />
+    <text x="580" y="160" font-size="40" text-anchor="middle" fill="#ffffff">?</text>
+    
+    <!-- Pipe -->
+    <rect x="650" y="140" width="60" height="80" fill="#00b336" />
+    <rect x="640" y="140" width="80" height="20" fill="#00b336" />
+    
+    <!-- Second row -->
+    <!-- Game controller -->
+    <rect x="100" y="300" width="100" height="60" rx="15" ry="15" fill="#333333" />
+    <circle cx="130" cy="330" r="15" fill="#666666" />
+    <circle cx="170" cy="330" r="15" fill="#666666" />
+    
+    <!-- Triforce -->
+    <polygon points="300,300 270,350 330,350" fill="#ffcb05" />
+    <polygon points="285,325 255,375 315,375" fill="#ffcb05" />
+    <polygon points="315,325 285,375 345,375" fill="#ffcb05" />
+    
+    <!-- Pokeball -->
+    <circle cx="450" cy="340" r="40" fill="#e60012" />
+    <rect x="410" y="340" width="80" height="10" fill="#333333" />
+    <circle cx="450" cy="340" r="10" fill="white" stroke="#333333" stroke-width="3" />
+    
+    <!-- Coin -->
+    <circle cx="580" cy="340" r="30" fill="#ffcb05" />
+    <text x="580" y="350" font-size="20" text-anchor="middle" fill="#fff">$</text>
+    
+    <!-- Pixel character -->
+    <rect x="650" y="310" width="10" height="10" fill="#ff0000" />
+    <rect x="660" y="310" width="10" height="10" fill="#ff0000" />
+    <rect x="670" y="310" width="10" height="10" fill="#ff0000" />
+    <rect x="650" y="320" width="10" height="10" fill="#ff0000" />
+    <rect x="660" y="320" width="10" height="10" fill="#ffcb05" />
+    <rect x="670" y="320" width="10" height="10" fill="#ffcb05" />
+    <rect x="650" y="330" width="10" height="10" fill="#ffcb05" />
+    <rect x="660" y="330" width="10" height="10" fill="#ffcb05" />
+    <rect x="670" y="330" width="10" height="10" fill="#ffcb05" />
+    <rect x="650" y="340" width="10" height="10" fill="#0000ff" />
+    <rect x="660" y="340" width="10" height="10" fill="#0000ff" />
+    <rect x="670" y="340" width="10" height="10" fill="#0000ff" />
+    <rect x="650" y="350" width="10" height="10" fill="#0000ff" />
+    <rect x="670" y="350" width="10" height="10" fill="#0000ff" />
+    
+    <!-- Third row - more patterns -->
+    <rect x="100" y="450" width="60" height="60" fill="#00b336" transform="rotate(45 130 480)" />
+    <rect x="300" y="450" width="60" height="60" fill="#e60012" transform="rotate(30 330 480)" />
+    <rect x="500" y="450" width="60" height="60" fill="#00c3e3" transform="rotate(15 530 480)" />
+    <rect x="700" y="450" width="60" height="60" fill="#ffcb05" transform="rotate(60 730 480)" />
+  </g>
+</svg> 
