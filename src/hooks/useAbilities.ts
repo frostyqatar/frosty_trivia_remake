@@ -100,11 +100,43 @@ export const useAbilities = () => {
       // Generate random points reduction between 300-500
       const pointsReduction = Math.floor(Math.random() * 201) + 300; // Random between 300-500
       
-      // Reduce opposing team's points
+      // Debug logs
+      console.log('Electric shock triggered!');
+      console.log('Opposing team:', opposingTeamIndex);
+      console.log('Points reduction:', pointsReduction);
+      console.log('Current opposing team score:', opposingTeam.score);
+      console.log('Current multiplier:', opposingTeam.pointsMultiplier);
+      
+      // DIRECT FIX: Temporarily save and reset the multiplier, apply the shock points, then restore multiplier
+      
+      // Step 1: Save the current multiplier
+      const currentMultiplier = opposingTeam.pointsMultiplier;
+      
+      // Step 2: Set multiplier to 1 to ensure no amplification of shock effect
+      dispatch(setPointsMultiplier({ 
+        teamIndex: opposingTeamIndex, 
+        multiplier: 1 
+      }));
+      
+      // Step 3: Apply the shock points without multiplier effect
       dispatch(awardPoints({ 
         teamIndex: opposingTeamIndex, 
         points: -pointsReduction 
       }));
+      
+      // Step 4: Restore the original multiplier if it was greater than 1
+      if (currentMultiplier > 1) {
+        dispatch(setPointsMultiplier({ 
+          teamIndex: opposingTeamIndex, 
+          multiplier: currentMultiplier 
+        }));
+      }
+      
+      // Check score after dispatch
+      setTimeout(() => {
+        console.log('Score after electric shock:', game.teams[opposingTeamIndex].score);
+        console.log('Multiplier after electric shock:', game.teams[opposingTeamIndex].pointsMultiplier);
+      }, 0);
       
       // Show notification about the electric shock
       showNotification(`⚡ ${team.name} used Electric Shock! ${game.teams[opposingTeamIndex].name} lost ${pointsReduction} points!`);

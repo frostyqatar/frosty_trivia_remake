@@ -37,23 +37,22 @@ const CategoryContainer = styled.div`
 `;
 
 const CategoryCard = styled(motion.div)`
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--card-background, rgba(255, 255, 255, 0.9));
   backdrop-filter: blur(8px);
-  border-radius: 12px;
-  box-shadow: 0 6px 20px rgba(0, 153, 204, 0.15);
+  border-radius: var(--border-radius, 12px);
+  box-shadow: var(--card-shadow, 0 6px 20px rgba(0, 153, 204, 0.15));
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
   cursor: pointer;
   padding-bottom: 12px;
-  border: 2px solid rgba(102, 212, 255, 0.3);
+  border: var(--card-border, 2px solid rgba(102, 212, 255, 0.3));
   transition: all 0.2s ease;
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 153, 204, 0.25);
-    border-color: rgba(102, 212, 255, 0.5);
+    box-shadow: 0 12px 28px rgba(0, 153, 204, 0.25);
   }
 `;
 
@@ -211,7 +210,7 @@ const QuestionCard = styled(motion.div)<QuestionCardProps>`
     transform: ${props => props.answered ? 'none' : 'translateY(-5px)'};
     box-shadow: ${props => props.answered ? 
       'none' : 
-      '0 8px 15px rgba(0, 153, 204, 0.25)'};
+      '0 8px 16px rgba(0, 153, 204, 0.3)'};
   }
 `;
 
@@ -347,6 +346,7 @@ const GameBoard: React.FC = () => {
             question={questionData.question}
             answered={questionData.question.answered}
             onClick={() => handleSelectQuestion(category.id, questionData.index)}
+            className="question-card"
           >
             {value}
           </QuestionCard>
@@ -391,8 +391,8 @@ const GameBoard: React.FC = () => {
             key={category.id}
             variants={cardVariants}
           >
-            <CategoryHeader>
-              <CategoryHeaderText>
+            <CategoryHeader className="category-header">
+              <CategoryHeaderText className="category-name">
                 <BidirectionalText text={category.name} />
               </CategoryHeaderText>
             </CategoryHeader>

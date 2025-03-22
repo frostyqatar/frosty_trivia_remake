@@ -21,10 +21,10 @@ const SoundControlsContainer = styled.div`
 
 // Main mute/unmute button
 const MuteButton = styled.button<{ colorMode: 'light' | 'dark' }>`
-  background: none;
-  border: none;
-  color: ${props => props.colorMode === 'light' ? '#0f5e87' : 'white'};
-  font-size: 24px;
+  background: var(--card-background); 
+  border: 2px solid var(--border-color);
+  color: ${props => props.colorMode === 'light' ? 'var(--text-color)' : 'var(--button-text-color)'};
+  font-size: 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -34,9 +34,10 @@ const MuteButton = styled.button<{ colorMode: 'light' | 'dark' }>`
   border-radius: 50%;
   transition: all 0.2s;
   z-index: 9999;
+  box-shadow: var(--card-shadow);
+  margin: 0 10px;
   
   &:hover {
-    background-color: ${props => props.colorMode === 'light' ? 'rgba(15, 94, 135, 0.1)' : 'rgba(255, 255, 255, 0.1)'};
     transform: scale(1.1);
   }
 `;

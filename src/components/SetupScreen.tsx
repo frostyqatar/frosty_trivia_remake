@@ -14,7 +14,7 @@ import { trackGameEvent } from '../services/analytics';
 import FeedbackModal from './FeedbackModal';
 import SoundControls from './common/SoundControls';
 import CursorStars from './effects/CursorStars';
-
+import ThemeSwitcher from './common/ThemeSwitcher';
 // Enhanced color palette
 const colors = {
   primary: '#0099cc',
@@ -578,7 +578,7 @@ const SetupScreen: React.FC = () => {
       <SnowflakeDecoration size="28px" top="65%" left="8%" duration="15s">❄️</SnowflakeDecoration>
       <SnowflakeDecoration size="32px" top="70%" left="90%" duration="9s">❄️</SnowflakeDecoration>
       <SnowflakeDecoration size="24px" top="40%" left="92%" duration="11s">❄️</SnowflakeDecoration>
-
+      
       {/* Wave background */}
       <WaveBackground
         animate={{ 
@@ -627,14 +627,25 @@ const SetupScreen: React.FC = () => {
       
       {/* Header section */}
       <Header as={motion.header} variants={itemVariants}>
-        <Logo>Frosty Trivia ☃️</Logo>
+        <Logo className="halloween-drip">Frosty Trivia</Logo>
         <CreatorInfo>برمجة عبدالله الشاعر </CreatorInfo>
         <Subtitle>استعد لتجربة لعبة سؤال وجواب رائعة ومسلية! اختبر معلوماتك وتنافس في هذه اللعبة الجماعية </Subtitle>
-        
-        <SoundControlsWrapper>
-          <SoundControls />
-        </SoundControlsWrapper>
-        
+        <div
+  style={{
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: 'calc(100% - 150px)', // Full width minus 20px (10px padding on both sides)
+    margin: '0 10px', // Adds 10px space on both left and right
+  }}
+>
+  <SoundControlsWrapper>
+    <SoundControls />
+  </SoundControlsWrapper>
+  <ThemeSwitcher />
+</div>
+
+
         <SnowToggleButton 
           onClick={handleToggleSnow}
           whileHover={{ scale: 1.1, rotate: 15 }}
@@ -680,7 +691,7 @@ const SetupScreen: React.FC = () => {
       
       {/* Category selector */}
       <SectionWrapper as={motion.div} variants={itemVariants}>
-        <SectionTitle>اختر الفئات</SectionTitle>
+        <SectionTitle className="halloween-drip">اختر الفئات</SectionTitle>
         <div style={{ width: '100%', position: 'relative', zIndex: 1 }}>
           <CategorySelector />
         </div>
@@ -688,7 +699,7 @@ const SetupScreen: React.FC = () => {
       
       {/* Team setup */}
       <SectionWrapper as={motion.div} variants={itemVariants}>
-        <SectionTitle>إعداد الفرق</SectionTitle>
+        <SectionTitle className="halloween-drip">إعداد الفرق</SectionTitle>
         <TeamsContainer>
           <TeamSetup 
             teamNumber={1} 

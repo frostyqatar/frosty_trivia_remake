@@ -1,0 +1,100 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <!-- Background rectangle -->
+  <rect width="800" height="600" fill="#13151a" />
+  
+  <!-- Background pattern -->
+  <pattern id="halloweenPattern" patternUnits="userSpaceOnUse" width="100" height="100">
+    <rect width="100" height="100" fill="#13151a"/>
+    <path d="M30 20 L35 30 L30 40 L25 30 z" fill="#ff6d0015" />
+    <path d="M10 10 L15 5 L20 10 L15 15 z" fill="#7e00fc15" />
+    <path d="M40 40 L45 35 L50 40 L45 45 z" fill="#00ff6615" />
+  </pattern>
+  <rect width="100%" height="100%" fill="url(#halloweenPattern)" />
+  
+  <!-- Spooky elements -->
+  
+  <!-- Pumpkin -->
+  <g transform="translate(100,120) scale(0.8)">
+    <path d="M50,30 C70,10 80,40 100,30 L100,90 C80,110 70,80 50,90 Z" fill="#ff6d00" />
+    <path d="M75,30 L75,10 C75,0 85,0 85,10 L85,30" fill="#38761d" stroke="#38761d" stroke-width="2" />
+    <circle cx="65" cy="50" r="10" fill="#000000" />
+    <circle cx="85" cy="50" r="10" fill="#000000" />
+    <path d="M65,75 Q75,85 85,75" fill="none" stroke="#000000" stroke-width="4" />
+  </g>
+  
+  <!-- Ghost -->
+  <g transform="translate(200,150) scale(0.7)">
+    <path d="M50,20 C20,20 20,60 50,90 C80,60 80,20 50,20 Z" fill="white" />
+    <circle cx="40" cy="50" r="7" fill="#000000" />
+    <circle cx="60" cy="50" r="7" fill="#000000" />
+    <path d="M40,70 Q50,80 60,70" fill="none" stroke="#000000" stroke-width="3" />
+  </g>
+  
+  <!-- Bat -->
+  <g transform="translate(600,100) scale(0.6)">
+    <path d="M50,30 L30,10 C20,0 0,10 10,20 L20,30 L0,40 C-10,50 0,70 20,60 L40,50 L60,50 L80,60 C100,70 110,50 100,40 L80,30 L90,20 C100,10 80,0 70,10 L50,30 Z" fill="#2c1b30" />
+    <circle cx="40" cy="35" r="5" fill="#ff6d00" />
+    <circle cx="60" cy="35" r="5" fill="#ff6d00" />
+  </g>
+  
+  <!-- Spider Web - Top Right -->
+  <g transform="translate(700,50)">
+    <path d="M0,0 L50,50 M0,0 L50,25 M0,0 L50,0 M0,0 L25,50 M0,0 L0,50" stroke="#ffffff20" stroke-width="1" />
+    <path d="M0,0 C15,10 30,20 50,50 M0,0 C15,5 30,10 50,25 M0,0 C15,0 30,0 50,0 M0,0 C5,15 10,30 25,50 M0,0 C0,15 0,30 0,50" stroke="#ffffff10" stroke-width="1" />
+  </g>
+  
+  <!-- Spider Web - Bottom Left -->
+  <g transform="translate(50,500)">
+    <path d="M0,0 L50,50 M0,0 L50,25 M0,0 L50,0 M0,0 L25,50 M0,0 L0,50" stroke="#ffffff20" stroke-width="1" />
+    <path d="M0,0 C15,10 30,20 50,50 M0,0 C15,5 30,10 50,25 M0,0 C15,0 30,0 50,0 M0,0 C5,15 10,30 25,50 M0,0 C0,15 0,30 0,50" stroke="#ffffff10" stroke-width="1" />
+  </g>
+  
+  <!-- Witch Hat -->
+  <g transform="translate(500,250) scale(0.7)">
+    <path d="M30,80 L90,80 L60,10 Z" fill="#2c1b30" />
+    <path d="M20,80 L100,80 C100,90 20,90 20,80 Z" fill="#7e00fc" />
+    <path d="M60,40 Q75,45 70,55" fill="none" stroke="#ff6d00" stroke-width="2" />
+  </g>
+  
+  <!-- Moon -->
+  <g transform="translate(650,450)">
+    <circle cx="0" cy="0" r="40" fill="#ffbd9e20" />
+    <path d="M-10,-10 C20,-30 30,10 0,20 C-20,30 -30,10 -10,-10 Z" fill="#ffbd9e40" />
+  </g>
+  
+  <!-- Candy -->
+  <g transform="translate(350,500) rotate(45)">
+    <rect x="-20" y="-10" width="40" height="20" rx="10" ry="10" fill="#ff6d00" />
+    <rect x="-20" y="-10" width="20" height="20" rx="10" ry="10" fill="#ffffff" />
+  </g>
+  
+  <g transform="translate(400,480) rotate(-20)">
+    <rect x="-20" y="-10" width="40" height="20" rx="10" ry="10" fill="#7e00fc" />
+    <rect x="-20" y="-10" width="20" height="20" rx="10" ry="10" fill="#ffffff" />
+  </g>
+  
+  <!-- Graves -->
+  <g transform="translate(450,380) scale(0.5)">
+    <path d="M30,100 L30,30 C30,10 50,0 70,0 C90,0 110,10 110,30 L110,100 Z" fill="#666666" />
+    <path d="M50,30 L90,30 M50,50 L90,50 M50,70 L90,70" stroke="#444444" stroke-width="3" />
+  </g>
+  
+  <g transform="translate(550,400) scale(0.4)">
+    <path d="M30,100 L30,30 C30,10 50,0 70,0 C90,0 110,10 110,30 L110,100 Z" fill="#666666" />
+    <circle cx="70" cy="50" r="20" fill="#444444" />
+  </g>
+  
+  <!-- Lightning -->
+  <path d="M300,10 L280,80 L320,60 L290,150" stroke="#ffbd9e" stroke-width="3" fill="none" />
+  
+  <!-- Sparkles for magical effect -->
+  <g transform="translate(450,200)">
+    <path d="M0,0 L0,10 M-5,5 L5,5" stroke="#7e00fc" stroke-width="2" />
+  </g>
+  <g transform="translate(380,320)">
+    <path d="M0,0 L0,10 M-5,5 L5,5" stroke="#ff6d00" stroke-width="2" />
+  </g>
+  <g transform="translate(280,220)">
+    <path d="M0,0 L0,10 M-5,5 L5,5" stroke="#00ff66" stroke-width="2" />
+  </g>
+</svg> 

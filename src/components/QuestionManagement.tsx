@@ -23,6 +23,7 @@ import ReactDOM from 'react-dom';
 import AudioTrimmer from './AudioTrimmer';
 import VideoTrimmer from './VideoTrimmer';
 import EmojiPickerTrigger from './common/EmojiPickerTrigger';
+import EmojiPickerElement from './common/EmojiPickerElement';
 
 // Temporary local implementation until module resolution is fixed
 const trackEvent = (category: string, action: string, label?: string, value?: number) => {
@@ -69,9 +70,11 @@ const Header = styled.div`
 `;
 
 const Title = styled.h1`
-  margin: 0;
-  font-size: 32px;
-  font-weight: 700;
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: var(--text-color, #333);
+  text-align: center;
+  font-family: var(--title-font-family, var(--heading-font-family));
 `;
 
 const Subtitle = styled.p`
@@ -283,10 +286,11 @@ const ModalContent = styled(motion.div)`
 `;
 
 const ModalTitle = styled.h2`
-  margin: 0 0 28px;
-  font-size: 28px;
-  color: #333;
-  font-weight: 700;
+  font-size: 20px;
+  margin-bottom: 20px;
+  color: var(--text-color, #333);
+  font-family: var(--heading-font-family);
+  text-align: center;
 `;
 
 const FormGroup = styled.div`
@@ -699,11 +703,12 @@ const CategoriesSection = styled.div`
 `;
 
 const CategoriesHeader = styled.h2`
-  font-size: 28px;
-  margin-bottom: 28px;
-  color: #2c3e50;
-  border-bottom: 2px solid #e0e0e0;
-  padding-bottom: 16px;
+  font-size: 24px;
+  margin-bottom: 16px;
+  color: var(--text-color, #333);
+  display: flex;
+  align-items: center;
+  font-family: var(--heading-font-family);
 `;
 
 const CategoryList = styled.div`
@@ -944,10 +949,10 @@ const SectionDivider = styled.div`
 `;
 
 const SectionTitle = styled.h3`
-  font-size: 20px;
-  color: #333;
+  font-size: 18px;
   margin-bottom: 16px;
-  font-weight: 600;
+  color: var(--text-color, #555);
+  font-family: var(--accent-font-family, var(--heading-font-family));
 `;
 
 // Replace the duplicate components with renamed versions
@@ -1037,20 +1042,19 @@ const CategoryEmojiPickerWrapper = styled.div`
     margin-top: 5px;
   }
   
-  /* Override the default positioning to place emoji grid above the button for category selection */
-  div[class*='EmojiGridContainer'] {
+  /* Styling for the emoji picker */
+  div[class*='PickerWrapper'] {
     bottom: calc(100% + 10px);
     top: auto;
     right: auto;
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) !important;
     
     /* Reset position when being dragged */
-    &[style*="transform"] {
-      /* This selector targets the element when it has inline transform styles (during drag) */
+    &[data-dragging="true"] {
       bottom: auto;
       left: auto;
-      transform: none !important; /* Use important to override Framer Motion's inline styles */
+      transform: none !important;
     }
   }
 `;
@@ -1078,9 +1082,9 @@ const QuestionManagement: React.FC = () => {
     question: string;
     answer: string;
     value: number;
-    image?: string;
-    audio?: string;
-    video?: string;
+    image: string;
+    audio: string;
+    video: string;
   }>({
     categoryId: categories[0]?.id || '',
     question: '',
@@ -1134,6 +1138,9 @@ const QuestionManagement: React.FC = () => {
   // Add state for QR code generation
   const [isGeneratingQR, setIsGeneratingQR] = useState(false);
 
+  // Add a new state variable to track if we're in simple mode
+  const [simpleMode, setSimpleMode] = useState<boolean>(false);
+
   // Helper function to generate QR code image data URL
   // Removed the generateQRCodeDataURL function
 
@@ -1146,10 +1153,10 @@ const QuestionManagement: React.FC = () => {
 
     setIsGeneratingQR(true);
     try {
-      // Create a canvas element
+      // Create a canvas element with larger dimensions
       const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
+      canvas.width = 500; // Increased further from 400
+      canvas.height = 500; // Increased further from 400
       const ctx = canvas.getContext('2d');
       
       if (!ctx) {
@@ -1164,12 +1171,22 @@ const QuestionManagement: React.FC = () => {
       const tempContainer = document.createElement('div');
       document.body.appendChild(tempContainer);
       
-      // Render QR code into temporary container
+      // Process answer text - if too long, it might need special handling
+      let qrValue = formData.answer;
+      const MAX_RECOMMENDED_LENGTH = 300; // QR codes become harder to scan at higher data densities
+      
+      if (qrValue.length > MAX_RECOMMENDED_LENGTH) {
+        console.log(`Warning: QR code content is very long (${qrValue.length} chars). This may affect scannability.`);
+        // We'll still try to generate it, but let the user know
+        showNotification(`Warning: Long answer (${qrValue.length} chars) may affect QR code scannability.`);
+      }
+      
+      // Render QR code into temporary container with increased size and error correction
       ReactDOM.render(
         <QRCodeCanvas 
-          value={formData.answer} 
-          size={240} 
-          level="H" 
+          value={qrValue} 
+          size={440} // Increased for better readability 
+          level="H" // High error correction for better reliability with longer text
           includeMargin={true}
           bgColor="#FFFFFF"
           fgColor="#000000"
@@ -1189,6 +1206,8 @@ const QuestionManagement: React.FC = () => {
             (canvas.width - qrCanvas.width) / 2, 
             (canvas.height - qrCanvas.height) / 2
           );
+          
+          
           
           // Convert to data URL
           const dataURL = canvas.toDataURL('image/png');
@@ -1347,8 +1366,32 @@ const QuestionManagement: React.FC = () => {
     setLastUpdateTimestamp(Date.now());
   };
   
+  // Add a function to open the modal in simple mode
+  const handleOpenSimpleModal = () => {
+    setModalMode('add');
+    setSimpleMode(true);
+    setFormData({
+      categoryId: categories[0]?.id || '',
+      question: '',
+      answer: '',
+      value: 100,
+      image: '',
+      audio: '',
+      video: ''
+    });
+    setEditingQuestion(null);
+    
+    // Reset URL inputs
+    setAudioUrlInput('');
+    setVideoUrlInput('');
+    
+    setShowModal(true);
+  };
+  
+  // Modify the existing handleOpenModal to reset simple mode
   const handleOpenModal = (mode: 'add' | 'edit', question?: { categoryId: string; questionIndex: number }) => {
     setModalMode(mode);
+    setSimpleMode(false);
     
     if (mode === 'add') {
       setFormData({
@@ -2438,10 +2481,145 @@ const QuestionManagement: React.FC = () => {
     setShowAddCategoryModal(true);
   };
 
+  // First, add a new function to generate QR codes in bulk
+  const generateBulkQRCodes = async () => {
+    if (selectedQuestions.length === 0) {
+      alert('Please select at least one question to generate QR codes for.');
+      return;
+    }
+
+    // Confirm with user
+    if (!window.confirm(`Generate QR codes for ${selectedQuestions.length} selected questions? This may take a moment.`)) {
+      return;
+    }
+
+    // Track how many were successfully generated
+    let successCount = 0;
+    let errorCount = 0;
+
+    // Create a deep copy of categories to avoid reference issues
+    const updatedCategories = JSON.parse(JSON.stringify(categories));
+
+    // Show notification that process is starting
+    showNotification(`Starting QR code generation for ${selectedQuestions.length} questions...`);
+
+    // Process questions one by one
+    for (const { categoryId, questionIndex } of selectedQuestions) {
+      try {
+        // Find category and question
+        const categoryIndex = updatedCategories.findIndex((c: Category) => c.id === categoryId);
+        if (categoryIndex === -1) continue;
+
+        const question = updatedCategories[categoryIndex].questions[questionIndex];
+        if (!question) continue;
+
+        // Only generate QR code if there's an answer and no existing QR code (image)
+        if (!question.answer || question.answer.trim() === '') {
+          errorCount++;
+          continue;
+        }
+
+        // Create canvas for QR code
+        const canvas = document.createElement('canvas');
+        canvas.width = 500;
+        canvas.height = 500;
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          throw new Error('Could not get canvas context');
+        }
+
+        // Draw white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Create temporary container for QR code
+        const tempContainer = document.createElement('div');
+        document.body.appendChild(tempContainer);
+
+        // Render QR code
+        ReactDOM.render(
+          <QRCodeCanvas
+            value={question.answer}
+            size={440}
+            level="H"
+            includeMargin={true}
+            bgColor="#FFFFFF"
+            fgColor="#000000"
+          />,
+          tempContainer
+        );
+
+        // Wait for render to complete and capture the QR code
+        await new Promise<void>((resolve) => {
+          setTimeout(() => {
+            try {
+              const qrCanvas = tempContainer.querySelector('canvas');
+              if (qrCanvas) {
+                // Draw QR code onto main canvas
+                ctx.drawImage(
+                  qrCanvas,
+                  (canvas.width - qrCanvas.width) / 2,
+                  (canvas.height - qrCanvas.height) / 2
+                );
+
+                // Add small note at bottom
+                ctx.font = '14px Arial';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.fillText('no cheating!', canvas.width / 2, canvas.height - 20);
+
+                // Convert to data URL and update question
+                const dataURL = canvas.toDataURL('image/png');
+                updatedCategories[categoryIndex].questions[questionIndex].image = dataURL;
+
+                // Update question text to include QR code notice if not already there
+                if (!question.question.includes('Do not scan the qr code')) {
+                  updatedCategories[categoryIndex].questions[questionIndex].question = 
+                    `${question.question || ''} Do not scan the qr code`.trim();
+                }
+
+                successCount++;
+              }
+
+              // Clean up
+              ReactDOM.unmountComponentAtNode(tempContainer);
+              document.body.removeChild(tempContainer);
+              resolve();
+            } catch (error) {
+              console.error('Error processing QR code:', error);
+              errorCount++;
+              
+              // Clean up in case of error
+              if (document.body.contains(tempContainer)) {
+                ReactDOM.unmountComponentAtNode(tempContainer);
+                document.body.removeChild(tempContainer);
+              }
+              resolve();
+            }
+          }, 100);
+        });
+
+      } catch (error) {
+        console.error('Error generating QR code:', error);
+        errorCount++;
+      }
+    }
+
+    // Update Redux store with the modified categories
+    dispatch(updateCategories(updatedCategories));
+
+    // Show completion notification
+    showNotification(`QR code generation complete: ${successCount} successful, ${errorCount} failed.`);
+    
+    // Play sound for feedback
+    playSound('button-click');
+  };
+
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
-        <Title>Question Management</Title>
+        <Title className="halloween-drip">Question Management</Title>
         <Subtitle>Review, add, update, or delete questions before starting the game</Subtitle>
       </Header>
       
@@ -2483,6 +2661,15 @@ const QuestionManagement: React.FC = () => {
               ➕ Add Question
             </Button>
       
+            <Button 
+              onClick={handleOpenSimpleModal}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ backgroundColor: '#43a047' }}
+            >
+              ✨ Add Simple Question
+            </Button>
+            
             <Button 
               onClick={handleSaveToLocalStorage}
               whileHover={{ scale: 1.05 }}
@@ -2528,14 +2715,27 @@ const QuestionManagement: React.FC = () => {
           </ButtonGroup>
           
           <DangerButtonGroup>
-            {selectMode && selectedQuestions.length > 0 && (
-              <DangerButton
-                onClick={handleDeleteSelected}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                🗑️ Delete Selected ({selectedQuestions.length})
-              </DangerButton>
+            {selectMode && (
+              <>
+                {selectedQuestions.length > 0 && (
+                  <DangerButton
+                    onClick={handleDeleteSelected}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    🗑️ Delete Selected ({selectedQuestions.length})
+                  </DangerButton>
+                )}
+                
+                {selectedQuestions.length > 0 && (
+                  <Button
+                    onClick={generateBulkQRCodes}
+                    style={{ marginLeft: '8px', backgroundColor: '#5bc0de' }}
+                  >
+                    📱 Generate QR Codes ({selectedQuestions.length})
+                  </Button>
+                )}
+              </>
             )}
             <DangerButton
               onClick={handleDeleteAllQuestions}
@@ -2684,7 +2884,11 @@ const QuestionManagement: React.FC = () => {
               onClick={(e) => e.stopPropagation()}
             >
               <ModalHeader>
-                <ModalTitle>{modalMode === 'add' ? 'Add New Question' : 'Edit Question'}</ModalTitle>
+                <ModalTitle className="halloween-drip">
+                  {modalMode === 'add' 
+                    ? (simpleMode ? 'Add Simple Question' : 'Add New Question') 
+                    : 'Edit Question'}
+                </ModalTitle>
                 <CloseButton 
                   onClick={handleCloseModal}
                   whileHover={{ scale: 1.1 }}
@@ -2775,186 +2979,191 @@ const QuestionManagement: React.FC = () => {
                 </PointValueButtonGroup>
               </FormGroup>
               
-              <FormGroup>
-                <FormLabel>Image (optional)</FormLabel>
-                <FormInput
-                  name="image"
-                  value={formData.image || ''}
-                  onChange={handleFormChange}
-                  placeholder="https://example.com/image.jpg"
-                />
-                <div style={{ marginTop: '8px' }}>
-                  <label htmlFor="file-upload" style={{ cursor: 'pointer', background: '#f0f0f0', padding: '8px 12px', borderRadius: '4px', display: 'inline-block' }}>
-                    Or upload image file
-                  </label>
-                  <input
-                    id="file-upload"
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                      if (e.target.files && e.target.files[0]) {
-                        const file = e.target.files[0];
-                        setSelectedFile(file);
-                        
-                        // Create local URL for the file
-                        const localUrl = URL.createObjectURL(file);
-                        setOriginalImageUrl(localUrl);
-                        setShowImageCropper(true);
-                      }
-                    }}
-                  />
-                </div>
-                
-                {formData.image && !showImageCropper && (
-                  <MediaContainer>
-                    <MediaPreview type="image" src={formData.image} />
-                    <RemoveMediaButton
-                      onClick={() => handleRemoveMedia('image')}
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      ✖
-                    </RemoveMediaButton>
-                  </MediaContainer>
-                )}
-                {showImageCropper && (
-                  <ImageCropper
-                    imageUrl={originalImageUrl}
-                    onCropComplete={handleCropComplete}
-                    onCancel={handleCropCancel}
-                  />
-                )}
-              </FormGroup>
-              
-              <FormGroup>
-                <FormLabel>Audio URL (optional)</FormLabel>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div>
-                    <StyledTextBlock>Upload from your device:</StyledTextBlock>
-                    <StyledInput
-                      type="file"
-                      accept="audio/*"
-                      onChange={handleAudioFileUpload}
+              {/* Only show optional media fields if not in simple mode */}
+              {!simpleMode && (
+                <>
+                  <FormGroup>
+                    <FormLabel>Image (optional)</FormLabel>
+                    <FormInput
+                      name="image"
+                      value={formData.image || ''}
+                      onChange={handleFormChange}
+                      placeholder="https://example.com/image.jpg"
                     />
-                  </div>
-                  
-                  <div>
-                    <StyledTextBlock>Or use a direct URL:</StyledTextBlock>
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <StyledInput
-                        type="text"
-                        placeholder="Enter audio URL"
-                        value={audioUrlInput}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAudioUrlInput(e.target.value)}
-                        style={{ flex: 1 }}
+                    <div style={{ marginTop: '8px' }}>
+                      <label htmlFor="file-upload" style={{ cursor: 'pointer', background: '#f0f0f0', padding: '8px 12px', borderRadius: '4px', display: 'inline-block' }}>
+                        Or upload image file
+                      </label>
+                      <input
+                        id="file-upload"
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            const file = e.target.files[0];
+                            setSelectedFile(file);
+                            
+                            // Create local URL for the file
+                            const localUrl = URL.createObjectURL(file);
+                            setOriginalImageUrl(localUrl);
+                            setShowImageCropper(true);
+                          }
+                        }}
                       />
-                      <Button
-                        onClick={handleAudioUrlSubmit}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Use URL
-                      </Button>
                     </div>
-                  </div>
-                </div>
-                
-                {showAudioTrimmer && formData.audio && (
-                  <AudioTrimmer
-                    audioUrl={formData.audio!}
-                    onTrimComplete={handleAudioTrimComplete}
-                    onCancel={handleAudioTrimCancel}
-                  />
-                )}
-                {formData.audio && !showAudioTrimmer && (
-                  <div style={{ marginTop: '15px' }}>
-                    <MediaContainer>
-                      <MediaPreview type="audio" src={formData.audio} />
-                      <RemoveMediaButton
-                        onClick={() => handleRemoveMedia('audio')}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        ✖
-                      </RemoveMediaButton>
-                    </MediaContainer>
                     
-                    <Button
-                      onClick={() => setShowAudioTrimmer(true)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      style={{ marginTop: '10px', backgroundColor: '#6c757d' }}
-                    >
-                      ✂️ Trim Audio
-                    </Button>
-                  </div>
-                )}
-              </FormGroup>
-              
-              <FormGroup>
-                <FormLabel>Video URL (optional)</FormLabel>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div>
-                    <StyledTextBlock>Upload from your device:</StyledTextBlock>
-                    <StyledInput
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoFileUpload}
-                    />
-                  </div>
-                  
-                  <div>
-                    <StyledTextBlock>Or use a direct URL:</StyledTextBlock>
-                    <div style={{ display: 'flex', gap: '5px' }}>
-                      <StyledInput
-                        type="text"
-                        placeholder="Enter video URL"
-                        value={videoUrlInput}
-                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVideoUrlInput(e.target.value)}
-                        style={{ flex: 1 }}
+                    {formData.image && !showImageCropper && (
+                      <MediaContainer>
+                        <MediaPreview type="image" src={formData.image} />
+                        <RemoveMediaButton
+                          onClick={() => handleRemoveMedia('image')}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          ✖
+                        </RemoveMediaButton>
+                      </MediaContainer>
+                    )}
+                    {showImageCropper && (
+                      <ImageCropper
+                        imageUrl={originalImageUrl}
+                        onCropComplete={handleCropComplete}
+                        onCancel={handleCropCancel}
                       />
-                      <Button
-                        onClick={handleVideoUrlSubmit}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        Use URL
-                      </Button>
+                    )}
+                  </FormGroup>
+              
+                  <FormGroup>
+                    <FormLabel>Audio URL (optional)</FormLabel>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div>
+                        <StyledTextBlock>Upload from your device:</StyledTextBlock>
+                        <StyledInput
+                          type="file"
+                          accept="audio/*"
+                          onChange={handleAudioFileUpload}
+                        />
+                      </div>
+                      
+                      <div>
+                        <StyledTextBlock>Or use a direct URL:</StyledTextBlock>
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <StyledInput
+                            type="text"
+                            placeholder="Enter audio URL"
+                            value={audioUrlInput}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAudioUrlInput(e.target.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <Button
+                            onClick={handleAudioUrlSubmit}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            Use URL
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                
-                {showVideoTrimmer && formData.video && (
-                  <VideoTrimmer
-                    videoUrl={formData.video!}
-                    onTrimComplete={handleVideoTrimComplete}
-                    onCancel={handleVideoTrimCancel}
-                  />
-                )}
-                {formData.video && !showVideoTrimmer && (
-                  <div>
-                    <MediaContainer>
-                      <MediaPreview type="video" src={formData.video} />
-                      <RemoveMediaButton
-                        onClick={() => handleRemoveMedia('video')}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        ✖
-                      </RemoveMediaButton>
-                    </MediaContainer>
-                    <Button
-                      onClick={() => setShowVideoTrimmer(true)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      style={{ marginTop: '10px', backgroundColor: '#6c757d' }}
-                    >
-                      ✂️ Trim Video
-                    </Button>
-                  </div>
-                )}
-              </FormGroup>
+                    
+                    {showAudioTrimmer && formData.audio && (
+                      <AudioTrimmer
+                        audioUrl={formData.audio!}
+                        onTrimComplete={handleAudioTrimComplete}
+                        onCancel={handleAudioTrimCancel}
+                      />
+                    )}
+                    {formData.audio && !showAudioTrimmer && (
+                      <div style={{ marginTop: '15px' }}>
+                        <MediaContainer>
+                          <MediaPreview type="audio" src={formData.audio} />
+                          <RemoveMediaButton
+                            onClick={() => handleRemoveMedia('audio')}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            ✖
+                          </RemoveMediaButton>
+                        </MediaContainer>
+                        
+                        <Button
+                          onClick={() => setShowAudioTrimmer(true)}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{ marginTop: '10px', backgroundColor: '#6c757d' }}
+                        >
+                          ✂️ Trim Audio
+                        </Button>
+                      </div>
+                    )}
+                  </FormGroup>
+                  
+                  <FormGroup>
+                    <FormLabel>Video URL (optional)</FormLabel>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      <div>
+                        <StyledTextBlock>Upload from your device:</StyledTextBlock>
+                        <StyledInput
+                          type="file"
+                          accept="video/*"
+                          onChange={handleVideoFileUpload}
+                        />
+                      </div>
+                      
+                      <div>
+                        <StyledTextBlock>Or use a direct URL:</StyledTextBlock>
+                        <div style={{ display: 'flex', gap: '5px' }}>
+                          <StyledInput
+                            type="text"
+                            placeholder="Enter video URL"
+                            value={videoUrlInput}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setVideoUrlInput(e.target.value)}
+                            style={{ flex: 1 }}
+                          />
+                          <Button
+                            onClick={handleVideoUrlSubmit}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                          >
+                            Use URL
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {showVideoTrimmer && formData.video && (
+                      <VideoTrimmer
+                        videoUrl={formData.video!}
+                        onTrimComplete={handleVideoTrimComplete}
+                        onCancel={handleVideoTrimCancel}
+                      />
+                    )}
+                    {formData.video && !showVideoTrimmer && (
+                      <div>
+                        <MediaContainer>
+                          <MediaPreview type="video" src={formData.video} />
+                          <RemoveMediaButton
+                            onClick={() => handleRemoveMedia('video')}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            ✖
+                          </RemoveMediaButton>
+                        </MediaContainer>
+                        <Button
+                          onClick={() => setShowVideoTrimmer(true)}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{ marginTop: '10px', backgroundColor: '#6c757d' }}
+                        >
+                          ✂️ Trim Video
+                        </Button>
+                      </div>
+                    )}
+                  </FormGroup>
+                </>
+              )}
               
               <ModalActions>
                 <Button
@@ -2981,7 +3190,7 @@ const QuestionManagement: React.FC = () => {
         <Modal onClick={e => e.stopPropagation()}>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Add New Category</ModalTitle>
+              <ModalTitle className="halloween-drip">Add New Category</ModalTitle>
               <CloseButton onClick={() => setShowAddCategoryModal(false)}>×</CloseButton>
             </ModalHeader>
             
@@ -3001,7 +3210,7 @@ const QuestionManagement: React.FC = () => {
                 
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <CategoryEmojiPickerWrapper>
-                    <EmojiPickerTrigger 
+                    <EmojiPickerElement 
                       onEmojiSelected={(emoji) => setNewCategoryIcon(emoji)}
                       currentEmoji={newCategoryIcon}
                       label="Choose Emoji"
@@ -3045,7 +3254,7 @@ const QuestionManagement: React.FC = () => {
         <Modal onClick={e => e.stopPropagation()}>
           <ModalContent>
             <ModalHeader>
-              <ModalTitle>Edit Category</ModalTitle>
+              <ModalTitle className="halloween-drip">Edit Category</ModalTitle>
               <CloseButton onClick={() => setShowEditCategoryModal(false)}>×</CloseButton>
             </ModalHeader>
             
@@ -3065,7 +3274,7 @@ const QuestionManagement: React.FC = () => {
                 
                 <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                   <CategoryEmojiPickerWrapper>
-                    <EmojiPickerTrigger 
+                    <EmojiPickerElement 
                       onEmojiSelected={(emoji) => setEditCategoryIcon(emoji)}
                       currentEmoji={editCategoryIcon}
                       label="Choose Emoji"
@@ -3145,7 +3354,7 @@ const QuestionManagement: React.FC = () => {
       )}
       
       <CategoriesSection>
-        <CategoriesHeader>Category Management</CategoriesHeader>
+        <CategoriesHeader className="halloween-drip">Category Management</CategoriesHeader>
         <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
           <Button 
             onClick={handleReturnToSetup}

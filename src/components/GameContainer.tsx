@@ -18,15 +18,16 @@ import QuestionManagement from './QuestionManagement';
 import Legend from './effects/Legend';
 import SoundControls from './common/SoundControls';
 import CursorStars from './effects/CursorStars';
+import ThemeSwitcher from './common/ThemeSwitcher';
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   position: relative;
-  background-color: #e6f7ff;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpattern id='pattern-waves' patternUnits='userSpaceOnUse' width='20' height='20'%3E%3Cpath d='M0,10 Q5,5 10,10 T20,10' stroke='%2366d4ff20' fill='none' /%3E%3Cpath d='M0,15 Q5,10 10,15 T20,15' stroke='%2366d4ff20' fill='none' /%3E%3Cpath d='M0,5 Q5,0 10,5 T20,5' stroke='%2366d4ff20' fill='none' /%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23pattern-waves)' /%3E%3C/svg%3E");
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  background-color: var(--background-color, #e6f7ff);
+  background-image: var(--background-image, url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpattern id='pattern-waves' patternUnits='userSpaceOnUse' width='20' height='20'%3E%3Cpath d='M0,10 Q5,5 10,10 T20,10' stroke='%2366d4ff20' fill='none' /%3E%3Cpath d='M0,15 Q5,10 10,15 T20,15' stroke='%2366d4ff20' fill='none' /%3E%3Cpath d='M0,5 Q5,0 10,5 T20,5' stroke='%2366d4ff20' fill='none' /%3E%3C/pattern%3E%3Crect width='100%25' height='100%25' fill='url(%23pattern-waves)' /%3E%3C/svg%3E"));
+  font-family: var(--font-family, 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif);
 `;
 
 const GameContent = styled.div`
@@ -74,16 +75,37 @@ const ContentContainer = styled(motion.div)`
 const ControlsBar = styled.div`
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 16px 24px;
-  background: linear-gradient(135deg, #0099cc 0%, #66d4ff 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(0, 153, 204, 0.3);
+  background: var(--primary-gradient, linear-gradient(135deg, #0099cc 0%, #66d4ff 100%));
+  color: var(--button-text-color, white);
+  box-shadow: var(--box-shadow, 0 4px 15px rgba(0, 153, 204, 0.3));
+`;
+
+const ControlsLeftSection = styled.div`
+  display: flex;
+  align-items: center;
+  min-width: 100px;
+`;
+
+const ControlsCenterSection = styled.div`
+  display: flex;
+  justify-content: center;
+  flex-grow: 1;
+  padding: 0 20px;
+`;
+
+const ControlsRightSection = styled.div`
+  display: flex;
+  align-items: center;
+  min-width: 100px;
+  justify-content: flex-end;
 `;
 
 const MusicButton = styled.button`
   background: none;
   border: none;
-  color: white;
+  color: var(--button-text-color, white);
   font-size: 24px;
   cursor: pointer;
   position: relative;
@@ -104,8 +126,8 @@ const VolumeSlider = styled.input`
   width: 120px;
   height: 8px;
   margin-top: 8px;
-  background-color: #f1f0fe;
-  border-radius: 4px;
+  background-color: var(--card-background, #f1f0fe);
+  border-radius: var(--border-radius, 4px);
   outline: none;
   z-index: 10;
   padding: 8px 0;
@@ -316,34 +338,25 @@ const GameContainer: React.FC = () => {
   
   return (
     <Container>
-      <Snowfall 
-        snowflakeCount={300}
-        speed={[0.5, 2.0]}
-        wind={[-0.5, 0.5]}
-        radius={[1.0, 3.0]}
-        color="rgba(255, 255, 255, 0.9)"
-        style={{
-          position: 'fixed',
-          width: '100vw',
-          height: '100vh',
-          zIndex: 1,
-          pointerEvents: 'none',
-          opacity: showSnow ? 1 : 0,
-          transition: 'opacity 0.5s ease'
-        }}
-      />
-      
-      <CursorStars active={true} hideDefaultCursor={false} />
-      
+      {showSnow && <Snowfall snowflakeCount={200} style={{ zIndex: 1000 }} />}
       <ControlsBar>
-        <SoundControls />
+        <ControlsLeftSection>
+          <ThemeSwitcher />
+          <SoundControls />
+        </ControlsLeftSection>
         
-        <GameTitle>Frosty Trivia ☃️</GameTitle>
+        <ControlsCenterSection>
+          <GameTitle className="game-title">Frosty Trivia ☃️</GameTitle>
+        </ControlsCenterSection>
         
-        <MusicButton onClick={() => setShowSnow(!showSnow)}>
-          {showSnow ? '❄️' : '☀️'}
-        </MusicButton>
+        <ControlsRightSection>
+          <MusicButton onClick={() => setShowSnow(!showSnow)}>
+            {showSnow ? '❄️' : '☀️'}
+          </MusicButton>
+        </ControlsRightSection>
       </ControlsBar>
+      
+      <CursorStars />
       
       <GameContent>
         <ContentContainer>

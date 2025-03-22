@@ -7,7 +7,10 @@ import GameNotification from './components/common/GameNotification';
 import WelcomeMessage from './components/common/WelcomeMessage';
 import GlobalStyle from './styles/GlobalStyle';
 import GoogleSearchTimerWrapper from './components/GoogleSearchTimerWrapper';
+import { ThemeProvider } from './contexts/ThemeContext';
+import ThemeWrapper from './components/common/ThemeWrapper';
 import './App.css';
+import 'emoji-picker-element';
 import { initGA, pageView } from './services/analytics';
 
 const App: React.FC = () => {
@@ -20,11 +23,15 @@ const App: React.FC = () => {
   return (
     <Provider store={store}>
       <PersistGate loading={null} persistor={persistor}>
-        <GlobalStyle />
-        <GameContainer />
-        <GameNotification />
-        <GoogleSearchTimerWrapper />
-        <WelcomeMessage />
+        <ThemeProvider>
+          <ThemeWrapper>
+            <GlobalStyle />
+            <GameContainer />
+            <GameNotification />
+            <GoogleSearchTimerWrapper />
+            <WelcomeMessage />
+          </ThemeWrapper>
+        </ThemeProvider>
       </PersistGate>
     </Provider>
   );

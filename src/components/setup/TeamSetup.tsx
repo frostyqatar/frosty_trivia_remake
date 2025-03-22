@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Team, AbilityType } from '../../types/game.types';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
-import EmojiPickerTrigger from '../common/EmojiPickerTrigger';
+import EmojiPickerElement from '../common/EmojiPickerElement';
 
 const Container = styled.div`
   background-color: rgba(255, 255, 255, 0.9);
@@ -29,7 +29,7 @@ const TeamHeader = styled.div`
   z-index: 5;
 `;
 
-const TeamAvatarPicker = styled(EmojiPickerTrigger)`
+const TeamAvatarPicker = styled(EmojiPickerElement)`
   background: none;
   border: none;
   font-size: 36px;
@@ -61,45 +61,30 @@ const TeamAvatarPicker = styled(EmojiPickerTrigger)`
     align-items: center;
   }
   
-  /* Fix the emoji grid display */
-  div[class*='EmojiGridContainer'] {
-    width: 340px;
-    max-height: 320px;
+  /* Styling for emoji-picker-element */
+  emoji-picker {
+    height: 350px;
+    --emoji-size: 1.5rem;
+    --background: white;
+    --border-color: #e0e0e0;
+    --border-size: 1px;
+    --input-border-color: #e0e0e0;
+    --input-font-color: #333;
+    --input-placeholder-color: #999;
+    --category-font-color: #111;
+  }
+  
+  /* Custom positioning for the emoji picker */
+  div[class*='PickerWrapper'] {
     position: absolute;
+    z-index: 10000;
     right: calc(100% + 10px);
     top: 0;
-    transform: none;
-    z-index: 1000;
-    display: block;
-    flex-direction: column;
     
     /* Reset position when being dragged */
-    &[style*="transform:"] {
-      right: auto;
-      top: auto;
+    &[data-dragging="true"] {
       position: fixed;
     }
-  }
-  
-  div[class*='drag-handle'] {
-    cursor: grab;
-  }
-  
-  div[class*='EmojiItem'] {
-    font-size: 28px;
-  }
-  
-  div[class*='CategoryRow'] {
-    display: flex;
-    flex-direction: row;
-    overflow-x: auto;
-    padding-bottom: 8px;
-  }
-  
-  div[class*='EmojiGrid'] {
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    gap: 8px;
   }
 `;
 

@@ -8,6 +8,7 @@ import { useSoundEffects } from '../../hooks/useSoundEffects';
 import { showNotification } from '../../components/common/GameNotification';
 import { clearSavedGame } from '../../utils/storageUtils';
 import { Category } from '../../types/game.types';
+import ThemeSwitcher from '../../components/common/ThemeSwitcher';
 
 import { BidirectionalText } from '../../utils/textUtils';
 
@@ -108,61 +109,58 @@ const CategoryName = styled.div`
 `;
 
 const CategoryCard = styled(motion.div)<{ selected: boolean }>`
-  background-color: ${props => props.selected ? 'rgba(0, 153, 204, 0.15)' : 'rgba(255, 255, 255, 0.7)'};
-  border: 2px solid ${props => props.selected ? '#0099cc' : 'rgba(0, 153, 204, 0.1)'};
-  border-radius: 16px;
-  padding: 16px;
-  cursor: pointer;
-  text-align: center;
-  transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  aspect-ratio: 1/1;
+  background-color: ${props => props.selected ? 'rgba(0, 153, 204, 0.2)' : 'rgba(255, 255, 255, 0.9)'};
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
   position: relative;
+  transition: all 0.2s ease;
   overflow: hidden;
-  box-shadow: ${props => props.selected ? 
-    '0 8px 20px rgba(0, 153, 204, 0.3), 0 0 15px rgba(0, 153, 204, 0.2) inset' : 
-    '0 4px 8px rgba(0, 0, 0, 0.05)'
-  };
-  
-  // Add pulse glow effect for selected cards
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: radial-gradient(circle, rgba(102, 212, 255, 0.3) 0%, rgba(255, 255, 255, 0) 70%);
-    opacity: ${props => props.selected ? 1 : 0};
-    transition: opacity 0.3s ease;
-    z-index: -1;
-    animation: ${props => props.selected ? 'pulse 2s infinite ease-in-out' : 'none'};
-  }
-  
-  &::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0) 100%);
-    z-index: -2;
-  }
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0, 153, 204, 0.2);
-    background-color: ${props => props.selected ? 'rgba(0, 153, 204, 0.2)' : 'rgba(255, 255, 255, 0.9)'};
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
   }
   
-  @keyframes pulse {
-    0% { opacity: 0.5; }
-    50% { opacity: 1; }
-    100% { opacity: 0.5; }
+  &:after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      to bottom right, 
+      rgba(255, 255, 255, 0.1), 
+      transparent
+    );
+    pointer-events: none;
+  }
+
+  /* Add NES.css styling for retro theme */
+  [data-theme="retro"] & {
+    image-rendering: pixelated;
+    background-color: #000;
+    color: #fff;
+    border-radius: 0;
+    border: 4px solid ${props => props.selected ? '#92cc41' : '#209cee'};
+    box-shadow: 0 4px 0 ${props => props.selected ? '#4aa52e' : '#006bb3'};
+    padding: 8px;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 3px 0 ${props => props.selected ? '#4aa52e' : '#006bb3'};
+    }
+    
+    &:active {
+      transform: translateY(2px);
+      box-shadow: 0 0 0 ${props => props.selected ? '#4aa52e' : '#006bb3'};
+    }
   }
 `;
 
@@ -172,7 +170,8 @@ const ActionBar = styled.div`
   align-items: center;
   margin-bottom: 20px;
   position: relative;
-  z-index: 1;
+  z-index: 1000;
+  gap: 15px;
 `;
 
 const EmergencyResetButton = styled.button`
@@ -195,12 +194,43 @@ const EmergencyResetButton = styled.button`
   &:active {
     transform: translateY(1px);
   }
+  
+  /* Add NES.css styling for retro theme */
+  [data-theme="retro"] & {
+    background: #e76e55;
+    image-rendering: pixelated;
+    border-radius: 0;
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+    padding: 6px 8px;
+    margin: 4px;
+    font-weight: normal;
+    box-shadow: 0 4px 0 #c3533e;
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #c3533e;
+    }
+    
+    &:active {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 #c3533e;
+    }
+  }
 `;
 
 const EmptyMessage = styled.div`
   text-align: center;
   color: #666;
   font-size: 18px;
+  padding: 20px;
+  
+  [data-theme="retro"] & {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 10px;
+    color: #fff;
+    padding: 10px;
+  }
 `;
 
 const CategorySelector: React.FC = () => {
@@ -255,12 +285,12 @@ const CategorySelector: React.FC = () => {
   return (
     <Container>
       <TitleContainer>
-        <Title>📚 اختر الفئات (١-٨)</Title>
-        
+        <Title className="halloween-drip">📚 اختر الفئات (١-٨)</Title>
       </TitleContainer>
       <CounterText>اختر الفئات: {selectedCategories.length}/8</CounterText>
       
       <ActionBar>
+        
         <EmergencyResetButton onClick={handleEmergencyReset}>
           Emergency Reset
         </EmergencyResetButton>

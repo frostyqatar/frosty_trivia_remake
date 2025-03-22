@@ -278,6 +278,20 @@ const gameSlice = createSlice({
     setShockedTeam: (state, action: PayloadAction<TeamIndex | null>) => {
       state.shockedTeam = action.payload;
     },
+    
+    applyElectricShock: (state, action: PayloadAction<{ teamIndex: TeamIndex, points: number }>) => {
+      const { teamIndex, points } = action.payload;
+      
+      // Apply points directly without considering the multiplier
+      if (state.teams[teamIndex]) {
+        state.teams[teamIndex].score += points;
+        
+        // Ensure score doesn't go below zero
+        if (state.teams[teamIndex].score < 0) {
+          state.teams[teamIndex].score = 0;
+        }
+      }
+    },
   },
   extraReducers: (builder) => {
     builder.addCase(resetGame, (state) => {
@@ -352,6 +366,7 @@ export const {
   blockTeamFromAnswering,
   setActiveTeamIndex,
   setShockedTeam,
+  applyElectricShock,
 } = gameSlice.actions;
 
 export const resetGame = createAction('game/resetGame');

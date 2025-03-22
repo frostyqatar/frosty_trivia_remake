@@ -156,12 +156,12 @@ const Legend: React.FC = () => {
               
               <FeatureItem>
                 <FeatureIcon>2️⃣</FeatureIcon>
-                <FeatureDescription>دبل نقاط الإجابة</FeatureDescription>
+                <FeatureDescription>دبل نقاط الإجابة.. تقدر تضاعف الصعقة بدال النقاط</FeatureDescription>
               </FeatureItem>
               
               <FeatureItem>
                 <FeatureIcon>🔍</FeatureIcon>
-                <FeatureDescription>الإتصال بصديق مضيعة وقت... أنت دور بقوقل بنفسك</FeatureDescription>
+                <FeatureDescription>الإتصال بصديق مضيعة وقت... أنت دور بقوقل بنفسك... فقط حق نقاط 100 و200</FeatureDescription>
               </FeatureItem>
               
               <FeatureItem>

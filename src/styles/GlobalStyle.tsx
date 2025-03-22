@@ -8,22 +8,36 @@ const GlobalStyle = createGlobalStyle`
   }
 
   body {
-    font-family: 'Noto Sans Arabic', 'Roboto', sans-serif;
-    background-color: #edf2f7;
-    color: #2d3748;
+    font-family: var(--font-family, 'Noto Sans Arabic', 'Roboto', sans-serif);
+    background-color: var(--background-color, #edf2f7);
+    color: var(--text-color, #2d3748);
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 
   button {
-    font-family: 'Noto Sans Arabic', 'Roboto', sans-serif;
+    font-family: var(--font-family, 'Noto Sans Arabic', 'Roboto', sans-serif);
   }
   
   input {
-    font-family: 'Noto Sans Arabic', 'Roboto', sans-serif;
+    font-family: var(--font-family, 'Noto Sans Arabic', 'Roboto', sans-serif);
+  }
+
+  /* Card styles */
+  .card {
+    background-color: var(--card-background, white);
+    border-radius: var(--border-radius, 8px);
+    box-shadow: var(--card-shadow, 0 4px 6px rgba(0, 0, 0, 0.1));
+  }
+  
+  /* Button styles */
+  .btn-primary {
+    background-color: var(--primary-color, #3498db);
+    color: var(--button-text-color, white);
   }
 
   /* Support for Arabic text */
   .arabic {
-    font-family: 'Noto Sans Arabic', 'Roboto', sans-serif;
+    font-family: var(--font-family, 'Noto Sans Arabic', 'Roboto', sans-serif);
   }
 `;
 

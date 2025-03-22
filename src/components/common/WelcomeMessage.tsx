@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
+import ThemeSwitcher from './ThemeSwitcher';
 
 const MessageOverlay = styled(motion.div)`
   position: fixed;
@@ -34,6 +35,16 @@ const MessageHeader = styled.div`
   text-align: center;
   font-weight: bold;
   font-size: 1.2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+`;
+
+const ThemeSwitcherContainer = styled.div`
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1100;
 `;
 
 const MessageContent = styled.div`
@@ -123,6 +134,10 @@ const WelcomeMessage: React.FC = () => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
+          <ThemeSwitcherContainer>
+            <ThemeSwitcher />
+          </ThemeSwitcherContainer>
+          
           <MessageContainer
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}

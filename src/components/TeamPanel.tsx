@@ -20,13 +20,13 @@ interface TeamPanelProps {
 const TeamContainer = styled(motion.div)<{ isActive: boolean, isShocked: boolean }>`
   display: flex;
   flex-direction: column;
-  background-color: rgba(255, 255, 255, 0.9);
+  background-color: var(--card-background, rgba(255, 255, 255, 0.9));
   backdrop-filter: blur(8px);
-  border-radius: 24px;
+  border-radius: var(--border-radius, 24px);
   padding: 32px;
-  box-shadow: 0 12px 25px rgba(0, 153, 204, 0.15);
+  box-shadow: var(--card-shadow, 0 12px 25px rgba(0, 153, 204, 0.15));
   transition: all 0.3s ease;
-  border: ${props => props.isActive ? '4px solid #0099cc' : '2px solid rgba(102, 212, 255, 0.3)'};
+  border: ${props => props.isActive ? `4px solid var(--primary-color, #0099cc)` : `2px solid var(--secondary-color, rgba(102, 212, 255, 0.3))`};
   position: relative;
   overflow: hidden;
   min-width: 390px;
@@ -43,7 +43,7 @@ const ActiveTeamIndicator = styled.div`
   left: 0;
   width: 100%;
   height: 8px;
-  background: linear-gradient(90deg, #0099cc 0%, #66d4ff 100%);
+  background: var(--primary-gradient, linear-gradient(90deg, #0099cc 0%, #66d4ff 100%));
 `;
 
 const TeamHeader = styled.div`
@@ -296,7 +296,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
           <CatLoader active={true} size={1.2} />
         </TeamAvatar>
         <TeamInfo>
-          <TeamName>{team.name}</TeamName>
+          <TeamName className="team-name">{team.name}</TeamName>
           <TeamScore>
             <ScoreAdjustButton 
               onClick={() => handleAdjustScore(-10)}
@@ -322,6 +322,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
       <AbilitiesSection>
         <AbilitiesGrid>
           <AbilityButton 
+            className="ability-button"
             isUsed={team.abilities.chatgpt.used}
             disabled={gamePhase !== 'question' || team.abilities.chatgpt.used}
             whileHover={!team.abilities.chatgpt.used ? { scale: 1.05 } : {}}
@@ -332,6 +333,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
           </AbilityButton>
           
           <AbilityButton 
+            className="ability-button"
             isUsed={team.abilities.double.used}
             disabled={gamePhase !== 'question' || team.abilities.double.used}
             whileHover={!team.abilities.double.used ? { scale: 1.05 } : {}}
@@ -343,6 +345,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
           </AbilityButton>
           
           <AbilityButton 
+            className="ability-button"
             isUsed={team.abilities.google.used}
             disabled={gamePhase !== 'question' || team.abilities.google.used}
             whileHover={!team.abilities.google.used ? { scale: 1.05 } : {}}
@@ -353,6 +356,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
           </AbilityButton>
           
           <AbilityButton 
+            className="ability-button"
             isUsed={team.abilities.dismiss.used}
             disabled={gamePhase !== 'question' || team.abilities.dismiss.used}
             whileHover={!team.abilities.dismiss.used ? { scale: 1.05 } : {}}
@@ -363,6 +367,7 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
           </AbilityButton>
           
           <AbilityButton 
+            className="ability-button"
             isUsed={team.abilities.electric.used}
             disabled={team.abilities.electric.used}
             whileHover={!team.abilities.electric.used ? { scale: 1.05 } : {}}
