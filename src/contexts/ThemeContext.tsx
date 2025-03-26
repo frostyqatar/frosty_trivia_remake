@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // Define theme names
-export type ThemeName = 'default' | 'fun' | 'halloween' | 'retro';
+export type ThemeName = 'default' | 'fun' | 'halloween' | 'retro' | 'dark';
 
 // Define context type
 interface ThemeContextType {

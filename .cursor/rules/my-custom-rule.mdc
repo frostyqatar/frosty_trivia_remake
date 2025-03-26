@@ -1,0 +1,525 @@
+---
+description: It tells what each file does.
+globs: 
+alwaysApply: false
+---
+
+### **Detailed Description of Each File in the Frosty Trivia Remake Game**
+
+The directory structure of the **Frosty Trivia Remake** game is organized to separate concerns, making the codebase maintainable and scalable. Below is a comprehensive description of each file and its role within the application.
+
+---
+
+### **1. Root Directory: `frostyqatar-frosty_trivia_remake/`**
+
+This is the root directory of the project, containing configuration files and the main directories for source code and public assets.
+
+---
+
+### **2. Configuration Files**
+
+#### **`package.json`**
+- **Purpose**: Defines the project's metadata and dependencies.
+- **Contents**:
+  - **Name & Version**: Identifies the project and its version.
+  - **Dependencies**: Lists all external libraries and packages used in the project, such as React, Redux, Framer Motion, etc.
+  - **Scripts**: Defines scripts for starting the development server, building the project, testing, and deploying.
+  - **DevDependencies**: Lists development-specific packages like TypeScript types and deployment tools.
+  - **Homepage**: Specifies the URL where the app will be hosted.
+
+#### **`terminal`**
+- **Purpose**: Contains a command-line script used to set up the project.
+- **Contents**: 
+  - Commands to create a React app with TypeScript, install dependencies like Redux, Framer Motion, and other libraries.
+
+#### **`tsconfig.json`**
+- **Purpose**: Configures the TypeScript compiler options.
+- **Contents**:
+  - **Target**: Specifies the ECMAScript target version (e.g., ES5).
+  - **Lib**: Includes libraries for the TypeScript compiler (e.g., DOM, ESNext).
+  - **Include**: Specifies the directories to include (e.g., `src`).
+  - **Other Options**: Enables features like strict type checking, module resolution, and more.
+
+#### **`public/`**
+- **Purpose**: Contains public assets and the main HTML file.
+
+##### **`public/CNAME`**
+- **Purpose**: Specifies the custom domain for deployment (e.g., `gamzn.com`).
+
+##### **`public/index.html`**
+- **Purpose**: The main HTML file that serves as the entry point for the React application.
+- **Contents**:
+  - **Meta Tags**: Includes metadata for character set, viewport settings, theme color, and SEO.
+  - **Links**: References favicon, Apple Touch icon, Google Fonts, NES.css for styling, and manifest for Progressive Web App (PWA) support.
+  - **Open Graph & Twitter Meta Tags**: Provides metadata for social media sharing.
+  - **Root Div**: The `<div id="root"></div>` is where the React app mounts.
+
+##### **`public/theme-console-test.js`**
+- **Purpose**: [Non-text file, likely a script for theme testing or console functionality.]
+- **Contents**: Not detailed, but likely contains JavaScript code for theme-related console operations.
+
+---
+
+### **3. Source Code Directory: `src/`**
+
+This directory contains all the source code for the React application, including components, Redux store, hooks, services, and utilities.
+
+#### **`src/App.css`**
+- **Purpose**: Contains base styles for the application.
+- **Contents**:
+  - Basic styling for the `body` and `.app-container` to set margins, padding, and font family.
+
+#### **`src/App.tsx`**
+- **Purpose**: The main component that renders the entire application.
+- **Contents**:
+  - **Providers**: Wraps the application with Redux `Provider`, `PersistGate` for state persistence, and `ThemeProvider` for theme management.
+  - **Components**: Renders `GameContainer`, `GameNotification`, `WelcomeMessage`, `GlobalStyle`, and `GoogleSearchTimerWrapper`.
+  - **Analytics**: Initializes Google Analytics and tracks page views.
+
+#### **`src/index.tsx`**
+- **Purpose**: The entry point of the React application.
+- **Contents**:
+  - Renders the `App` component into the DOM using `ReactDOM.createRoot`.
+  - Sets up performance monitoring with `reportWebVitals`.
+
+#### **`src/reportWebVitals.ts`**
+- **Purpose**: Handles performance metrics reporting.
+- **Contents**:
+  - Imports `web-vitals` and defines a function to report metrics like CLS, FID, FCP, LCP, and TTFB.
+  - Can send metrics to analytics endpoints or log them to the console.
+
+#### **`src/components/`**
+- **Purpose**: Contains all the React components used in the application.
+
+##### **`AnswerReveal.tsx`**
+- **Purpose**: Displays the answer to a question and allows awarding points to teams.
+- **Contents**:
+  - **Redux Integration**: Uses `useDispatch` to dispatch actions like awarding points and returning to the game board.
+  - **State Management**: Manages suspense state to show a loading overlay before revealing the answer.
+  - **Animations**: Uses Framer Motion for animations when revealing the answer.
+  - **Sound Effects**: Plays sound effects for revealing the answer and awarding points.
+
+##### **`AudioTrimmer.tsx`**
+- **Purpose**: Provides an interface for trimming audio files.
+- **Contents**:
+  - **Audio Playback**: Allows users to play, pause, and seek through the audio.
+  - **Trimming Controls**: Includes sliders to set start and end times for trimming.
+  - **Trimming Logic**: Handles the logic for trimming the audio and converting it to a playable format.
+  - **CORS Handling**: Uses a proxy to handle CORS for external audio URLs.
+
+##### **`CategorySelector.tsx`**
+- **Purpose**: Allows users to select categories for the game.
+- **Contents**:
+  - **Grid Layout**: Displays categories in a responsive grid layout.
+  - **Category Cards**: Each category is represented as a card with an icon and name.
+  - **Interactions**: Users can click on a category to select it.
+  - **Animations**: Uses Framer Motion for hover and click animations.
+  - **Sound Effects**: Plays a sound effect when a category is selected.
+
+##### **`EndGame.tsx`**
+- **Purpose**: Displays the end game screen with the final scores and winner announcement.
+- **Contents**:
+  - **Winner Announcement**: Shows which team won or if there was a tie.
+  - **Score Display**: Shows the scores of both teams.
+  - **Play Again Button**: Allows users to restart the game.
+  - **Confetti Animation**: Uses `canvas-confetti` for confetti effects to celebrate the winner.
+  - **Animations**: Uses Framer Motion for animations when displaying the winner and scores.
+
+##### **`FeedbackModal.tsx`**
+- **Purpose**: Displays a modal for users to provide feedback.
+- **Contents**:
+  - **Modal Overlay**: Covers the screen with a semi-transparent background.
+  - **Modal Container**: Contains the feedback form embedded as an iframe.
+  - **Close Button**: Allows users to close the modal.
+  - **Animations**: Uses Framer Motion for modal entrance and exit animations.
+
+##### **`GameBoard.tsx`**
+- **Purpose**: Displays the game board with categories and questions.
+- **Contents**:
+  - **Category Display**: Shows selected categories and their questions.
+  - **Progress Bar**: Indicates the progress of the game.
+  **Team Turn Indicator**: Shows which team's turn it is and allows switching turns.
+  - **Question Cards**: Each question is represented as a card with its point value.
+  - **Animations**: Uses Framer Motion for animations when loading categories and questions.
+  - **Sound Effects**: Plays sound effects for revealing questions and other interactions.
+
+##### **`GameContainer.tsx`**
+- **Purpose**: Acts as the main container for the game, managing different game phases.
+- **Contents**:
+  - **Game Phases**: Manages different phases like setup, playing, question, answer, and end.
+  - **Components**: Renders components like `TeamPanel`, `GameBoard`, `QuestionScreen`, `AnswerReveal`, and `EndGame`.
+  - **Sound Controls**: Includes controls for toggling music and adjusting volume.
+  - **Animations**: Uses Framer Motion for transitions between game phases.
+  - **Snowfall Effect**: Renders the `Snowfall` component for visual effects.
+
+##### **`GoogleSearchTimer.tsx`**
+- **Purpose**: Implements a timer for Google searches during the game.
+- **Contents**:
+  - **Timer Display**: Shows the remaining time for the Google search.
+  - **Progress Bar**: Indicates the time remaining.
+  - **Timer Logic**: Handles the countdown and triggers actions when time is up.
+  - **Animations**: Uses Framer Motion for timer entrance and exit animations.
+
+##### **`GoogleSearchTimerWrapper.tsx`**
+- **Purpose**: Wraps the `GoogleSearchTimer` component and manages its visibility.
+- **Contents**:
+  - **Event Listening**: Listens for events to show or hide the timer.
+  - **Notification**: Shows a notification when the timer runs out.
+  - **Timer Management**: Controls the visibility of the `GoogleSearchTimer` based on events.
+
+##### **`Notification.tsx`**
+- **Purpose**: Displays notifications to the user.
+- **Contents**:
+  - **Notification Container**: Shows the notification message with styling.
+  - **Animations**: Uses Framer Motion for entrance and exit animations.
+
+##### **`QuestionCard.tsx`**
+- **Purpose**: Represents a single question as a card.
+- **Contents**:
+  - **Question Display**: Shows the point value of the question.
+  - **Interactions**: Users can click on the card to reveal the question.
+  - **Animations**: Uses Framer Motion for animations when flipping the card.
+  - **Sound Effects**: Plays a sound effect when a question is revealed.
+
+##### **`QuestionManagement.tsx`**
+- **Purpose**: Manages the creation, editing, and deletion of questions and categories.
+- **Contents**:
+  - **Category Management**: Allows adding, editing, and deleting categories.
+  - **Question Management**: Allows adding, editing, and deleting questions.
+  - **Import/Export**: Provides functionality to import and export questions via CSV.
+  - **QR Code Generation**: Generates QR codes for answers.
+  - **Search Functionality**: Allows searching for questions and categories.
+  - **Pagination**: Handles pagination for displaying questions.
+  - **Animations**: Uses Framer Motion for animations when opening modals and other interactions.
+
+##### **`QuestionScreen.tsx`**
+- **Purpose**: Displays the current question and related media.
+- **Contents**:
+  - **Question Display**: Shows the question text with bidirectional support.
+  - **Media Display**: Displays images, videos, and audio related to the question.
+  - **Timer**: Shows the remaining time for the question.
+  **Team Information**: Shows which team is currently answering.
+  - **Buttons**: Includes buttons for revealing the answer and returning to the game board.
+  - **Animations**: Uses Framer Motion for animations when displaying the question and media.
+  - **Sound Effects**: Plays sound effects for timer actions and other interactions.
+
+##### **`SetupScreen.tsx`**
+- **Purpose**: Provides the setup interface for starting the game.
+- **Contents**:
+  - **Category Selection**: Allows users to select categories for the game.
+  - **Team Setup**: Allows users to set up teams, including names and avatars.
+  - **Feedback Modal**: Includes a button to open the feedback modal.
+  - **Sound Controls**: Includes controls for toggling music and adjusting volume.
+  - **Animations**: Uses Framer Motion for animations when displaying the setup screen and other interactions.
+  - **Snowfall Effect**: Renders the `Snowfall` component for visual effects.
+
+##### **`TeamPanel.tsx`**
+- **Purpose**: Displays information about a team, including score and abilities.
+- **Contents**:
+  - **Team Information**: Shows the team name, avatar, and score.
+  - **Score Adjustment**: Allows users to adjust the team score.
+  - **Abilities**: Displays available abilities for the team.
+  - **Animations**: Uses Framer Motion for animations when the team is active or shocked.
+  - **Sound Effects**: Plays sound effects for ability activations and other interactions.
+
+##### **`VideoTrimmer.tsx`**
+- **Purpose**: Provides an interface for trimming video files.
+- **Contents**:
+  - **Video Playback**: Allows users to play, pause, and seek through the video.
+  - **Trimming Controls**: Includes sliders to set start and end times for trimming.
+  - **Trimming Logic**: Handles the logic for trimming the video using a simplified approach with media fragments.
+  - **CORS Handling**: Uses a proxy to handle CORS for external video URLs.
+
+##### **`common/EmojiPickerElement.tsx`**
+- **Purpose**: Implements an emoji picker using the `emoji-picker-element` library.
+- **Contents**:
+  - **Emoji Selection**: Allows users to select an emoji.
+  - **Emoji Display**: Shows the selected emoji.
+  - **Label**: Displays a label for the emoji picker.
+  - **Button Style**: Allows customization of the button style.
+  - **Event Handling**: Handles emoji selection events.
+
+##### **`common/EmojiPickerTrigger.tsx`**
+- **Purpose**: Provides a trigger button for the emoji picker.
+- **Contents**:
+  - **Button**: Displays a button with the current emoji and label.
+  - **Emoji Grid**: Shows a grid of emojis when the button is clicked.
+  - **Category Selection**: Allows users to select different emoji categories.
+  - **Dragging**: Allows users to drag the emoji grid to reposition it.
+  - **Event Handling**: Handles emoji selection and outside clicks to close the picker.
+
+##### **`common/GameNotification.tsx`**
+- **Purpose**: Displays game-related notifications.
+- **Contents**:
+  - **Notification Container**: Shows the notification message with styling.
+  - **Animations**: Uses Framer Motion for entrance and exit animations.
+  - **Event Handling**: Listens for `game-notification` events to display notifications.
+
+##### **`common/ImageCropper.tsx`**
+- **Purpose**: Provides an interface for cropping images.
+- **Contents**:
+  - **Image Display**: Shows the image to be cropped.
+  - **Crop Controls**: Allows users to adjust the crop area.
+  - **Cropping Logic**: Generates the cropped image using `react-image-crop`.
+  - **Animations**: Uses Framer Motion for animations when displaying the cropper.
+
+##### **`common/SoundControls.tsx`**
+- **Purpose**: Provides controls for managing sound settings.
+- **Contents**:
+  - **Mute Button**: Toggles between mute and unmute states.
+  **Controls Panel**: Displays sliders for adjusting volume and toggles for enabling/disabling music and effects.
+  - **Dragging**: Allows users to drag the controls panel to reposition it.
+  - **Animations**: Uses Framer Motion for animations when displaying the controls panel.
+
+##### **`common/ThemeSwitcher.tsx`**
+- **Purpose**: Allows users to switch between different themes.
+- **Contents**:
+  - **Theme Button**: Displays the current theme icon.
+  - **Theme Menu**: Shows a menu with available themes.
+  - **Theme Selection**: Allows users to select a theme.
+  - **Animations**: Uses Framer Motion for animations when displaying the theme menu.
+
+##### **`common/ThemeWrapper.tsx`**
+- **Purpose**: Wraps the application with global theme styles.
+- **Contents**:
+  - **Global Styles**: Applies global styles based on the current theme.
+  - **Theme Variables**: Defines CSS variables for colors, typography, and other theme-related properties.
+  - **Animations**: Defines theme-specific animations like Halloween drip and retro NES styles.
+
+---
+
+### **4. Contexts Directory: `src/contexts/`**
+
+#### **`ThemeContext.tsx`**
+- **Purpose**: Provides theme-related context to the application.
+- **Contents**:
+  - **Theme State**: Manages the current theme.
+  - **Theme Actions**: Provides functions to set the theme.
+  - **Theme Provider**: Wraps the application with the ThemeContext Provider.
+
+---
+
+### **5. Data Directory: `src/data/`**
+
+#### **`questions.ts`**
+- **Purpose**: Contains the initial set of questions and categories for the game.
+- **Contents**:
+  - **Categories**: Defines the categories and their associated questions.
+  - **Questions**: Each question includes text, answer, point value, and optional media URLs.
+
+---
+
+### **6. Hooks Directory: `src/hooks/`**
+
+#### **`useAbilities.ts`**
+- **Purpose**: Manages team abilities and their usage.
+- **Contents**:
+  - **Ability States**: Tracks the usage and cooldown of abilities like ChatGPT, Double, Google, Dismiss, and Electric.
+  - **Ability Actions**: Provides functions to activate and manage abilities.
+
+#### **`useSoundEffects.ts`**
+- **Purpose**: Manages sound effects and music playback.
+- **Contents**:
+  - **Sound States**: Tracks the enabled state of music and sound effects.
+  - **Sound Actions**: Provides functions to play, stop, and manage sound effects.
+
+#### **`useTimer.ts`**
+- **Purpose**: Manages the game timer.
+- **Contents**:
+  - **Timer State**: Tracks the remaining time and timer status.
+  - **Timer Actions**: Provides functions to start, pause, tick, and reset the timer.
+
+---
+
+### **7. Services Directory: `src/services/`**
+
+#### **`analytics.ts`**
+- **Purpose**: Handles analytics tracking.
+- **Contents**:
+  - **Google Analytics Integration**: Initializes and tracks page views and events.
+  - **Event Tracking**: Provides functions to track specific events like game start, end, and other interactions.
+
+---
+
+### **8. Store Directory: `src/store/`**
+
+#### **`gameSlice.ts`**
+- **Purpose**: Defines the Redux slice for the game state.
+- **Contents**:
+  - **State**: Manages the game state, including current question, teams, active team, game phase, and more.
+  **Actions**: Defines actions like selecting a question, awarding points, switching teams, and setting the game phase.
+  - **Reducers**: Handles state updates based on actions.
+
+#### **`index.ts`**
+- **Purpose**: Sets up the Redux store with reducers, middleware, and state persistence.
+- **Contents**:
+  - **Store Configuration**: Configures the Redux store with reducers and middleware.
+  - **State Persistence**: Uses `redux-persist` to persist the state to localStorage.
+
+---
+
+### **9. Styles Directory: `src/styles/`**
+
+#### **`GlobalStyle.tsx`**
+- **Purpose**: Defines global styles for the application.
+- **Contents**:
+  - **Global CSS**: Applies global styles like font family, background color, and other base styles.
+  - **Theme Variables**: Uses CSS variables for theme management.
+
+#### **`themeStyles.ts`**
+- **Purpose**: Defines theme-specific styles.
+- **Contents**:
+  - **Theme Variables**: Defines theme-specific colors, typography, and other style properties.
+  - **Animations**: Defines theme-specific animations.
+
+---
+
+### **10. Types Directory: `src/types/`**
+
+#### **`canvas-confetti.d.ts`**
+- **Purpose**: Provides TypeScript type definitions for the `canvas-confetti` library.
+
+#### **`game.types.ts`**
+- **Purpose**: Defines TypeScript types for the game.
+- **Contents**:
+  - **Team**: Defines the structure of a team.
+  - **Ability**: Defines the structure of an ability.
+  - **Question**: Defines the structure of a question.
+  - **Category**: Defines the structure of a category.
+  - **GamePhase**: Defines the different phases of the game.
+
+#### **`react-image-crop.d.ts`**
+- **Purpose**: Provides TypeScript type definitions for the `react-image-crop` library.
+
+#### **`react-snowfall.d.ts`**
+- **Purpose**: Provides TypeScript type definitions for the `react-snowfall` library.
+
+---
+
+### **11. Utils Directory: `src/utils/`**
+
+#### **`csvImport.ts`**
+- **Purpose**: Handles importing questions from a CSV file.
+- **Contents**:
+  - **Import Function**: Parses the CSV file and converts it into a format suitable for the game state.
+
+#### **`notificationUtils.ts`**
+- **Purpose**: Provides utility functions for managing notifications.
+- **Contents**:
+  - **Notification Events**: Dispatches events to display notifications.
+
+#### **`storageUtils.ts`**
+- **Purpose**: Provides utility functions for managing localStorage.
+- **Contents**:
+  - **Save to Storage**: Saves data to localStorage.
+  - **Load from Storage**: Loads data from localStorage.
+
+#### **`textUtils.tsx`**
+- **Purpose**: Provides utility functions for handling bidirectional text.
+- **Contents**:
+  - **BidirectionalText**: Renders text with bidirectional support.
+
+---
+
+### **12. Other Files**
+
+#### **`src/components/setup/CategorySelector.tsx`**
+- **Purpose**: Provides a component for selecting categories during the setup phase.
+- **Contents**:
+  - **Category Grid**: Displays categories in a grid layout.
+  - **Category Cards**: Each category is represented as a card with an icon and name.
+  - **Interactions**: Users can click on a category to select it.
+
+#### **`src/components/setup/TeamSetup.tsx`**
+- **Purpose**: Provides a component for setting up teams during the setup phase.
+- **Contents**:
+  - **Team Information**: Shows team name, avatar, and score.
+  **Score Adjustment**: Allows users to adjust the team score.
+  - **Avatar Selection**: Allows users to select an avatar for the team.
+  - **Name Input**: Allows users to input the team name.
+
+---
+
+### **13. Assets**
+
+#### **`public/favicon.ico`**
+- **Purpose**: The favicon for the application.
+
+#### **`public/manifest.json`**
+- **Purpose**: The manifest file for the Progressive Web App (PWA) configuration.
+
+---
+
+### **14. Public Assets**
+
+#### **`public/theme-console-test.js`**
+- **Purpose**: [Non-text file, likely a script for theme testing or console functionality.]
+- **Contents**: Not detailed, but likely contains JavaScript code for theme-related console operations.
+
+---
+
+### **15. Images and Media**
+
+- **`public/images/`**: Contains images used in the application.
+- **`public/media/`**: Contains media files like audio and video used in questions.
+
+---
+
+### **16. Deployment Files**
+
+#### **`package-lock.json`**
+- **Purpose**: Locks the versions of dependencies for consistent installations.
+
+#### **`README.md`**
+- **Purpose**: Provides documentation for the project.
+
+#### **`deploy.sh`**
+- **Purpose**: A shell script for deploying the application.
+
+---
+
+### **17. Configuration Files**
+
+#### **`.gitignore`**
+- **Purpose**: Specifies files and directories to be ignored by Git.
+
+#### **`.eslintrc.json`**
+- **Purpose**: Configures ESLint for code linting.
+
+#### **`babel.config.js`**
+- **Purpose**: Configures Babel for transpiling JavaScript code.
+
+#### **`webpack.config.js`**
+- **Purpose**: Configures Webpack for bundling the application.
+
+---
+
+### **18. Testing Files**
+
+#### **`src/tests/`**
+- **Purpose**: Contains test files for the application.
+
+---
+
+### **19. Documentation**
+
+#### **`docs/`**
+- **Purpose**: Contains documentation files for the project.
+
+---
+
+### **20. Other Directories**
+
+#### **`node_modules/`**
+- **Purpose**: Contains installed dependencies.
+
+#### **`dist/`**
+- **Purpose**: Contains the built files for production.
+
+---
+
+### **21. Summary**
+
+Each file in the project serves a specific purpose, contributing to the overall functionality and structure of the application. From configuration and setup to components, state management, and utilities, every piece of the codebase is designed to work together to create a cohesive and engaging trivia game.
+
+---

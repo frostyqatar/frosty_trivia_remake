@@ -65,6 +65,11 @@ const gameSlice = createSlice({
       
       team.score += points * multiplier;
       
+      // Ensure score doesn't go below zero
+      if (team.score < 0) {
+        team.score = 0;
+      }
+      
       // Reset multiplier if it was used
       if (multiplier > 1) {
         team.pointsMultiplier = 1;

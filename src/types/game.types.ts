@@ -6,6 +6,8 @@ export interface Question {
   answer: string;
   answered: boolean;
   image?: string;
+  imageBlur?: number;
+  hideQuestion?: boolean;
   audio?: string;
   video?: string;
 }

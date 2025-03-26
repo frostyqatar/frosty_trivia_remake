@@ -1,60 +1,63 @@
 import { css } from 'styled-components';
 import { ThemeName } from '../contexts/ThemeContext';
 
-// Default theme styles
+// Default theme - Modern, Professional
 export const defaultTheme = css`
-  --primary-color: #0099cc;
-  --primary-light: #66d4ff;
-  --primary-dark: #0f5e87;
-  --secondary-color: #8c52ff;
-  --background-color: #f0f8ff;
-  --card-background: rgba(255, 255, 255, 0.9);
-  --text-color: #333333;
-  --border-color: rgba(102, 212, 255, 0.3);
-  --header-font: 'Poppins', sans-serif;
-  --body-font: 'Roboto', sans-serif;
-  --card-shadow: 0 6px 20px rgba(0, 153, 204, 0.15);
-  --button-gradient: linear-gradient(135deg, #0099cc, #66d4ff);
-  --background-image: radial-gradient(circle, #f0f8ff 0%, #e6f2ff 100%);
+  --primary-color: #3a86ff;
+  --primary-light: #83b7ff;
+  --primary-dark: #0057e7;
+  --secondary-color: #8338ec;
+  --background-color: #f8fafc;
+  --card-background: rgba(255, 255, 255, 0.95);
+  --text-color: #1e293b;
+  --border-color: rgba(58, 134, 255, 0.2);
+  --header-font: 'Inter', 'Poppins', sans-serif;
+  --body-font: 'Inter', 'Roboto', sans-serif;
+  --card-shadow: 0 10px 25px -5px rgba(58, 134, 255, 0.1);
+  --button-gradient: linear-gradient(135deg, #3a86ff, #0057e7);
+  --background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%233a86ff' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+  --border-radius: 8px;
+  --success-color: #22c55e;
+  --danger-color: #ef4444;
 `;
 
-// Fun theme styles (previously Nintendo)
+// Fun theme - Vibrant, Playful
 export const funTheme = css`
-  --primary-color: #0593ff;
-  --primary-light: #7a8cfd;
-  --primary-dark: #0077cc;
-  --secondary-color: #ff7c7c;
-  --background-color: #f5faff;
-  --card-background: rgba(255, 255, 255, 0.85);
-  --text-color: #333333;
-  --border-color: rgba(5, 147, 255, 0.3);
-  --header-font: 'Poppins', sans-serif;
-  --body-font: 'Roboto', sans-serif;
-  --card-shadow: 0 6px 20px rgba(5, 147, 255, 0.15);
-  --button-gradient: linear-gradient(135deg, #0593ff, #7a8cfd);
-  --background-image: url('/fun-bg.svg');
-  --background-size: cover;
-  --primary-gradient: linear-gradient(135deg, #0593ff, #7a8cfd);
-  --secondary-gradient: linear-gradient(135deg, #ff7c7c, #fbae3c);
-  --card-text-color: #333333;
-  --card-border: 2px solid rgba(5, 147, 255, 0.2);
+  --primary-color: #00bbf9;
+  --primary-light: #72efdd;
+  --primary-dark: #0096c7;
+  --secondary-color: #ff9f1c;
+  --background-color: #fdfffc;
+  --card-background: rgba(255, 255, 255, 0.9);
+  --text-color: #2b2d42;
+  --border-color: rgba(0, 187, 249, 0.2);
+  --header-font: 'Quicksand', 'Poppins', sans-serif;
+  --body-font: 'Quicksand', 'Roboto', sans-serif;
+  --card-shadow: 0 8px 20px rgba(0, 187, 249, 0.15);
+  --button-gradient: linear-gradient(135deg, #00bbf9, #72efdd);
+  --background-image: url("data:image/svg+xml,%3Csvg width='52' height='26' viewBox='0 0 52 26' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%2300bbf9' fill-opacity='0.1'%3E%3Cpath d='M10 10c0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6h2c0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4 3.314 0 6 2.686 6 6 0 2.21 1.79 4 4 4v2c-3.314 0-6-2.686-6-6 0-2.21-1.79-4-4-4-3.314 0-6-2.686-6-6zm25.464-1.95l8.486 8.486-1.414 1.414-8.486-8.486 1.414-1.414z' /%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  --background-size: 250px;
+  --primary-gradient: linear-gradient(135deg, #00bbf9, #72efdd);
+  --secondary-gradient: linear-gradient(135deg, #ff9f1c, #ffbf69);
+  --card-text-color: #2b2d42;
+  --card-border: 2px solid rgba(0, 187, 249, 0.1);
   --border-radius: 16px;
-  --button-background: #0593ff;
+  --button-background: #00bbf9;
   --button-text-color: white;
   --button-border: none;
-  --button-shadow: 0 4px 10px rgba(5, 147, 255, 0.3);
+  --button-shadow: 0 4px 10px rgba(0, 187, 249, 0.3);
   --animation-speed: 0.3s;
-  --box-shadow: 0 6px 20px rgba(5, 147, 255, 0.25);
+  --box-shadow: 0 6px 20px rgba(0, 187, 249, 0.2);
   --letter-spacing: 0.5px;
   --text-shadow: none;
   --hover-effect: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
   --hover-content: '';
   --title-animation: bounce 3s infinite ease-in-out;
   --hover-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  --heading-hover-color: #0593ff;
-  --heading-underline: linear-gradient(90deg, #0593ff, #7a8cfd);
-  --success-color: #4caf50;
-  --danger-color: #f44336;
+  --heading-hover-color: #00bbf9;
+  --heading-underline: linear-gradient(90deg, #00bbf9, #72efdd);
+  --success-color: #06d6a0;
+  --danger-color: #ef476f;
   
   @keyframes bounce {
     0%, 100% { transform: translateY(0); }
@@ -62,7 +65,7 @@ export const funTheme = css`
   }
 `;
 
-// Halloween theme styles
+// Halloween theme - Spooky, Playful
 export const halloweenTheme = css`
   --background-color: #13151a;
   --text-color: #ff9e58;
@@ -71,98 +74,108 @@ export const halloweenTheme = css`
   --accent-color: #00ff66;
   --success-color: #38ef7d;
   --danger-color: #ff416c;
-  --border-color: #ff6d00;
-  --font-family: '"Press Start 2P", "Noto Sans Arabic", cursive, sans-serif';
-  --heading-font-family: '"Creepster", cursive';
-  --title-font-family: '"Nosifer", cursive';
-  --accent-font-family: '"Eater", cursive';
-  --background-image: url('/halloween-bg.svg');
-  --background-pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='60' height='60' viewBox='0 0 60 60'%3E%3Cpath d='M30 20 L35 30 L30 40 L25 30 z' fill='%23ff6d0015' /%3E%3Cpath d='M10 10 L15 5 L20 10 L15 15 z' fill='%237e00fc15' /%3E%3Cpath d='M40 40 L45 35 L50 40 L45 45 z' fill='%2300ff6615' /%3E%3C/svg%3E");
+  --card-background: rgba(31, 31, 35, 0.85);
+  --border-color: rgba(255, 109, 0, 0.5);
+  --box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+  --button-text-color: #ffffff;
   --primary-gradient: linear-gradient(135deg, #ff6d00 0%, #ff9e58 100%);
-  --secondary-gradient: linear-gradient(135deg, #7e00fc 0%, #aa53ff 100%);
-  --card-background: #2c1b30;
-  --card-text-color: #fff0e8;
-  --card-border: 2px solid #ff6d00;
-  --card-shadow: 0 4px 0 #000000, 0 6px 10px rgba(255, 109, 0, 0.25);
-  --border-radius: 0px;
-  --button-background: #ff6d00;
-  --button-text-color: #13151a;
-  --button-border: 2px solid #ff9e58;
-  --button-shadow: 0 4px 0 #732600, 0 6px 10px rgba(0, 0, 0, 0.5);
-  --pixel-effect: pixelated;
-  --animation-speed: 0.2s;
-  --box-shadow: 0 4px 0 #000000, 0 6px 10px rgba(126, 0, 252, 0.3);
-  --letter-spacing: 1px;
-  --text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  --hover-effect: radial-gradient(circle, transparent, #ff6d00 100%);
-  --hover-content: '';
-  --title-animation: pulse 3s infinite ease-in-out;
-  --hover-transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
-  --heading-hover-color: #ff416c;
-  --heading-underline: linear-gradient(90deg, #ff6d00, #ff416c);
-  --font-weight: 700;
-  
-  /* New styles for team names, categories, abilities button, and question tiles */
-  --team-name-color: #ffffff;
-  --team-name-font-size: 2rem;
-  --team-name-font-weight: 900;
-  --team-name-text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
-  
-  --category-font-size: 2rem;
-  --category-text-shadow: 2px 2px 3px rgba(0, 0, 0, 0.8);
-  
-  --ability-button-background: linear-gradient(135deg, #7e00fc 0%, #aa53ff 100%);
-  --ability-button-border: 2px solid #aa53ff;
-  --ability-button-shadow: 0 4px 0 #4b0094, 0 6px 10px rgba(0, 0, 0, 0.5);
-  --ability-button-color: #ffffff;
-  
-  --question-tile-background: linear-gradient(135deg, #2c1b30 0%, #451c47 100%);
-  --question-tile-border: 2px solid #ff6d00;
-  --question-tile-shadow: 0 4px 0 #000000, 0 6px 10px rgba(255, 109, 0, 0.3);
-  --question-tile-color: #ff9e58;
-  --question-tile-hover-background: linear-gradient(135deg, #451c47 0%, #2c1b30 100%);
-  --question-tile-font-size: 2rem;
+  --secondary-gradient: linear-gradient(135deg, #7e00fc 0%, #9b51e0 100%);
+  --card-border: 2px solid rgba(255, 109, 0, 0.18);
+  --font-family: 'Eater', cursive;
+  --background-image: url('/halloweenbg.webp');
+  --background-size: cover;
+  --background-position: center;
+  --background-repeat: no-repeat;
+  --background-attachment: fixed;
+  --background-blend-mode: multiply;
+  --enable-bat-snowfall: true;
 `;
 
-// Retro NES theme styles
+// Retro NES theme - Pixelated, Nostalgic
 export const retroTheme = css`
-  --primary-color: #209cee;
-  --primary-light: #4fb3f6;
-  --primary-dark: #006bb3;
-  --secondary-color: #92cc41;
-  --background-color: #212529;
-  --card-background: #000;
-  --text-color: #fff;
-  --border-color: #92cc41;
+  --primary-color: #ff0044;
+  --primary-light: #ff6b6b;
+  --primary-dark: #c80035;
+  --secondary-color: #ffd166;
+  --background-color: #0d2b45;
+  --card-background: #203c56;
+  --text-color:rgb(253, 253, 253);
+  --border-color: #ff0044;
   --header-font: 'Press Start 2P', cursive;
   --body-font: 'Press Start 2P', cursive;
-  --card-shadow: 0 4px 0 #006bb3;
+  --card-shadow: 0 4px 0 #000;
   --button-gradient: none;
-  --background-image: url('/retro-bg.svg');
-  --background-size: 800px auto;
+  --background-image: url('/retrobg.webp');
+  --background-size: cover;
+  --background-position: center;
   --primary-gradient: none;
   --secondary-gradient: none;
-  --card-text-color: #fff;
-  --card-border: 4px solid #92cc41;
+  --card-text-color: #eef7ff;
+  --card-border: 4px solid #ff0044;
   --border-radius: 0;
-  --button-background: #92cc41;
-  --button-text-color: #212529;
-  --button-border: 4px solid #92cc41;
-  --button-shadow: 0 4px 0 #4aa52e;
+  --button-background: #ffd166;
+  --button-text-color:rgb(254, 255, 255);
+  --button-border: 4px solid #ffd166;
+  --button-shadow: 0 4px 0 #c79a31;
   --pixel-effect: pixelated;
   --animation-speed: 0.1s;
-  --box-shadow: 0 4px 0 #4aa52e;
+  --box-shadow: 0 4px 0 #000;
   --letter-spacing: 1px;
   --text-shadow: 2px 2px 0 #000;
   --hover-effect: none;
   --hover-content: '';
-  --title-animation: none;
+  --title-animation: blink 1s steps(2) infinite;
   --hover-transition: all 0.1s steps(2);
-  --heading-hover-color: #e76e55;
-  --heading-underline: #e76e55;
+  --heading-hover-color: #ffd166;
+  --heading-underline: #ffd166;
   --font-weight: normal;
-  --success-color: #92cc41;
-  --danger-color: #e76e55;
+  --success-color: #06d6a0;
+  --danger-color: #ff0044;
+  --team-name-color: #ffffff;
+ 
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+`;
+
+// Dark theme - Modern, Sleek
+export const darkTheme = css`
+--team-name-color: #ffffff;
+  --primary-color: var(--clr-primary-a0, #6a59f4);
+  --primary-light: var(--clr-primary-a20, #927cf8);
+  --primary-dark: var(--clr-primary-a0, #6a59f4);
+  --secondary-color: var(--clr-primary-a30, #a48ef9);
+  --background-color: var(--clr-surface-a0, #121212);
+  --card-background: var(--clr-surface-a10, #282828);
+  --text-color: var(--clr-light-a0, #ffffff);
+  --border-color: var(--clr-surface-a20, #3f3f3f);
+  --header-font: 'Inter', 'Poppins', sans-serif;
+  --body-font: 'Inter', 'Roboto', sans-serif;
+  --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  --button-gradient: linear-gradient(135deg, var(--clr-primary-a0, #6a59f4), var(--clr-primary-a20, #927cf8));
+  --background-image: none;
+  --border-radius: 8px;
+  --success-color: #22c55e;
+  --danger-color: #ef4444;
+  --primary-gradient: linear-gradient(135deg, var(--clr-primary-a0, #6a59f4), var(--clr-primary-a20, #927cf8));
+  --secondary-gradient: linear-gradient(135deg, var(--clr-primary-a30, #a48ef9), var(--clr-primary-a40, #b5a0fb));
+  --card-text-color: var(--clr-light-a0, #ffffff);
+  --card-border: 1px solid var(--clr-surface-a20, #3f3f3f);
+  --button-background: var(--clr-primary-a0, #6a59f4);
+  --button-text-color: var(--clr-light-a0, #ffffff);
+  --button-border: none;
+  --button-shadow: 0 4px 10px rgba(106, 89, 244, 0.3);
+  --animation-speed: 0.3s;
+  --box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  --letter-spacing: 0.5px;
+  --text-shadow: none;
+  --hover-effect: linear-gradient(to bottom, rgba(255, 255, 255, 0.1), transparent);
+  --hover-content: '';
+  --title-animation: none;
+  --hover-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --heading-hover-color: var(--clr-primary-a20, #927cf8);
+  --heading-underline: linear-gradient(90deg, var(--clr-primary-a0, #6a59f4), var(--clr-primary-a20, #927cf8));
 `;
 
 // Get theme styles based on theme name
@@ -174,8 +187,10 @@ export const getThemeStyles = (themeName: ThemeName) => {
       return funTheme;
     case 'retro':
       return retroTheme;
+    case 'dark':
+      return darkTheme;
     case 'default':
     default:
       return defaultTheme;
   }
-}; 
+};

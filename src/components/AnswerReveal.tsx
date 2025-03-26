@@ -53,8 +53,8 @@ const QuestionText = styled.div`
 `;
 
 const AnswerText = styled(motion.div)`
-  font-size: 32px;
-  font-weight: bold;
+  font-size: 80px;
+  font-weight: 1000;
   color: #2c3e50;
   margin: 32px 0;
   text-align: center;

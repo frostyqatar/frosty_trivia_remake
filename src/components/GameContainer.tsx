@@ -19,6 +19,65 @@ import Legend from './effects/Legend';
 import SoundControls from './common/SoundControls';
 import CursorStars from './effects/CursorStars';
 import ThemeSwitcher from './common/ThemeSwitcher';
+import Soundboard from './Soundboard';
+import Chatbot from './Chatbot';
+
+// Define a local Button component
+const StyledButton = styled.button<{ $variant?: 'primary' | 'secondary' | 'danger' }>`
+  background: ${props => {
+    switch (props.$variant) {
+      case 'secondary':
+        return 'linear-gradient(135deg, #6c757d 0%, #495057 100%)';
+      case 'danger':
+        return 'linear-gradient(135deg, #ff4d4d 0%, #cc0000 100%)';
+      default:
+        return 'var(--primary-gradient, linear-gradient(135deg, #0099cc 0%, #66d4ff 100%))';
+    }
+  }};
+  color: white;
+  border: none;
+  padding: 10px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  children: React.ReactNode;
+  variant?: 'primary' | 'secondary' | 'danger';
+}
+
+const Button: React.FC<ButtonProps> = ({ 
+  children, 
+  variant = 'primary',
+  ...props 
+}) => {
+  return (
+    <StyledButton
+      $variant={variant}
+      {...props}
+    >
+      {children}
+    </StyledButton>
+  );
+};
 
 const Container = styled.div`
   display: flex;
@@ -80,19 +139,24 @@ const ControlsBar = styled.div`
   background: var(--primary-gradient, linear-gradient(135deg, #0099cc 0%, #66d4ff 100%));
   color: var(--button-text-color, white);
   box-shadow: var(--box-shadow, 0 4px 15px rgba(0, 153, 204, 0.3));
+  position: relative;
 `;
 
 const ControlsLeftSection = styled.div`
   display: flex;
   align-items: center;
   min-width: 100px;
+  z-index: 2;
 `;
 
 const ControlsCenterSection = styled.div`
+  position: absolute;
+  left: 0;
+  right: 0;
   display: flex;
   justify-content: center;
-  flex-grow: 1;
-  padding: 0 20px;
+  align-items: center;
+  z-index: 1;
 `;
 
 const ControlsRightSection = styled.div`
@@ -100,6 +164,7 @@ const ControlsRightSection = styled.div`
   align-items: center;
   min-width: 100px;
   justify-content: flex-end;
+  z-index: 2;
 `;
 
 const MusicButton = styled.button`
@@ -165,6 +230,12 @@ const TeamActiveText = styled.span`
   font-weight: bold;
 `;
 
+const GameControlsContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
 const EndGameButtonContainer = styled.div`
   display: flex;
   justify-content: center;
@@ -177,16 +248,16 @@ const EndGameButtonContainer = styled.div`
   }
 `;
 
-const EndGameButton = styled(motion.button)`
+const EndGameButton = styled.button`
   background: linear-gradient(135deg, #ff6464 0%, #ff5252 100%);
   color: white;
   border: none;
   padding: 12px 20px;
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   border-radius: 30px;
   cursor: pointer;
-  width: 100%;
+  width: 30%;
   box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
   transition: all 0.2s ease;
   
@@ -225,10 +296,12 @@ const GameContainer: React.FC = () => {
   }));
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
+  const { initializeElectricCooldown } = useAbilities();
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [shockedTeam, setShockedTeam] = useState<0 | 1 | null>(null);
-  const { initializeElectricCooldown } = useAbilities();
   const [showSnow, setShowSnow] = useState(true);
+  const [showSoundboard, setShowSoundboard] = useState(false);
+  const [showChatbot, setShowChatbot] = useState(false);
   
   const { categories, selectedCategories } = useSelector((state: RootState) => ({
     categories: state.categories || [],
@@ -259,8 +332,8 @@ const GameContainer: React.FC = () => {
   
   // Effect for initializing electric cooldown when game starts
   useEffect(() => {
-    if (gamePhase === 'playing') {
-      const hasInitialized = localStorage.getItem('electricInitialized');
+    if (gamePhase === 'board') {
+      const hasInitialized = localStorage.getItem('electricInitialized') === 'true';
       
       if (!hasInitialized) {
         initializeElectricCooldown();
@@ -336,13 +409,40 @@ const GameContainer: React.FC = () => {
       content = <SetupScreen />;
   }
   
+  const renderGameControls = () => {
+    return (
+      <GameControlsContainer>
+        <SoundControls
+          isMusicEnabled={musicEnabled}
+          volume={volume}
+          onToggleMusic={handleToggleMusic}
+          onVolumeChange={handleVolumeChange}
+        />
+        <Button 
+          onClick={() => setShowSoundboard(!showSoundboard)}
+          style={{ marginLeft: '10px' }}
+        >
+          🔊 Soundboard
+        </Button>
+        <Button 
+          onClick={() => setShowChatbot(!showChatbot)}
+          style={{ marginLeft: '10px' }}
+        >
+          المساعد الروبوتي 🤖
+        </Button>
+        <ThemeSwitcher />
+      </GameControlsContainer>
+    );
+  };
+  
   return (
     <Container>
-      {showSnow && <Snowfall snowflakeCount={200} style={{ zIndex: 1000 }} />}
+      {showSnow && <Snowfall snowflakeCount={200} style={{ zIndex: 5 }} />}
+      <CursorStars />
+      
       <ControlsBar>
         <ControlsLeftSection>
-          <ThemeSwitcher />
-          <SoundControls />
+          {renderGameControls()}
         </ControlsLeftSection>
         
         <ControlsCenterSection>
@@ -355,8 +455,6 @@ const GameContainer: React.FC = () => {
           </MusicButton>
         </ControlsRightSection>
       </ControlsBar>
-      
-      <CursorStars />
       
       <GameContent>
         <ContentContainer>
@@ -393,8 +491,6 @@ const GameContainer: React.FC = () => {
             <EndGameButtonContainer>
               <EndGameButton
                 onClick={() => dispatch(setGamePhase('end'))}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
               >
                 إنهاء اللعبة
               </EndGameButton>
@@ -413,6 +509,39 @@ const GameContainer: React.FC = () => {
           snowflakeCount={200}
         />
       )}
+      
+      {showSoundboard && (
+        <div style={{ 
+          position: 'fixed', 
+          top: '50%', 
+          left: '50%', 
+          transform: 'translate(-50%, -50%)', 
+          zIndex: 1000,
+          width: '90%',
+          maxWidth: '500px'
+        }}>
+          <Soundboard />
+          <Button
+            onClick={() => setShowSoundboard(false)}
+            style={{ 
+              position: 'absolute', 
+              top: '-15px', 
+              right: '-15px',
+              borderRadius: '50%',
+              width: '30px',
+              height: '30px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: 0
+            }}
+          >
+            ✕
+          </Button>
+        </div>
+      )}
+      
+      <Chatbot isVisible={showChatbot} toggleVisibility={() => setShowChatbot(!showChatbot)} />
     </Container>
   );
 };

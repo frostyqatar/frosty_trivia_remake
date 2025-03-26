@@ -83,6 +83,7 @@ const themeOptions: { name: ThemeName; icon: string; displayName: string }[] = [
   { name: 'fun', icon: '🎨', displayName: 'Fun' },
   { name: 'halloween', icon: '🎃', displayName: 'Halloween' },
   { name: 'retro', icon: '👾', displayName: 'Retro' },
+  { name: 'dark', icon: '🌙', displayName: 'Dark' }
 ];
 
 const ThemeSwitcher: React.FC = () => {

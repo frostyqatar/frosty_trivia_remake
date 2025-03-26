@@ -7,11 +7,20 @@ const GlobalStyle = createGlobalStyle`
     padding: 0;
   }
 
+  html {
+    overflow-y: scroll;
+    scrollbar-gutter: stable;
+  }
+
   body {
     font-family: var(--font-family, 'Noto Sans Arabic', 'Roboto', sans-serif);
     background-color: var(--background-color, #edf2f7);
     color: var(--text-color, #2d3748);
     transition: background-color 0.3s ease, color 0.3s ease;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
   }
 
   button {
@@ -38,6 +47,12 @@ const GlobalStyle = createGlobalStyle`
   /* Support for Arabic text */
   .arabic {
     font-family: var(--font-family, 'Noto Sans Arabic', 'Roboto', sans-serif);
+  }
+
+  #root {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 `;
 

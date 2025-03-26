@@ -39,13 +39,16 @@ const trackEvent = (category: string, action: string, label?: string, value?: nu
 };
 
 const DEFAULT_FORM_DATA = {
-  categoryId: '',
+  id: '',
+  categoryId: '',  // We'll set this when we have categories
   question: '',
   answer: '',
   value: 100,
   image: '',
   audio: '',
-  video: ''
+  video: '',
+  imageBlur: 0,
+  hideQuestion: false
 };
 
 const Container = styled.div`
@@ -155,6 +158,12 @@ const ImportButton = styled(Button)`
   &:hover {
     background-color: #43a047;
     box-shadow: 0 6px 8px rgba(76, 175, 80, 0.3);
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
   }
 `;
 
@@ -180,9 +189,14 @@ const Table = styled.table`
   border-spacing: 0;
   margin-top: 24px;
   table-layout: fixed;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-radius: 16px;
   overflow: hidden;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  }
 `;
 
 const TableHeader = styled.th`
@@ -200,7 +214,7 @@ const TableRow = styled.tr`
   transition: background-color 0.2s ease;
   
   &:hover {
-    background-color: #f9f5ff;
+    background-color: #f0f7ff;
   }
   
   &:last-child td {
@@ -644,7 +658,7 @@ const truncateText = (text: string, maxLength: number): string => {
   return text.slice(0, maxLength) + '...';
 };
 
-const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: string }) => {
+const MediaPreview = ({ type, src, blur }: { type: 'image' | 'audio' | 'video', src: string, blur?: number }) => {
   console.log(`MediaPreview - type: ${type}, src: ${src}`);
   
   if (!src) {
@@ -675,7 +689,14 @@ const MediaPreview = ({ type, src }: { type: 'image' | 'audio' | 'video', src: s
         <img 
           src={src} 
           alt="Preview" 
-          style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '8px', display: 'block', margin: '0 auto' }} 
+          style={{ 
+            maxWidth: '100%', 
+            maxHeight: '200px', 
+            borderRadius: '8px', 
+            display: 'block', 
+            margin: '0 auto',
+            filter: blur && blur > 0 ? `blur(${blur}px)` : 'none'
+          }} 
         />
       </div>
     );
@@ -1059,10 +1080,43 @@ const CategoryEmojiPickerWrapper = styled.div`
   }
 `;
 
+// Add this back after some of the other styled components near the top of the file
+const NotificationDisplay = styled(motion.div)<{ type: 'success' | 'error' | 'info' | 'warning' }>`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background-color: ${({ type }) => 
+    type === 'success' ? '#4caf50' : 
+    type === 'error' ? '#f44336' : 
+    type === 'warning' ? '#ff9800' : '#2196f3'};
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  max-width: 400px;
+  z-index: 1100;
+  white-space: pre-line;
+`;
+
 const QuestionManagement: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
   const { categories } = useSelector((state: RootState) => state);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  
+  // Define default form data inside the component where 'categories' is available
+  const DEFAULT_FORM_DATA = {
+    id: '',
+    categoryId: '',  // We'll set this when we have categories
+    question: '',
+    answer: '',
+    value: 100,
+    image: '',
+    audio: '',
+    video: '',
+    imageBlur: 0,
+    hideQuestion: false
+  };
   
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -1078,6 +1132,7 @@ const QuestionManagement: React.FC = () => {
   const [newCategoryIcon, setNewCategoryIcon] = useState<string>('❓');
   
   const [formData, setFormData] = useState<{
+    id: string;
     categoryId: string;
     question: string;
     answer: string;
@@ -1085,14 +1140,19 @@ const QuestionManagement: React.FC = () => {
     image: string;
     audio: string;
     video: string;
+    imageBlur: number;
+    hideQuestion: boolean;
   }>({
-    categoryId: categories[0]?.id || '',
+    id: '',
+    categoryId: '',  // We'll set this when we have categories
     question: '',
     answer: '',
     value: 100,
     image: '',
     audio: '',
-    video: ''
+    video: '',
+    imageBlur: 0,
+    hideQuestion: false
   });
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -1140,6 +1200,12 @@ const QuestionManagement: React.FC = () => {
 
   // Add a new state variable to track if we're in simple mode
   const [simpleMode, setSimpleMode] = useState<boolean>(false);
+
+  // Add state for image blur in the component
+  const [imageBlur, setImageBlur] = useState<number>(0);
+
+  // Add this with the other useState declarations in the component
+  const [isImporting, setIsImporting] = useState(false);
 
   // Helper function to generate QR code image data URL
   // Removed the generateQRCodeDataURL function
@@ -1267,7 +1333,9 @@ const QuestionManagement: React.FC = () => {
           // Explicitly handle media fields, ensuring they're strings or empty strings
           image: formData.image || '',
           audio: formData.audio || '',
-          video: formData.video || ''
+          video: formData.video || '',
+          imageBlur: imageBlur,
+          hideQuestion: formData.hideQuestion
         };
         
         console.log('Adding new question:', newQuestion);
@@ -1279,7 +1347,7 @@ const QuestionManagement: React.FC = () => {
         dispatch(updateCategories(updatedCategories));
         
         // Close modal and clear form
-        setFormData({...DEFAULT_FORM_DATA});
+        setFormData({...DEFAULT_FORM_DATA, imageBlur: 0});
         setShowModal(false);
         
         // Reset the URL inputs
@@ -1309,7 +1377,9 @@ const QuestionManagement: React.FC = () => {
           // Explicitly handle media fields
           image: formData.image || '',
           audio: formData.audio || '',
-          video: formData.video || ''
+          video: formData.video || '',
+          imageBlur: imageBlur,
+          hideQuestion: formData.hideQuestion
         };
         
         console.log('Updating question:', updatedQuestion);
@@ -1352,7 +1422,7 @@ const QuestionManagement: React.FC = () => {
         console.log('Categories after edit:', updatedCategories);
         
         // Close modal and clear form
-        setFormData({...DEFAULT_FORM_DATA});
+        setFormData({...DEFAULT_FORM_DATA, imageBlur: 0});
         setEditingQuestion(null);
         setShowModal(false);
         
@@ -1368,24 +1438,22 @@ const QuestionManagement: React.FC = () => {
   
   // Add a function to open the modal in simple mode
   const handleOpenSimpleModal = () => {
+    setShowModal(true);
     setModalMode('add');
     setSimpleMode(true);
     setFormData({
-      categoryId: categories[0]?.id || '',
+      id: '',
+      categoryId: '',  // We'll set this when we have categories
       question: '',
       answer: '',
       value: 100,
       image: '',
       audio: '',
-      video: ''
+      video: '',
+      imageBlur: 0,
+      hideQuestion: false
     });
     setEditingQuestion(null);
-    
-    // Reset URL inputs
-    setAudioUrlInput('');
-    setVideoUrlInput('');
-    
-    setShowModal(true);
   };
   
   // Modify the existing handleOpenModal to reset simple mode
@@ -1395,13 +1463,16 @@ const QuestionManagement: React.FC = () => {
     
     if (mode === 'add') {
       setFormData({
-        categoryId: categories[0]?.id || '',
+        id: '',
+        categoryId: '',  // We'll set this when we have categories
         question: '',
         answer: '',
         value: 100,
         image: '',
         audio: '',
-        video: ''
+        video: '',
+        imageBlur: 0,
+        hideQuestion: false
       });
       setEditingQuestion(null);
       
@@ -1415,13 +1486,16 @@ const QuestionManagement: React.FC = () => {
       if (category) {
         const q = category.questions[questionIndex];
         setFormData({
+          id: q.id || '',
           categoryId,
           question: q.question,
           answer: q.answer,
           value: q.value,
           image: q.image || '',
           audio: q.audio || '',
-          video: q.video || ''
+          video: q.video || '',
+          imageBlur: q.imageBlur || 0,
+          hideQuestion: q.hideQuestion || false
         });
         setEditingQuestion({ categoryId, questionIndex });
       }
@@ -1440,12 +1514,12 @@ const QuestionManagement: React.FC = () => {
     if (hasData) {
       if (window.confirm('Are you sure you want to close? All unsaved changes will be lost.')) {
         setShowModal(false);
-        setFormData({...DEFAULT_FORM_DATA});
+        setFormData({...DEFAULT_FORM_DATA, imageBlur: 0});
         setEditingQuestion(null);
       }
     } else {
       setShowModal(false);
-      setFormData({...DEFAULT_FORM_DATA});
+      setFormData({...DEFAULT_FORM_DATA, imageBlur: 0});
       setEditingQuestion(null);
     }
   };
@@ -1539,75 +1613,113 @@ const QuestionManagement: React.FC = () => {
   const handleImportCSV = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
     
+    // Store reference to file input for later reset
+    const fileInput = e.target;
+    
+    // Set loading state
+    setIsImporting(true);
+    
+    // Show loading notification
+    setNotification({
+      message: 'Importing CSV file...',
+      type: 'info',
+      visible: true
+    });
+    
     try {
       const file = e.target.files[0];
-      const reader = new FileReader();
       
-      reader.onload = async (event) => {
-        if (!event.target || typeof event.target.result !== 'string') return;
+      try {
+        const questions = await importQuestionsFromCSV(file);
         
-        try {
-          const questions = await importQuestionsFromCSV(file);
+        // Add the questions to the categories state
+        if (questions.length > 0) {
+          // Create a TRUE deep copy of categories (important!)
+          const updatedCategories = JSON.parse(JSON.stringify(categories));
           
-          // Add the questions to the categories state
-          if (questions.length > 0) {
-            const updatedCategories = [...categories];
+          // Track categories for reporting
+          const existingCategoriesUpdated = new Set<string>();
+          const newCategoriesCreated = new Set<string>();
+          
+          // Group questions by category
+          questions.forEach(question => {
+            const categoryName = question.category;
             
-            // Group questions by category
-            questions.forEach(question => {
-              const categoryName = question.category;
-              
-              // Find or create category
-              let category = updatedCategories.find(c => c.name === categoryName);
-              if (!category) {
-                // Create new category with unique ID
-                category = {
-                  id: `category-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-                  name: categoryName,
-                  questions: []
-                };
-                updatedCategories.push(category);
-              }
-              
-              // Add question to category
-              category.questions.push({
-                ...question,
-                id: `question-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
-              });
+            // Find existing category with case-insensitive matching
+            let category = updatedCategories.find((c: any) => 
+              c.name.toLowerCase().trim() === categoryName.toLowerCase().trim()
+            );
+            
+            if (!category) {
+              // Create new category with unique ID
+              category = {
+                id: `category-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                name: categoryName, // Preserve original case from CSV
+                icon: '❓',
+                questions: []
+              };
+              updatedCategories.push(category);
+              newCategoriesCreated.add(categoryName);
+            } else {
+              existingCategoriesUpdated.add(category.name);
+            }
+            
+            // Add question to category
+            category.questions.push({
+              ...question,
+              id: `question-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
             });
-            
-            // Update the store
-            dispatch(updateCategories(updatedCategories));
-            
-            // Track the import in analytics
-            trackGameEvent.importQuestions(questions.length);
-            
-            // Show success notification
-            setNotification({
-              message: `Successfully imported ${questions.length} questions`,
-              type: 'success',
-              visible: true
-            });
+          });
+          
+          // Update Redux store with modified categories
+          dispatch(updateCategories(updatedCategories));
+          
+          // Track analytics
+          trackGameEvent.importQuestions(questions.length);
+          
+          // Create detailed success message
+          let successMessage = `Successfully imported ${questions.length} questions`;
+          
+          if (newCategoriesCreated.size > 0) {
+            successMessage += `\n✅ Created ${newCategoriesCreated.size} new categories: ${Array.from(newCategoriesCreated).join(', ')}`;
           }
-        } catch (error) {
-          console.error('Error parsing CSV:', error);
+          
+          if (existingCategoriesUpdated.size > 0) {
+            successMessage += `\n✅ Updated ${existingCategoriesUpdated.size} existing categories: ${Array.from(existingCategoriesUpdated).join(', ')}`;
+          }
+          
+          // Show success notification
           setNotification({
-            message: `Error parsing CSV: ${error}`,
-            type: 'error',
+            message: successMessage,
+            type: 'success',
+            visible: true
+          });
+        } else {
+          setNotification({
+            message: 'No valid questions found in the CSV file.',
+            type: 'warning',
             visible: true
           });
         }
-      };
-      
-      // Read the file as text with UTF-8 encoding
-      reader.readAsText(file, 'UTF-8');
+      } catch (error) {
+        console.error('Error parsing CSV:', error);
+        setNotification({
+          message: `Error parsing CSV: ${error instanceof Error ? error.message : String(error)}`,
+          type: 'error',
+          visible: true
+        });
+      }
     } catch (error) {
       console.error('Error importing CSV:', error);
       setNotification({
-        message: `Error importing CSV: ${error}`,
+        message: `Error importing CSV: ${error instanceof Error ? error.message : String(error)}`,
         type: 'error',
         visible: true
       });
+    } finally {
+      // Always reset the file input to allow reimporting the same file
+      if (fileInput) fileInput.value = '';
+      setIsImporting(false);
     }
   };
   
@@ -2616,6 +2728,48 @@ const QuestionManagement: React.FC = () => {
     playSound('button-click');
   };
 
+  // Add this function with the other utility functions
+  const handleDownloadSampleCSV = () => {
+    const csvContent = `category,question,answer,value,image,audio,video,batch
+Science,What is the chemical symbol for water?,H2O,100,,,,"default"
+History,Who was the first President of the United States?,George Washington,200,,,,"default"
+Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"default"`;
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'sample_questions_template.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    // Show notification
+    setNotification({
+      message: 'Sample CSV template downloaded',
+      type: 'success',
+      visible: true
+    });
+  };
+
+  // Add this as a new handler function
+  const handleFormKeyDown = (e: React.KeyboardEvent) => {
+    // Check for Ctrl+Enter shortcut
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Only submit if we're in the modal and the form has valid data
+      if (showModal && formData.question && formData.answer) {
+        handleSubmit();
+        playSound('button-click');
+      }
+    }
+  };
+
+  // Update the form elements to include the onKeyDown handler
+  // For example, in the modal's form elements, add onKeyDown={handleFormKeyDown} to inputs and textareas
+
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
@@ -2637,8 +2791,10 @@ const QuestionManagement: React.FC = () => {
               onClick={handleImportClick}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
+              disabled={isImporting}
+              title="CSV must include 'category', 'question', and 'answer' columns. Optional columns: 'value', 'image', 'audio', 'video', 'batch'"
             >
-              📥 Import CSV
+              {isImporting ? '⏳ Importing...' : '📥 Import CSV'}
             </ImportButton>
             <FileInput 
               type="file" 
@@ -2646,6 +2802,15 @@ const QuestionManagement: React.FC = () => {
               accept=".csv" 
               onChange={handleImportCSV} 
             />
+            <Button 
+              onClick={handleDownloadSampleCSV}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              style={{ backgroundColor: '#8338ec' }}
+              title="Download a CSV template with example questions"
+            >
+              📋 CSV Template
+            </Button>
             <Button 
               onClick={handleExportCSV}
               whileHover={{ scale: 1.05 }}
@@ -2940,8 +3105,23 @@ const QuestionManagement: React.FC = () => {
                   name="question"
                   value={formData.question}
                   onChange={handleFormChange}
+                  onKeyDown={handleFormKeyDown}
                   placeholder="Enter question text"
                 />
+                
+                {/* Add the hide question checkbox */}
+                <div style={{ marginTop: '8px', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type="checkbox"
+                    id="hideQuestion"
+                    checked={formData.hideQuestion}
+                    onChange={(e) => setFormData({...formData, hideQuestion: e.target.checked})}
+                    style={{ marginRight: '8px' }}
+                  />
+                  <label htmlFor="hideQuestion" style={{ cursor: 'pointer' }}>
+                    Hide question? <span style={{ color: '#777', fontSize: '0.9em' }}>(A "Reveal Question" button will be shown instead)</span>
+                  </label>
+                </div>
               </FormGroup>
               
               <FormGroup>
@@ -2950,6 +3130,7 @@ const QuestionManagement: React.FC = () => {
                   name="answer"
                   value={formData.answer}
                   onChange={handleFormChange}
+                  onKeyDown={handleFormKeyDown}
                   placeholder="Enter answer text"
                 />
                 <Button
@@ -2990,6 +3171,24 @@ const QuestionManagement: React.FC = () => {
                       onChange={handleFormChange}
                       placeholder="https://example.com/image.jpg"
                     />
+                    
+                    {/* Image blur slider - only show if an image URL is provided */}
+                    {formData.image && (
+                      <div style={{ margin: '10px 0' }}>
+                        <FormLabel>Image Blur Level: {imageBlur}px</FormLabel>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <input
+                            type="range"
+                            min="0"
+                            max="50"
+                            value={imageBlur}
+                            onChange={(e) => setImageBlur(parseInt(e.target.value))}
+                          />
+                          <button onClick={() => setImageBlur(0)}>Reset</button>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div style={{ marginTop: '8px' }}>
                       <label htmlFor="file-upload" style={{ cursor: 'pointer', background: '#f0f0f0', padding: '8px 12px', borderRadius: '4px', display: 'inline-block' }}>
                         Or upload image file
@@ -3015,7 +3214,7 @@ const QuestionManagement: React.FC = () => {
                     
                     {formData.image && !showImageCropper && (
                       <MediaContainer>
-                        <MediaPreview type="image" src={formData.image} />
+                        <MediaPreview type="image" src={formData.image} blur={imageBlur} />
                         <RemoveMediaButton
                           onClick={() => handleRemoveMedia('image')}
                           whileHover={{ scale: 1.1 }}
@@ -3421,6 +3620,17 @@ const QuestionManagement: React.FC = () => {
       >
         🔄 Emergency Reset
       </Button>
+      
+      {notification.visible && (
+        <NotificationDisplay
+          type={notification.type as 'success' | 'error' | 'info' | 'warning'}
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: 50 }}
+        >
+          {notification.message}
+        </NotificationDisplay>
+      )}
     </Container>
   );
 };

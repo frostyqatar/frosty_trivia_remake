@@ -1,7 +1,128 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import styled, { createGlobalStyle, css } from 'styled-components';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getThemeStyles } from '../../styles/themeStyles';
+
+// Snowflake animation keyframes
+const snowflakesContainer = css`
+  .snowflakes {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 1000;
+    overflow: hidden;
+  }
+
+  .snowflake {
+    color: #fff;
+    font-size: 1em;
+    font-family: Serif;
+    text-shadow: 0 0 1px #000;
+    position: fixed;
+    top: -10%;
+    z-index: 9999;
+    user-select: none;
+    cursor: default;
+    animation-name: snowflakes-fall, snowflakes-shake;
+    animation-duration: 10s, 3s;
+    animation-timing-function: linear, ease-in-out;
+    animation-iteration-count: infinite, infinite;
+    animation-play-state: running, running;
+  }
+
+  .snowflake img {
+    height: 40px;
+    display: block;
+  }
+
+  .snowflake:nth-of-type(0) {
+    left: 1%;
+    animation-delay: 0s, 0s;
+  }
+  .snowflake:nth-of-type(1) {
+    left: 10%;
+    animation-delay: 1s, 1s;
+  }
+  .snowflake:nth-of-type(2) {
+    left: 20%;
+    animation-delay: 6s, 0.5s;
+  }
+  .snowflake:nth-of-type(3) {
+    left: 30%;
+    animation-delay: 4s, 2s;
+  }
+  .snowflake:nth-of-type(4) {
+    left: 40%;
+    animation-delay: 2s, 2s;
+  }
+  .snowflake:nth-of-type(5) {
+    left: 50%;
+    animation-delay: 8s, 3s;
+  }
+  .snowflake:nth-of-type(6) {
+    left: 60%;
+    animation-delay: 6s, 2s;
+  }
+  .snowflake:nth-of-type(7) {
+    left: 70%;
+    animation-delay: 2s, 1s;
+  }
+  .snowflake:nth-of-type(8) {
+    left: 80%;
+    animation-delay: 1s, 0s;
+  }
+  .snowflake:nth-of-type(9) {
+    left: 90%;
+    animation-delay: 3s, 1s;
+  }
+
+  @keyframes snowflakes-fall {
+    0% {
+      top: -10%;
+    }
+    100% {
+      top: 100%;
+    }
+  }
+  @keyframes snowflakes-shake {
+    0% {
+      transform: translateX(0px);
+    }
+    50% {
+      transform: translateX(80px);
+    }
+    100% {
+      transform: translateX(0px);
+    }
+  }
+`;
+
+const Container = styled.div`
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+  background: var(--background-image);
+  background-size: var(--background-size, cover);
+  background-position: var(--background-position, center);
+  background-repeat: var(--background-repeat, no-repeat);
+  background-attachment: var(--background-attachment, fixed);
+  background-blend-mode: var(--background-blend-mode, normal);
+  
+  &::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: inherit;
+    z-index: -1;
+  }
+`;
 
 // Global theme styles
 const GlobalThemeStyles = createGlobalStyle<{ themeStyles: any, themeName: string }>`
@@ -10,6 +131,10 @@ const GlobalThemeStyles = createGlobalStyle<{ themeStyles: any, themeName: strin
   }
   
   body {
+    margin: 0;
+    padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
     background: var(--background-image);
     background-size: var(--background-size, cover);
     color: var(--text-color);
@@ -198,6 +323,13 @@ const GlobalThemeStyles = createGlobalStyle<{ themeStyles: any, themeName: strin
     margin: 0 6px;
   }
   
+  /* Lalezar font */
+  .lalezar-regular {
+    font-family: "Lalezar", system-ui;
+    font-weight: 400;
+    font-style: normal;
+  }
+  
   /* Apply NES.css styling when retro theme is active */
   [data-theme="retro"] {
     .nes-btn {
@@ -281,6 +413,21 @@ const GlobalThemeStyles = createGlobalStyle<{ themeStyles: any, themeName: strin
       background: linear-gradient(45deg, #3f5bf0, #ff3aaf);
     }
     
+    /* Answered question tiles styling */
+    .question-card[data-answered="true"] {
+      background: #000000 !important;
+      color: rgba(255, 255, 255, 0.7) !important;
+      border: 2px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    /* Used abilities styling */
+    .ability-button[disabled] {
+      background: #f44336 !important;
+      color: white !important;
+      opacity: 0.9 !important;
+      border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    }
+    
     @keyframes bounce {
       0%, 100% { transform: translateY(0); }
       50% { transform: translateY(-5px); }
@@ -291,14 +438,14 @@ const GlobalThemeStyles = createGlobalStyle<{ themeStyles: any, themeName: strin
     /* Team name styles */
     .team-name {
       color: var(--team-name-color, #ffffff) !important;
-      font-size: var(--team-name-font-size, 1.5rem) !important;
+      font-size: var(--team-name-font-size, 2.1rem) !important;
       font-weight: var(--team-name-font-weight, 900) !important;
       text-shadow: var(--team-name-text-shadow, 2px 2px 4px rgba(0, 0, 0, 0.7)) !important;
     }
 
     /* Category styles */
     .category-name, .category-header {
-      font-size: var(--category-font-size, 1.25rem) !important;
+      font-size: var(--category-font-size, 2.1rem) !important;
       text-shadow: var(--category-text-shadow, 2px 2px 3px rgba(0, 0, 0, 0.8)) !important;
       font-weight: bold !important;
       color: var(--text-color, #ff9e58) !important;
@@ -317,18 +464,223 @@ const GlobalThemeStyles = createGlobalStyle<{ themeStyles: any, themeName: strin
       transform: translateY(-2px) !important;
     }
 
+    /* Used abilities styling */
+    .ability-button[disabled] {
+      background: #f44336 !important;
+      color: white !important;
+      opacity: 0.9 !important;
+      border: 2px solid rgba(255, 255, 255, 0.2) !important;
+      box-shadow: 0 4px 0 #8b0000, 0 6px 10px rgba(0, 0, 0, 0.5) !important;
+    }
+
     /* Question tile styles */
     .question-card {
       background: var(--question-tile-background, linear-gradient(135deg, #2c1b30 0%, #451c47 100%)) !important;
       border: var(--question-tile-border, 2px solid #ff6d00) !important;
       box-shadow: var(--question-tile-shadow, 0 4px 0 #000000, 0 6px 10px rgba(255, 109, 0, 0.3)) !important;
       color: var(--question-tile-color, #ff9e58) !important;
-      font-size: var(--question-tile-font-size, 1.2rem) !important;
+      font-size: var(--question-tile-font-size, 1.9rem) !important;
     }
 
     .question-card:hover {
       background: var(--question-tile-hover-background, linear-gradient(135deg, #451c47 0%, #2c1b30 100%)) !important;
       transform: translateY(-5px) !important;
+    }
+
+    /* Answered question tiles styling */
+    .question-card[data-answered="true"] {
+      background: #000000 !important;
+      color: rgba(255, 255, 255, 0.5) !important;
+      border: 2px solid rgba(255, 109, 0, 0.3) !important;
+      box-shadow: 0 2px 0 #000000, 0 3px 5px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    ${snowflakesContainer}
+  `}
+  
+  ${({ themeName }) => themeName === 'retro' && css`
+    /* Font settings */
+    body, button, input, select, textarea {
+      font-family: "Lalezar", system-ui;
+      font-weight: 400;
+      letter-spacing: 1px;
+    }
+    
+    /* Game title */
+    .game-title {
+      font-family: "Lalezar", system-ui;
+      font-size: 3rem;
+      color: #f8d800;
+      text-shadow: 4px 4px 0 #ff004d;
+      animation: pulse 2s infinite;
+    }
+    
+    /* Team name styles */
+    .team-name {
+      color: #29adff !important;
+      font-size: 2.1rem !important;
+      font-weight: 400 !important;
+      text-shadow: 3px 3px 0 #ff004d !important;
+      font-family: "Lalezar", system-ui !important;
+    }
+
+    /* Category styles */
+    .category-name, .category-header {
+      font-size: 2.1rem !important;
+      text-shadow: 2px 2px 0 #ff004d !important;
+      font-weight: 400 !important;
+      color: #f8d800 !important;
+      font-family: "Lalezar", system-ui !important;
+    }
+    
+    /* Question tile styles */
+    .question-card {
+      background: #1d2b53 !important;
+      border: 4px solid #ff004d !important;
+      box-shadow: 4px 4px 0 #000000 !important;
+      color: #f8d800 !important;
+      font-size: 1.9rem !important;
+      font-family: "Lalezar", system-ui !important;
+      image-rendering: pixelated;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .question-card:hover {
+      transform: translateY(-5px) !important;
+      box-shadow: 6px 6px 0 #000000 !important;
+    }
+
+    /* Answered question tiles styling */
+    .question-card[data-answered="true"] {
+      background: #000000 !important;
+      color: rgba(255, 255, 255, 0.7) !important;
+      border-color: #666666 !important;
+      image-rendering: pixelated;
+      box-shadow: 2px 2px 0 #333333 !important;
+    }
+    
+    /* Abilities button styles */
+    .ability-button {
+      background: #7e2553 !important;
+      border: 4px solid #ff77a8 !important;
+      box-shadow: 4px 4px 0 #000000 !important;
+      color: #ffffff !important;
+      font-family: "Lalezar", system-ui !important;
+      font-size: 1.2rem !important;
+      image-rendering: pixelated;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .ability-button:hover {
+      transform: translateY(-3px) !important;
+      box-shadow: 6px 6px 0 #000000 !important;
+    }
+
+    /* Used abilities styling */
+    .ability-button[disabled] {
+      background: #83769c !important;
+      color: #ffffff !important;
+      border: 4px solid #5f574e !important;
+      box-shadow: 2px 2px 0 #000000 !important;
+      opacity: 0.8 !important;
+      image-rendering: pixelated;
+    }
+    
+    /* Modal content */
+    .modal-content {
+      background: #1d2b53 !important;
+      border: 4px solid #ff004d !important;
+      box-shadow: 8px 8px 0 #000000 !important;
+      color: #fff1e8 !important;
+      font-family: "Lalezar", system-ui !important;
+    }
+    
+    /* Buttons */
+    button {
+      background: #00e436 !important;
+      color: #fff !important;
+      border: 4px solid #008751 !important;
+      box-shadow: 4px 4px 0 #000000 !important;
+      font-family: "Lalezar", system-ui !important;
+      font-size: 1.2rem !important;
+      padding: 8px 16px !important;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    button:hover {
+      transform: translateY(-3px) !important;
+      box-shadow: 6px 6px 0 #000000 !important;
+    }
+    
+    /* Inputs */
+    input, select, textarea {
+      background: #c2c3c7 !important;
+      color: #000000 !important;
+      border: 4px solid #5f574e !important;
+      box-shadow: 4px 4px 0 #000000 !important;
+      font-family: "Lalezar", system-ui !important;
+      padding: 8px !important;
+    }
+    
+    /* Card styling */
+    .theme-card, .card {
+      background: #1d2b53 !important;
+      border: 4px solid #ff004d !important;
+      box-shadow: 6px 6px 0 #000000 !important;
+      color: #fff1e8 !important;
+      padding: 16px !important;
+    }
+    
+    /* Animation for game elements */
+    @keyframes pixel-pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+    
+    /* Pixelated background effect */
+    body, .container {
+      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFElEQVQYlWNgYGD4z4AGGBkZSVIAAM9TA99mU+9GAAAAAElFTkSuQmCC') !important;
+      background-repeat: repeat !important;
+      background-size: 8px 8px !important;
+      background-color: #1d2b53 !important;
+    }
+    
+    /* Special effects for retro theme */
+    .retro-effect {
+      position: relative;
+      overflow: hidden;
+      
+      &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: rgba(255, 255, 255, 0.3);
+        animation: scan-line 4s linear infinite;
+      }
+    }
+    
+    @keyframes scan-line {
+      0% { top: -10%; }
+      100% { top: 100%; }
+    }
+    
+    /* Pixelated icons */
+    .retro-icon {
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
+    }
+    
+    /* Floating pixel effect */
+    ${snowflakesContainer}
+    
+    .snowflake img {
+      image-rendering: pixelated;
+      height: 16px;
     }
   `}
 `;
@@ -340,13 +692,60 @@ interface ThemeWrapperProps {
 const ThemeWrapper: React.FC<ThemeWrapperProps> = ({ children }) => {
   const { currentTheme } = useTheme();
   const themeStyles = getThemeStyles(currentTheme);
+  const [showSnowflakes, setShowSnowflakes] = useState(false);
+
+  // Check if snowfall should be enabled based on theme settings
+  useEffect(() => {
+    // Read the CSS variable for snowfall
+    const enableSnowfall = 
+      (currentTheme === 'halloween' || currentTheme === 'retro') && 
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--enable-snowflakes')
+        .trim() === 'true';
+    
+    setShowSnowflakes(enableSnowfall);
+  }, [currentTheme]);
   
   return (
     <>
       <GlobalThemeStyles themeStyles={themeStyles} themeName={currentTheme} />
-      <div data-theme={currentTheme}>
+      <Container>
+        {showSnowflakes && (currentTheme === 'halloween' || currentTheme === 'retro') && (
+          <div className="snowflakes">
+            <div className="snowflake">
+              <img src={currentTheme === 'retro' ? "/pixel-star.png" : "https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif"} /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+            <div className="snowflake">
+              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
+            </div>
+          </div>
+        )}
         {children}
-      </div>
+      </Container>
     </>
   );
 };

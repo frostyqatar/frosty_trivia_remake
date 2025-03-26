@@ -13,4 +13,5 @@ const NotificationContainer = styled.div`
   text-align: center;
   max-width: 80%;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  
 `; 

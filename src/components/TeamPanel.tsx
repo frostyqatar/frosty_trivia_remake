@@ -23,13 +23,13 @@ const TeamContainer = styled(motion.div)<{ isActive: boolean, isShocked: boolean
   background-color: var(--card-background, rgba(255, 255, 255, 0.9));
   backdrop-filter: blur(8px);
   border-radius: var(--border-radius, 24px);
-  padding: 32px;
+  padding: 50px;
   box-shadow: var(--card-shadow, 0 12px 25px rgba(0, 153, 204, 0.15));
   transition: all 0.3s ease;
   border: ${props => props.isActive ? `4px solid var(--primary-color, #0099cc)` : `2px solid var(--secondary-color, rgba(102, 212, 255, 0.3))`};
   position: relative;
   overflow: hidden;
-  min-width: 390px;
+  min-width: px;
   flex: 1;
   
   &:hover {
@@ -73,7 +73,9 @@ const TeamInfo = styled.div`
 
 const TeamName = styled.h2`
   margin: 0;
-  font-size: 30px;
+  font-size: 45px;
+  font-weight: 800;
+  font-family: 'Arial', sans-serif;
   color: #333;
   margin-bottom: 10px;
   font-weight: 600;

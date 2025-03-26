@@ -15,22 +15,28 @@ import FeedbackModal from './FeedbackModal';
 import SoundControls from './common/SoundControls';
 import CursorStars from './effects/CursorStars';
 import ThemeSwitcher from './common/ThemeSwitcher';
+import { toggleMusic, setVolume } from '../store/gameSlice';
+
 // Enhanced color palette
 const colors = {
   primary: '#0099cc',
   primaryLight: '#66d4ff',
   primaryDark: '#0077a2',
-  accent: '#FF7E5F', // Vibrant orange for highlights
+  primaryGlow: 'rgba(102, 212, 255, 0.4)',
+  accent: '#FF7E5F', 
   accentHover: '#FF6347',
-  background: '#e8f4ff', // Light blue background
+  accentGlow: 'rgba(255, 126, 95, 0.4)',
+  background: '#e8f4ff',
   backgroundDark: '#d1e8f8',
-  text: '#00354d', // Dark blue text
+  text: '#00354d',
   textLight: '#3a7ca5',
   white: '#ffffff',
   lightGray: '#f0f8ff',
   mediumGray: '#cce4ff',
   darkGray: '#9ab9d1',
-  snow: '#ffffff'
+  frost: 'rgba(255, 255, 255, 0.8)',
+  glass: 'rgba(255, 255, 255, 0.25)',
+  glassDarker: 'rgba(255, 255, 255, 0.35)'
 };
 
 const Container = styled.div`
@@ -43,6 +49,10 @@ const Container = styled.div`
   overflow: hidden;
   background-color: transparent;
   font-family: 'Poppins', 'Noto Sans Arabic', 'Roboto', sans-serif;
+  
+  @media (max-width: 768px) {
+    padding: 20px;
+  }
 `;
 
 const Header = styled.header`
@@ -53,46 +63,79 @@ const Header = styled.header`
   margin-bottom: 40px;
   position: relative;
   z-index: 2;
-  padding: 20px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(5px);
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15);
+  padding: 30px;
+  border-radius: 24px;
+  background: ${colors.glass};
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 10px 30px rgba(31, 38, 135, 0.1),
+    0 1px 2px rgba(255, 255, 255, 0.3),
+    inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 
+      0 15px 35px rgba(31, 38, 135, 0.15),
+      0 1px 2px rgba(255, 255, 255, 0.3),
+      inset 0 1px 2px rgba(255, 255, 255, 0.5);
+  }
 `;
 
 const Logo = styled.h1`
-  font-size: 52px;
-  font-weight: 700;
+  font-size: 64px;
+  font-weight: 800;
   text-align: center;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   color: ${colors.text};
-  text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5),
-               0 0 15px rgba(102, 212, 255, 0.4);
-  letter-spacing: 1px;
+  text-shadow: 
+    2px 2px 4px rgba(255, 255, 255, 0.5),
+    0 0 20px ${colors.primaryGlow},
+    0 0 40px rgba(255, 255, 255, 0.2);
+  letter-spacing: 2px;
   display: flex;
   align-items: center;
+  position: relative;
   
   &::before {
     content: '❄️';
-    margin-right: 15px;
-    font-size: 42px;
+    margin-right: 20px;
+    font-size: 52px;
+    animation: pulse 4s infinite ease-in-out alternate;
   }
   
   &::after {
     content: '❄️';
-    margin-left: 15px;
+    margin-left: 20px;
+    font-size: 52px;
+    animation: pulse 4s infinite ease-in-out alternate-reverse;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+    50% { transform: scale(1.1) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+  }
+  
+  @media (max-width: 768px) {
     font-size: 42px;
+    
+    &::before, &::after {
+      font-size: 36px;
+    }
   }
 `;
 
 const CreatorInfo = styled.div`
-  font-size: 28px;
-  font-weight: 500;
+  font-size: 42px;
+  font-weight: 800;
   color: ${colors.text};
-  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
-  margin-top: 10px;
+  text-shadow: 
+    1px 1px 2px rgba(255, 255, 255, 0.5),
+    0 0 10px rgba(255, 255, 255, 0.2);
+  margin-top: 15px;
   position: relative;
-  padding-bottom: 5px;
+  padding-bottom: 10px;
   
   &::after {
     content: '';
@@ -100,55 +143,77 @@ const CreatorInfo = styled.div`
     bottom: -5px;
     left: 50%;
     transform: translateX(-50%);
-    width: 80px;
-    height: 3px;
-    background: linear-gradient(90deg, transparent, ${colors.accent}, transparent);
-    border-radius: 3px;
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      transparent, 
+      ${colors.accent}50, 
+      ${colors.accent}, 
+      ${colors.accent}50, 
+      transparent
+    );
+    border-radius: 4px;
+    box-shadow: 0 0 10px ${colors.accentGlow};
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 30px;
   }
 `;
 
 const Subtitle = styled.p`
-  font-size: 20px;
+  font-size: 22px;
   color: ${colors.textLight};
-  margin-top: 15px;
+  margin-top: 20px;
   text-align: center;
-  max-width: 700px;
-  line-height: 1.6;
-  font-weight: 300;
+  max-width: 800px;
+  line-height: 1.7;
+  font-weight: 400;
+  
+  @media (max-width: 768px) {
+    font-size: 18px;
+    line-height: 1.5;
+  }
 `;
 
 const SnowToggleButton = styled(motion.button)`
   position: absolute;
   right: 20px;
   top: 20px;
-  background: rgba(255, 255, 255, 0.3);
+  background: ${colors.glassDarker};
   border: none;
-  font-size: 24px;
+  font-size: 28px;
   cursor: pointer;
   z-index: 10;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 45px;
-  height: 45px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 
+    0 4px 10px rgba(0, 0, 0, 0.1),
+    0 0 20px rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   
   &:hover {
-    background: rgba(255, 255, 255, 0.6);
+    background: ${colors.glassDarker};
     transform: rotate(15deg);
+    box-shadow: 
+      0 6px 15px rgba(0, 0, 0, 0.15),
+      0 0 30px rgba(255, 255, 255, 0.3);
   }
 `;
 
 const TeamsContainer = styled.div`
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 30px;
   margin-bottom: 40px;
   z-index: 1;
   position: relative;
-  max-width: 900px;
+  max-width: 1000px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
@@ -159,15 +224,17 @@ const TeamsContainer = styled.div`
 `;
 
 const StartButton = styled(motion.button)`
-  padding: 15px 40px;
-  font-size: 22px;
-  font-weight: 600;
+  padding: 18px 50px;
+  font-size: 24px;
+  font-weight: 700;
   color: white;
   background: linear-gradient(135deg, ${colors.accent} 0%, ${colors.accentHover} 100%);
   border: none;
   border-radius: 50px;
   cursor: pointer;
-  box-shadow: 0 10px 25px rgba(255, 126, 95, 0.4);
+  box-shadow: 
+    0 10px 25px ${colors.accentGlow},
+    0 0 15px rgba(255, 255, 255, 0.2);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -180,7 +247,7 @@ const StartButton = styled(motion.button)`
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
     transition: all 0.5s ease;
     z-index: -1;
   }
@@ -201,7 +268,9 @@ const StartButton = styled(motion.button)`
   
   &:hover {
     transform: translateY(-5px) scale(1.03);
-    box-shadow: 0 15px 30px rgba(255, 126, 95, 0.5), 0 0 15px rgba(255, 126, 95, 0.3);
+    box-shadow: 
+      0 15px 30px ${colors.accentGlow},
+      0 0 20px rgba(255, 255, 255, 0.3);
     
     &::before {
       left: 100%;
@@ -214,7 +283,7 @@ const StartButton = styled(motion.button)`
   
   &:active {
     transform: translateY(1px) scale(0.98);
-    box-shadow: 0 5px 15px rgba(255, 126, 95, 0.4);
+    box-shadow: 0 5px 15px ${colors.accentGlow};
   }
   
   &:disabled {
@@ -233,14 +302,17 @@ const Button = styled(motion.button)`
   background: linear-gradient(135deg, ${colors.primary} 0%, ${colors.primaryLight} 100%);
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 12px 24px;
+  border-radius: 14px;
+  padding: 14px 28px;
   font-weight: 600;
+  font-size: 16px;
   cursor: pointer;
   display: flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 8px 15px rgba(0, 153, 204, 0.2);
+  box-shadow: 
+    0 8px 15px rgba(0, 153, 204, 0.2),
+    0 0 10px rgba(102, 212, 255, 0.2);
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -252,9 +324,9 @@ const Button = styled(motion.button)`
     left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
     transition: all 0.5s ease;
-    z-index: -1;
+    z-index: 0;
   }
   
   &::after {
@@ -266,14 +338,16 @@ const Button = styled(motion.button)`
     bottom: 0;
     background: linear-gradient(135deg, ${colors.primary}88 0%, ${colors.primaryLight}88 100%);
     opacity: 0;
-    border-radius: 12px;
+    border-radius: 14px;
     transition: opacity 0.3s ease;
-    z-index: -2;
+    z-index: -1;
   }
   
   &:hover {
     transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 10px 20px rgba(0, 153, 204, 0.3), 0 0 15px rgba(0, 153, 204, 0.2);
+    box-shadow: 
+      0 10px 20px rgba(0, 153, 204, 0.3),
+      0 0 15px rgba(102, 212, 255, 0.3);
     
     &::before {
       left: 100%;
@@ -308,7 +382,7 @@ const FeedbackButton = styled(Button)`
 
 const ButtonContainer = styled.div`
   display: flex;
-  gap: 15px;
+  gap: 20px;
   margin-bottom: 30px;
   z-index: 2;
   position: relative;
@@ -320,8 +394,8 @@ const StartButtonContainer = styled.div`
   display: flex;
   justify-content: center;
   width: 100%;
-  margin-top: 30px;
-  margin-bottom: 40px;
+  margin-top: 40px;
+  margin-bottom: 50px;
   z-index: 2;
   position: relative;
 `;
@@ -345,63 +419,66 @@ const WaveBackground = styled(motion.div)`
   }
 `;
 
-// New component for snowflake decorations
 interface SnowflakeDecorationProps {
   size?: string;
   top?: string;
   left?: string;
   duration?: string;
   children: React.ReactNode;
+  delay?: string;
+  rotate?: string;
 }
 
-const SnowflakeDecoration = styled.div<SnowflakeDecorationProps>`
+const SnowflakeDecoration = styled(motion.div)<SnowflakeDecorationProps>`
   position: absolute;
   font-size: ${props => props.size || '32px'};
-  color: rgba(255, 255, 255, 0.8);
-  animation: float ${props => props.duration || '8s'} ease-in-out infinite;
+  color: rgba(255, 255, 255, 0.9);
+  filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.5));
   z-index: 1;
   top: ${props => props.top || '10%'};
   left: ${props => props.left || '10%'};
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
-  opacity: 0.8;
-  
-  @keyframes float {
-    0% {
-      transform: translateY(0) rotate(0deg);
-    }
-    50% {
-      transform: translateY(20px) rotate(10deg);
-    }
-    100% {
-      transform: translateY(0) rotate(0deg);
-    }
-  }
+  opacity: 0.9;
 `;
 
-// Footer component
 const Footer = styled.footer`
   margin-top: auto;
   text-align: center;
   padding: 20px;
   color: ${colors.textLight};
-  font-size: 14px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(5px);
-  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 500;
+  background: ${colors.glass};
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
   margin: 20px 0;
   z-index: 2;
+  box-shadow: 
+    0 4px 12px rgba(31, 38, 135, 0.1),
+    inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.18);
 `;
 
 const SectionWrapper = styled(motion.div)`
-  margin: 20px 0;
-  padding: 25px;
-  background: rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(5px);
-  border-radius: 20px;
-  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+  margin: 25px 0;
+  padding: 35px;
+  background: ${colors.glass};
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  box-shadow: 
+    0 8px 32px rgba(31, 38, 135, 0.1),
+    0 1px 2px rgba(255, 255, 255, 0.3);
   z-index: 2;
   position: relative;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 
+      0 12px 32px rgba(31, 38, 135, 0.15),
+      0 1px 2px rgba(255, 255, 255, 0.3);
+    transform: translateY(-5px);
+  }
   
   &::before {
     content: '';
@@ -413,18 +490,22 @@ const SectionWrapper = styled(motion.div)`
     background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.05) 100%);
     z-index: -1;
     backdrop-filter: blur(5px);
-    border-radius: 20px;
+    border-radius: 24px;
+  }
+  
+  @media (max-width: 768px) {
+    padding: 25px;
   }
 `;
 
 const SectionTitle = styled.h2`
-  font-size: 28px;
+  font-size: 32px;
   color: ${colors.text};
-  margin-bottom: 20px;
+  margin-bottom: 25px;
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;
   position: relative;
-  padding-bottom: 10px;
+  padding-bottom: 15px;
   
   &::after {
     content: '';
@@ -432,24 +513,181 @@ const SectionTitle = styled.h2`
     bottom: 0;
     left: 50%;
     transform: translateX(-50%);
-    width: 60px;
-    height: 3px;
+    width: 80px;
+    height: 4px;
     background: ${colors.accent};
-    border-radius: 3px;
+    border-radius: 4px;
+    box-shadow: 0 0 10px ${colors.accentGlow};
+  }
+  
+  @media (max-width: 768px) {
+    font-size: 28px;
   }
 `;
 
-// Add a styled component for the sound controls wrapper
 const SoundControlsWrapper = styled.div`
   position: relative;
-  z-index: 9999; /* Ensure sound controls are always on top */
-  margin: 10px 0;
+  z-index: 9999;
+  background: ${colors.glass};
+  padding: 10px;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
 `;
+
+const ControlsContainer = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  margin: 15px 0;
+  gap: 20px;
+  
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 10px;
+  }
+`;
+
+const GradientBorder = styled.div`
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: 26px;
+  background: linear-gradient(45deg, 
+    ${colors.primaryLight}50, 
+    transparent, 
+    ${colors.accent}50, 
+    transparent,
+    ${colors.primaryLight}50
+  );
+  z-index: -1;
+  filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  
+  ${SectionWrapper}:hover & {
+    opacity: 1;
+    animation: borderRotate 6s linear infinite;
+  }
+  
+  @keyframes borderRotate {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 300% 0%; }
+  }
+`;
+
+const FloatingButton = styled(motion.button)`
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: ${colors.primary};
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  border: none;
+  box-shadow: 0 5px 15px rgba(0, 153, 204, 0.3);
+  cursor: pointer;
+  z-index: 1000;
+`;
+
+const ThemeSwitcherWrapper = styled.div`
+  position: relative;
+  z-index: 9999;
+  background: ${colors.glass};
+  padding: 10px;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+`;
+
+// Create a shimmer effect component
+const Shimmer = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: shimmer 3s infinite;
+  pointer-events: none;
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-150%) skewX(-20deg); }
+    50% { transform: translateX(-60%) skewX(-20deg); }
+    100% { transform: translateX(150%) skewX(-20deg); }
+  }
+`;
+
+// Frost effect for sections
+const FrostEffect = styled.div`
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 24px;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: -1;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    right: -10px;
+    bottom: -10px;
+    background: radial-gradient(
+      circle at 50% 50%,
+      rgba(255, 255, 255, 0.2) 0%,
+      transparent 80%
+    );
+    opacity: 0.5;
+  }
+`;
+
+type Notification = {
+  message: string;
+  type: 'success' | 'error' | 'info' | 'warning';
+  visible: boolean;
+};
 
 const SetupScreen: React.FC = () => {
   const dispatch = useDispatch();
   const selectedCategories = useSelector((state: RootState) => state.selectedCategories);
   const { playSound } = useSoundEffects();
+  const { musicEnabled, volume } = useSelector((state: RootState) => ({
+    musicEnabled: state.musicEnabled,
+    volume: state.volume,
+  }));
   
   const [teams, setTeams] = useState<[Partial<Team>, Partial<Team>]>([{}, {}]);
   const [isReady, setIsReady] = useState(false);
@@ -528,6 +766,14 @@ const SetupScreen: React.FC = () => {
     playSound('button-click');
   };
   
+  const handleToggleMusic = () => {
+    dispatch(toggleMusic());
+  };
+  
+  const handleVolumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    dispatch(setVolume(Number(e.target.value) / 100));
+  };
+  
   // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -535,18 +781,32 @@ const SetupScreen: React.FC = () => {
       opacity: 1,
       transition: { 
         when: "beforeChildren",
-        staggerChildren: 0.3
+        staggerChildren: 0.2,
+        duration: 0.6
       }
     }
   };
   
   const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
+    hidden: { y: 30, opacity: 0 },
     visible: { 
       y: 0,
       opacity: 1,
-      transition: { type: "spring", stiffness: 100 }
+      transition: { type: "spring", stiffness: 80, damping: 12 }
     }
+  };
+  
+  const snowflakeVariants = {
+    animate: (custom: number) => ({
+      y: [0, 15, 0],
+      rotate: [0, 10, 0],
+      scale: [1, 1.05, 1],
+      transition: {
+        duration: custom,
+        repeat: Infinity,
+        ease: "easeInOut"
+      }
+    })
   };
   
   return (
@@ -573,11 +833,76 @@ const SetupScreen: React.FC = () => {
       <CursorStars active={true} hideDefaultCursor={false} />
 
       {/* Decorative snowflakes */}
-      <SnowflakeDecoration size="42px" top="15%" left="5%" duration="10s">❄️</SnowflakeDecoration>
-      <SnowflakeDecoration size="36px" top="25%" left="85%" duration="12s">❄️</SnowflakeDecoration>
-      <SnowflakeDecoration size="28px" top="65%" left="8%" duration="15s">❄️</SnowflakeDecoration>
-      <SnowflakeDecoration size="32px" top="70%" left="90%" duration="9s">❄️</SnowflakeDecoration>
-      <SnowflakeDecoration size="24px" top="40%" left="92%" duration="11s">❄️</SnowflakeDecoration>
+      <SnowflakeDecoration 
+        size="42px" 
+        top="15%" 
+        left="5%" 
+        variants={snowflakeVariants}
+        custom={10}
+        animate="animate"
+      >
+        ❄️
+      </SnowflakeDecoration>
+      <SnowflakeDecoration 
+        size="36px" 
+        top="25%" 
+        left="85%" 
+        variants={snowflakeVariants}
+        custom={12}
+        animate="animate"
+      >
+        ❄️
+      </SnowflakeDecoration>
+      <SnowflakeDecoration 
+        size="28px" 
+        top="65%" 
+        left="8%" 
+        variants={snowflakeVariants}
+        custom={15}
+        animate="animate"
+      >
+        ❄️
+      </SnowflakeDecoration>
+      <SnowflakeDecoration 
+        size="32px" 
+        top="70%" 
+        left="90%" 
+        variants={snowflakeVariants}
+        custom={9}
+        animate="animate"
+      >
+        ❄️
+      </SnowflakeDecoration>
+      <SnowflakeDecoration 
+        size="24px" 
+        top="40%" 
+        left="92%" 
+        variants={snowflakeVariants}
+        custom={11}
+        animate="animate"
+      >
+        ❄️
+      </SnowflakeDecoration>
+      <SnowflakeDecoration 
+        size="38px" 
+        top="55%" 
+        left="22%" 
+        variants={snowflakeVariants}
+        custom={13}
+        animate="animate"
+      >
+        ❄️
+      </SnowflakeDecoration>
+      <SnowflakeDecoration 
+        size="30px" 
+        top="32%" 
+        left="75%" 
+        variants={snowflakeVariants}
+        custom={8}
+        animate="animate"
+      >
+        ❄️
+      </SnowflakeDecoration>
       
       {/* Wave background */}
       <WaveBackground
@@ -630,26 +955,31 @@ const SetupScreen: React.FC = () => {
         <Logo className="halloween-drip">Frosty Trivia</Logo>
         <CreatorInfo>برمجة عبدالله الشاعر </CreatorInfo>
         <Subtitle>استعد لتجربة لعبة سؤال وجواب رائعة ومسلية! اختبر معلوماتك وتنافس في هذه اللعبة الجماعية </Subtitle>
-        <div
-  style={{
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: 'calc(100% - 150px)', // Full width minus 20px (10px padding on both sides)
-    margin: '0 10px', // Adds 10px space on both left and right
-  }}
->
-  <SoundControlsWrapper>
-    <SoundControls />
-  </SoundControlsWrapper>
-  <ThemeSwitcher />
-</div>
-
+        
+        <ControlsContainer>
+          <SoundControlsWrapper>
+            <SoundControls 
+              isMusicEnabled={musicEnabled}
+              volume={volume}
+              onToggleMusic={handleToggleMusic}
+              onVolumeChange={handleVolumeChange}
+            />
+            <Shimmer />
+          </SoundControlsWrapper>
+          
+          <ThemeSwitcherWrapper>
+            <ThemeSwitcher />
+            <Shimmer />
+          </ThemeSwitcherWrapper>
+        </ControlsContainer>
 
         <SnowToggleButton 
           onClick={handleToggleSnow}
           whileHover={{ scale: 1.1, rotate: 15 }}
           whileTap={{ scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1, duration: 0.5 }}
         >
           {showSnow ? '❄️' : '☀️'}
         </SnowToggleButton>
@@ -691,6 +1021,8 @@ const SetupScreen: React.FC = () => {
       
       {/* Category selector */}
       <SectionWrapper as={motion.div} variants={itemVariants}>
+        <GradientBorder />
+        <FrostEffect />
         <SectionTitle className="halloween-drip">اختر الفئات</SectionTitle>
         <div style={{ width: '100%', position: 'relative', zIndex: 1 }}>
           <CategorySelector />
@@ -699,6 +1031,8 @@ const SetupScreen: React.FC = () => {
       
       {/* Team setup */}
       <SectionWrapper as={motion.div} variants={itemVariants}>
+        <GradientBorder />
+        <FrostEffect />
         <SectionTitle className="halloween-drip">إعداد الفرق</SectionTitle>
         <TeamsContainer>
           <TeamSetup 
@@ -746,25 +1080,79 @@ const SetupScreen: React.FC = () => {
             }
           } : {}}
         >
-          {isReady && <span style={{ position: 'absolute', top: '-15px', left: '-15px', fontSize: '28px', animation: 'spin 4s linear infinite' }}>✨</span>}
+          {isReady && (
+            <motion.span 
+              style={{ position: 'absolute', top: '-15px', left: '-15px', fontSize: '28px' }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            >
+              ✨
+            </motion.span>
+          )}
           ابدأ اللعبة
-          {isReady && <span style={{ position: 'absolute', bottom: '-15px', right: '-15px', fontSize: '28px', animation: 'spin 4s linear infinite' }}>✨</span>}
+          {isReady && (
+            <motion.span 
+              style={{ position: 'absolute', bottom: '-15px', right: '-15px', fontSize: '28px' }}
+              animate={{ rotate: 360 }}
+              transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+            >
+              ✨
+            </motion.span>
+          )}
         </StartButton>
       </StartButtonContainer>
       
       {/* Footer */}
       <Footer as={motion.footer} variants={itemVariants}>
-        Frosty Trivia - صنع في قطر - إصدار 1.0 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1, duration: 0.5 }}
+        >
+          Frosty Trivia - صنع في قطر - إصدار 1.0 
+        </motion.div>
       </Footer>
+      
+      {/* Floating Help Button */}
+      <FloatingButton
+        whileHover={{ scale: 1.1, rotate: 5 }}
+        whileTap={{ scale: 0.9 }}
+        initial={{ opacity: 0, y: 50 }}
+        animate={{ 
+          opacity: 1, 
+          y: 0,
+          transition: { delay: 1.5, type: "spring" }
+        }}
+        onClick={() => setIsFeedbackModalOpen(true)}
+      >
+        ❔
+      </FloatingButton>
     </Container>
   );
 };
 
-// Add this at the end of the file, before the export statement
+// Add keyframes to the document
 const keyframes = `
   @keyframes spin {
     from { transform: rotate(0deg); }
     to { transform: rotate(360deg); }
+  }
+  
+  @keyframes borderRotate {
+    0% { background-position: 0% 0%; }
+    100% { background-position: 300% 0%; }
+  }
+  
+  @keyframes shimmer {
+    0% { transform: translateX(-150%) skewX(-20deg); }
+    50% { transform: translateX(-60%) skewX(-20deg); }
+    100% { transform: translateX(150%) skewX(-20deg); }
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1) rotate(0deg); opacity: 0.9; }
+    50% { transform: scale(1.1) rotate(10deg); opacity: 1; }
+    100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
   }
 `;
 
@@ -774,4 +1162,4 @@ style.type = 'text/css';
 style.appendChild(document.createTextNode(keyframes));
 document.head.appendChild(style);
 
-export default SetupScreen; 
+export default SetupScreen;

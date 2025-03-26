@@ -156,7 +156,7 @@ const Legend: React.FC = () => {
               
               <FeatureItem>
                 <FeatureIcon>2️⃣</FeatureIcon>
-                <FeatureDescription>دبل نقاط الإجابة.. تقدر تضاعف الصعقة بدال النقاط</FeatureDescription>
+                <FeatureDescription>دبل نقاط الإجابة.. </FeatureDescription>
               </FeatureItem>
               
               <FeatureItem>

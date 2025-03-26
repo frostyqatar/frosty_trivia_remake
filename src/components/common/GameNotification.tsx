@@ -29,8 +29,8 @@ const NotificationContainer = styled(motion.div)`
   z-index: 1000;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
   text-align: center;
-  font-size: 22px;
-  font-weight: 500;
+  font-size: 30px;
+  font-weight: 800;
   border: 2px solid #2ecc71;
   margin: 0;
   overflow-wrap: break-word;
@@ -42,9 +42,10 @@ const NotificationContainer = styled(motion.div)`
   display: flex;
   align-items: center;
   justify-content: center;
+  
 `;
 
-export const showNotification = (message: string, duration = 4000): void => {
+export const showNotification = (message: string, duration = 6000): void => {
   const event = new CustomEvent('game-notification', { 
     detail: { message, duration } 
   });

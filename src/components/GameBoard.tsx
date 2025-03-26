@@ -63,7 +63,8 @@ const CategoryHeader = styled.div`
   text-align: center;
   width: 100%;
   font-weight: 600;
-  font-size: 14px;
+  font-size: 35px;
+  font-weight: bold;
   height: 60px;
   display: flex;
   align-items: center;
@@ -306,14 +307,18 @@ const GameBoard: React.FC = () => {
 
   const renderCategoryQuestions = (category: Category) => {
     // Create a map of questions indexed by their point value
-    const questionsByValue: Record<number, any> = {};
+    // Each value will contain an array of questions with the same point value
+    const questionsByValue: Record<number, Array<{question: Question, index: number}>> = {};
     
-    // Populate the map
+    // Populate the map with arrays of questions
     category.questions.forEach((question, index) => {
-      questionsByValue[question.value] = {
+      if (!questionsByValue[question.value]) {
+        questionsByValue[question.value] = [];
+      }
+      questionsByValue[question.value].push({
         question,
         index
-      };
+      });
     });
     
     // Create pairs of point values: [100,200], [300,400], [500]
@@ -326,10 +331,10 @@ const GameBoard: React.FC = () => {
     // Render cards for each pair of point values
     return pointValuePairs.flatMap(pair => {
       return pair.map(value => {
-        const questionData = questionsByValue[value];
+        const questionsData = questionsByValue[value];
         
         // If there's no question for this value, show empty slot
-        if (!questionData) {
+        if (!questionsData || questionsData.length === 0) {
           return (
             <EmptyQuestionSlot key={`${category.id}-${value}`}>
               {value}
@@ -337,16 +342,33 @@ const GameBoard: React.FC = () => {
           );
         }
         
+        // Check if all questions for this value are answered
+        const allAnswered = questionsData.every(item => item.question.answered);
+        
         // Otherwise render the question card
         return (
           <QuestionCard
             key={`${category.id}-${value}`}
             categoryId={category.id}
-            questionIndex={questionData.index}
-            question={questionData.question}
-            answered={questionData.question.answered}
-            onClick={() => handleSelectQuestion(category.id, questionData.index)}
+            // We'll randomly select a question when clicked, so we don't need a specific index here
+            questionIndex={-1}
+            // Use the first question for display purposes
+            question={questionsData[0].question}
+            answered={allAnswered}
+            onClick={() => {
+              if (!allAnswered) {
+                // Filter for unanswered questions
+                const unansweredQuestions = questionsData.filter(item => !item.question.answered);
+                if (unansweredQuestions.length > 0) {
+                  // Randomly select one of the unanswered questions
+                  const randomIndex = Math.floor(Math.random() * unansweredQuestions.length);
+                  const selectedQuestion = unansweredQuestions[randomIndex];
+                  handleSelectQuestion(category.id, selectedQuestion.index);
+                }
+              }
+            }}
             className="question-card"
+            data-answered={allAnswered}
           >
             {value}
           </QuestionCard>

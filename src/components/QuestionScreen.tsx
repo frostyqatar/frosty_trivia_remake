@@ -1,371 +1,389 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { RootState } from '../store';
-import { pauseTimer, revealAnswer, returnToBoard, startTimer, tickTimer, resetTimer, setActiveTeam, resetGame, awardPoints, setBothTeamsTimedOut, setGamePhase, setVolume } from '../store/gameSlice';
+import { pauseTimer, revealAnswer, returnToBoard, startTimer, tickTimer, resetTimer, setActiveTeam, resetGame, awardPoints, setBothTeamsTimedOut, setGamePhase, setVolume, setPointsMultiplier } from '../store/gameSlice';
 import { BidirectionalText } from '../utils/textUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { showNotification } from '../utils/notificationUtils';
-import { store } from '../store';
-import AnswerReveal from './AnswerReveal';
 import { TeamIndex } from '../types/game.types';
 import { useAbilities } from '../hooks/useAbilities';
+import AnswerReveal from './AnswerReveal'; // Added missing import
+import { triggerGoogleSearchTimer } from '../hooks/useAbilities'; // Import the trigger function
 
-const QuestionContainer = styled.div`
+// Shared styles
+const cardStyles = css`
+  background: var(--card-background, white);
+  border-radius: var(--border-radius, 16px);
+  box-shadow: var(--card-shadow, 0 10px 25px rgba(0, 0, 0, 0.1));
+`;
+
+const QuestionContainer = styled(motion.div)`
   display: flex;
   flex-direction: column;
-  background-color: white;
-  border-radius: 24px;
-  box-shadow: 0 10px 30px rgba(140, 82, 255, 0.15);
-  overflow: hidden;
+  ${cardStyles}
   width: 100%;
-  max-width: 1230px;
+  max-width: 1000px;
+  
   margin: 0 auto;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1));
 `;
 
 const QuestionHeader = styled.div`
   width: 100%;
-  background: linear-gradient(135deg, #8c52ff 0%, #5e17eb 100%);
+  background: var(--primary-gradient, linear-gradient(135deg, var(--primary-color), var(--primary-dark)));
   color: white;
-  padding: 20px 24px;
+  padding: 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-`;
-
-const QuestionProgress = styled.div`
-  font-weight: 700;
-  font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
   
-  &::before {
-    content: '❓';
-    font-size: 18px;
+  @media (max-width: 768px) {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 0.75rem;
+    align-items: flex-start;
   }
 `;
 
-const BookmarkButton = styled.button`
+const CategoryTag = styled.div`
+  display: inline-flex;
+  align-items: center;
   background: rgba(255, 255, 255, 0.2);
-  border: none;
-  color: white;
-  font-size: 20px;
-  cursor: pointer;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  padding: 0.5rem 1rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  backdrop-filter: blur(4px);
+  
+  @media (max-width: 480px) {
+    font-size: 0.75rem;
+  }
+`;
+
+const PointsDisplay = styled.div`
+  font-weight: 700;
+  font-size: 1.25rem;
   display: flex;
   align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
+  gap: 0.5rem;
   
-  &:hover {
-    background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
+  span {
+    font-family: var(--header-font);
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.125rem;
   }
 `;
 
 const QuestionContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  padding: 32px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas: 
+    "question"
+    "media"
+    "timer"
+    "buttons";
+  gap: 1.5rem;
+  padding: 1.75rem;
   position: relative;
   
-  @media (min-width: 1024px) {
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-areas: 
-      "question"
-      "media"
-      "timer"
-      "buttons";
-    gap: 24px;
-  }
-`;
-
-const QuestionTextContainer = styled.div`
-  font-size: 32px;
-  line-height: 1.4;
-  margin-bottom: 24px;
-  text-align: center;
-  width: 100%;
-  padding: 16px;
-  color: #333;
-  font-weight: 500;
-  
   @media (max-width: 768px) {
-    font-size: 28px;
+    padding: 1.25rem;
+    gap: 1.25rem;
   }
   
   @media (max-width: 480px) {
-    font-size: 24px;
+    padding: 1rem;
+    gap: 1rem;
+  }
+`;
+
+const QuestionTextWrapper = styled(motion.div)`
+  grid-area: question;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+`;
+
+const QuestionTextContainer = styled.div`
+  font-size: 3rem;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--text-color);
+  font-weight: 600;
+  padding: 1rem;
+  border-radius: var(--border-radius);
+  background: var(--card-background);
+  box-shadow: var(--card-shadow, 0 4px 20px rgba(0, 0, 0, 0.06));
+  
+  @media (max-width: 768px) {
+    font-size: 1.75rem;
+    padding: 0.875rem;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 1.5rem;
+    padding: 0.75rem;
   }
 `;
 
 const TimerSection = styled.div`
   display: flex;
   flex-direction: column;
-  margin-bottom: 32px;
   grid-area: timer;
+  border-radius: var(--border-radius);
+  padding: 1.25rem;
+  background: var(--card-background);
+  box-shadow: var(--card-shadow, 0 4px 20px rgba(0, 0, 0, 0.06));
 `;
 
 const TimerContainer = styled.div`
   width: 100%;
 `;
 
-const TimerLabel = styled.div`
+const TimerHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 8px;
-  font-size: 16px;
-  font-weight: 600;
-  color: #444;
+  margin-bottom: 0.75rem;
+`;
+
+const TimerLabelText = styled.div`
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+`;
+
+const TimerDisplay = styled.div<{ $isTimeUp: boolean }>`
+  color: ${props => props.$isTimeUp ? 'var(--danger-color)' : 'var(--text-color)'};
+  font-weight: 700;
+  font-size: 1.25rem;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
 `;
 
 const TimerTrack = styled.div`
   width: 100%;
   height: 10px;
-  background-color: #e0e0e0;
+  background-color: rgba(0, 0, 0, 0.1);
   border-radius: 6px;
   overflow: hidden;
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
 const TimerProgress = styled.div<{ $percent: number; $isTimeUp: boolean }>`
   height: 100%;
   width: ${props => props.$percent}%;
   background: ${props => props.$isTimeUp 
-    ? 'linear-gradient(90deg, #ff6b6b, #ff4757)' 
-    : 'linear-gradient(90deg, #ffda79, #ffa502)'};
+    ? 'var(--danger-color)' 
+    : 'var(--primary-color)'};
   border-radius: 6px;
   transition: width 0.3s linear;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
 `;
 
-const TimerDisplay = styled.div<{ $isTimeUp: boolean }>`
-  color: ${props => props.$isTimeUp ? '#ff4757' : '#333'};
-  font-weight: 700;
-  font-size: 18px;
+const TeamInfoContainer = styled.div`
+  margin-top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 `;
 
 const TeamInfo = styled.div`
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  margin: 10px 0 24px;
+  gap: 0.5rem;
   font-weight: 600;
-  font-size: 18px;
-  color: #8c52ff;
-  background: #f0ebff;
-  padding: 12px 24px;
+  font-size: 1rem;
+  color: var(--primary-color);
+  padding: 0.5rem 1rem;
   border-radius: 50px;
-  box-shadow: 0 2px 8px rgba(140, 82, 255, 0.15);
-  width: fit-content;
-  margin: 0 auto 24px;
+  background: rgba(var(--primary-color-rgb, 58, 134, 255), 0.1);
+`;
+
+const TimerActions = styled.div`
+  display: flex;
+  gap: 0.5rem;
 `;
 
 const ButtonsContainer = styled.div`
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
   grid-area: buttons;
   
-  @media (max-width: 768px) {
-    flex-direction: column;
+  @media (max-width: 480px) {
+    grid-template-columns: 1fr;
   }
 `;
 
 const ActionButton = styled(motion.button)`
-  background: linear-gradient(135deg, #8c52ff 0%, #7b44e0 100%);
+  background: var(--primary-color);
   color: white;
   border: none;
-  padding: 16px;
-  border-radius: 16px;
-  font-size: 16px;
+  padding: 1rem;
+  border-radius: 12px;
+  font-size: 1.25rem;
   font-weight: 700;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  box-shadow: 0 4px 12px rgba(140, 82, 255, 0.3);
+  gap: 0.5rem;
+  box-shadow: 0 4px 15px rgba(var(--primary-color-rgb, 58, 134, 255), 0.3);
   transition: all 0.2s ease;
   
   &:hover {
-    box-shadow: 0 6px 15px rgba(140, 82, 255, 0.4);
+    box-shadow: 0 6px 20px rgba(var(--primary-color-rgb, 58, 134, 255), 0.4);
   }
   
   &:disabled {
-    background: linear-gradient(135deg, #cccccc, #aaaaaa);
+    background: #d1d1d1;
     cursor: not-allowed;
     box-shadow: none;
   }
 `;
 
 const RevealButton = styled(ActionButton)`
-  background: linear-gradient(135deg, #ff6b6b 0%, #ff4757 100%);
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+  background: var(--secondary-color);
+  box-shadow: 0 4px 15px rgba(var(--secondary-color-rgb, 131, 56, 236), 0.3);
   
   &:hover {
-    box-shadow: 0 6px 15px rgba(255, 107, 107, 0.4);
+    box-shadow: 0 6px 20px rgba(var(--secondary-color-rgb, 131, 56, 236), 0.4);
   }
 `;
 
-const BottomControls = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 30px;
-  background: linear-gradient(to right, #f8f8f8, #f0f0f0);
-  padding: 18px 24px;
-  border-top: 1px solid #eee;
-  border-radius: 0 0 24px 24px;
-`;
-
-const ControlStats = styled.div`
-  display: flex;
-  gap: 18px;
-`;
-const StatItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 24px;
-  color: #333;
-  font-weight: bold;
-  background: #f8f8f8;
-  padding: 16px 20px;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 2px solid #8c52ff;
-`;
-
-const TimerActions = styled.div`
-  display: flex;
-  gap: 12px;
-`;
-
-const IconButton = styled(motion.button)`
-  background-color: white;
-  border: none;
-  border-radius: 50%;
-  width: 44px;
-  height: 44px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  cursor: pointer;
-  color: #555;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background-color: #f0f0f0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-  }
-`;
-
-const MediaContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 24px;
-  width: 100%;
+const MediaContainer = styled(motion.div)`
   grid-area: media;
-  padding: 0;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const MediaWrapper = styled.div`
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  box-shadow: var(--card-shadow, 0 8px 30px rgba(0, 0, 0, 0.1));
 `;
 
 const QuestionImage = styled.img`
-  max-width: 100%;
-  max-height: 400px;
-  border-radius: 12px;
-  margin-bottom: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-`;
-
-const VideoContainer = styled.div`
   width: 100%;
-  max-width: 640px;
-  margin-bottom: 16px;
-  border-radius: 12px;
-  overflow: hidden;
-`;
-
-const QuestionVideo = styled.video`
-  width: 100%;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  height: auto;
   display: block;
+  border-radius: var(--border-radius);
 `;
 
 const AudioContainer = styled.div`
   width: 100%;
-  max-width: 500px;
-  margin-bottom: 16px;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: var(--border-radius);
 `;
 
-const QuestionAudio = styled.audio`
-  width: 100%;
-`;
-
-const isYouTubeUrl = (url: string) => {
-  return url.includes('youtube.com') || url.includes('youtu.be');
-};
-
-const YouTubeEmbed = ({ url }: { url: string }) => {
-  const getYouTubeId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return (match && match[2].length === 11) ? match[2] : null;
-  };
-  
-  const videoId = getYouTubeId(url);
-  if (!videoId) return null;
-  
-  return (
-    <iframe
-      width="100%"
-      height="315"
-      src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`}
-      title="YouTube video player"
-      frameBorder="0"
-      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-      allowFullScreen
-    ></iframe>
-  );
-};
-
-const Button = styled(motion.button)`
-  background-color: #8c52ff;
-  color: white;
+const IconButton = styled(motion.button)`
+  background-color: var(--card-background);
   border: none;
-  border-radius: 8px;
-  padding: 8px 16px;
-  font-weight: 600;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
   cursor: pointer;
+  color: var(--text-color);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  
+  &:hover:not(:disabled) {
+    background-color: rgba(var(--primary-color-rgb, 58, 134, 255), 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
   
   &:disabled {
-    background-color: #d1d1d1;
+    opacity: 0.5;
     cursor: not-allowed;
   }
 `;
 
 const EmojiSpan = styled.span`
-  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji", sans-serif;
-  font-size: 1.3em;
   display: inline-block;
   vertical-align: middle;
+  font-size: 1.1em;
   margin: 0 2px;
 `;
 
+const RevealQuestionButton = styled(motion.button)`
+  background-color: var(--primary-color, #3498db);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-size: 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 20px auto;
+  display: block;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const ImageContainer = styled.div`
+  position: relative;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+`;
+
+const UnblurButton = styled(motion.button)`
+  position: absolute;
+  background-color: rgba(0, 0, 0, 0.6);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.8);
+    transform: translateY(-2px);
+  }
+`;
+
+// Main component
 const QuestionScreen: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
@@ -376,10 +394,9 @@ const QuestionScreen: React.FC = () => {
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { switchTeam } = useAbilities();
-  
-  const handleAudioEnded = useCallback(() => {
-    console.log('Audio playback ended');
-  }, []);
+  const [questionHidden, setQuestionHidden] = useState(true);
+  const [imageBlurred, setImageBlurred] = useState(true);
+  const questionContainerRef = useRef<HTMLDivElement>(null);
   
   const { currentQuestion, timer, teams, activeTeamIndex, answerRevealed, gamePhase } = useSelector((state: RootState) => ({
     currentQuestion: state.currentQuestion,
@@ -390,9 +407,25 @@ const QuestionScreen: React.FC = () => {
     gamePhase: state.gamePhase
   }));
   
+  // Add this effect to auto-scroll to the question card when component mounts
+  useEffect(() => {
+    if (questionContainerRef.current) {
+      // Get the element's position relative to the viewport
+      const rect = questionContainerRef.current.getBoundingClientRect();
+      // Calculate where to scroll - either to the element's top or with a small offset
+      const scrollToY = window.scrollY + rect.top - 10; // 10px offset from top
+      
+      // Smooth scroll to the position
+      window.scrollTo({
+        top: scrollToY,
+        behavior: 'smooth'
+      });
+    }
+  }, []);
+  
+  // Timer handlers and effects
   useEffect(() => {
     if (currentTimerTeam === null) {
-      console.log("Starting timer with activeTeamIndex:", activeTeamIndex);
       setCurrentTimerTeam(activeTeamIndex as TeamIndex);
     }
   }, [activeTeamIndex, currentTimerTeam]);
@@ -421,7 +454,6 @@ const QuestionScreen: React.FC = () => {
         setBothTeamsFinished(true);
         dispatch(setBothTeamsTimedOut(true));
       } else {
-        console.log(`Timer finished for team ${currentTimerTeam}, switching to team ${otherTeam}`);
         setCurrentTimerTeam(otherTeam);
         setOtherTeamFinished(true);
       }
@@ -445,6 +477,15 @@ const QuestionScreen: React.FC = () => {
     }
   };
   
+  const handleToggleTimer = () => {
+    playSound('button-click');
+    if (timer.isRunning) {
+      dispatch(pauseTimer());
+    } else if (timer.remaining > 0) {
+      dispatch(startTimer(timer.remaining));
+    }
+  };
+  
   const handleRestartTimers = () => {
     playSound('button-click');
     setCurrentTimerTeam(activeTeamIndex as TeamIndex);
@@ -456,38 +497,32 @@ const QuestionScreen: React.FC = () => {
   };
 
   const handleRevealAnswer = () => {
-    // Play sound first before state updates to ensure it plays reliably
     playSound('answer-reveal');
-    
-    // Switch active team before revealing answer
     dispatch(setActiveTeam(activeTeamIndex === 0 ? 1 : 0));
-    
-    // Then go to answer screen
     dispatch(setGamePhase('answer'));
     dispatch(revealAnswer());
     dispatch(pauseTimer());
     
-    console.log(`Switching from team ${activeTeamIndex} to ${activeTeamIndex === 0 ? 1 : 0}`);
+    // Stop the Google search timer and notifications when answer is revealed
+    triggerGoogleSearchTimer(false, '');
   };
   
   const handleReturnToBoard = () => {
     playSound('button-click');
     dispatch(returnToBoard({ markAsAnswered: false }));
+    
+    // Also stop the Google search timer when returning to board
+    triggerGoogleSearchTimer(false, '');
   };
+
+  // Media and cleanup effects
+  const handleAudioEnded = useCallback(() => {}, []);
   
   useEffect(() => {
     if (!currentQuestion) {
       dispatch(returnToBoard({ markAsAnswered: false }));
     }
   }, [currentQuestion, dispatch]);
-  
-  useEffect(() => {
-    console.log("Active Team Index changed to:", activeTeamIndex);
-  }, [activeTeamIndex]);
-  
-  useEffect(() => {
-    console.log("QuestionScreen mounted. Active team index:", activeTeamIndex);
-  }, []);
   
   useEffect(() => {
     let newAudioElement: HTMLAudioElement | null = null;
@@ -514,13 +549,6 @@ const QuestionScreen: React.FC = () => {
       }
     };
   }, [currentQuestion?.question?.audio, handleAudioEnded]);
-
-  const playAudio = useCallback(() => {
-    if (audioElement) {
-      audioElement.volume = 0.5;
-      audioElement.play().catch(e => console.error("Error playing audio:", e));
-    }
-  }, [audioElement]);
 
   useEffect(() => {
     if (audioElement && currentQuestion) {
@@ -555,34 +583,18 @@ const QuestionScreen: React.FC = () => {
   }, [dispatch, currentQuestion]);
 
   useEffect(() => {
-    if (currentQuestion?.question?.video && videoRef.current) {
-      const videoElement = videoRef.current;
-      
-      videoElement.style.display = 'block';
-      videoElement.autoplay = true;
-      
-      const handleVideoError = (e: any) => {
-        console.error('Video error:', e);
-      };
-      
-      videoElement.addEventListener('error', handleVideoError);
-      
-      return () => {
-        videoElement.removeEventListener('error', handleVideoError);
-      };
-    }
-  }, [currentQuestion?.question?.video]);
-  
-  useEffect(() => {
-    if (currentQuestion && currentQuestion.question.audio) {
-      const audioElements = document.querySelectorAll('audio');
-      audioElements.forEach(audioElement => {
-        audioElement.autoplay = false;
-        audioElement.preload = 'none';
-      });
+    if (currentQuestion?.question?.hideQuestion) {
+      setQuestionHidden(true);
+    } else {
+      setQuestionHidden(false);
     }
   }, [currentQuestion]);
-  
+
+  useEffect(() => {
+    setImageBlurred(true);
+  }, [currentQuestion]);
+
+  // Render conditions
   if (answerRevealed && currentQuestion) {
     return <AnswerReveal />;
   }
@@ -594,246 +606,274 @@ const QuestionScreen: React.FC = () => {
   const { categoryId, questionIndex, question } = currentQuestion;
   const timerPercent = (timer.remaining / timer.duration) * 100;
   const timerTeam = currentTimerTeam !== null ? teams[currentTimerTeam] : null;
-  const questionCount = 10;
-  const currentQuestionNumber = questionIndex + 1;
   
+  // Media rendering
   const renderMedia = () => {
-    if (question.video) {
-      let videoSrc = question.video;
-      let videoId = '';
-      
-      if (videoSrc.includes('youtube.com') || videoSrc.includes('youtu.be')) {
-        if (videoSrc.includes('youtube.com/watch')) {
-          const urlParams = new URLSearchParams(new URL(videoSrc).search);
-          videoId = urlParams.get('v') || '';
-        } else if (videoSrc.includes('youtu.be')) {
-          videoId = videoSrc.split('/').pop() || '';
-        } else if (videoSrc.includes('youtube.com/embed')) {
-          videoId = videoSrc.split('/').pop() || '';
-        }
-        
-        if (videoId) {
-          videoSrc = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1`;
-          
-          return (
-            <MediaContainer>
-              <iframe
-                id="youtube-player"
-                width="100%"
-                height="315"
-                src={videoSrc}
-                title="Video content"
-                frameBorder="0"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                allowFullScreen
-              ></iframe>
-              <script dangerouslySetInnerHTML={{ __html: `
-                var tag = document.createElement('script');
-                tag.src = "https://www.youtube.com/iframe_api";
-                var firstScriptTag = document.getElementsByTagName('script')[0];
-                firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-                
-                var player;
-                
-                window.onYouTubeIframeAPIReady = function() {
-                  player = new YT.Player('youtube-player', {
-                    events: {
-                      'onReady': function(event) {
-                        event.target.setVolume(10);
-                        event.target.playVideo();
-                      }
-                    }
-                  });
-                };
-              `}} />
-            </MediaContainer>
-          );
-        }
-      }
-      
-      return (
-        <MediaContainer>
-          <iframe
-            width="100%"
-            height="315"
-            src={videoSrc}
-            title="Video content"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowFullScreen
-          ></iframe>
-        </MediaContainer>
-      );
-    }
+    if (!question.image && !question.video && !question.audio) return null;
     
+    return (
+      <MediaContainer
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3, duration: 0.4 }}
+      >
+        <MediaWrapper>
+          {question.image && (
+            <ImageContainer>
+              <QuestionImage 
+                src={question.image} 
+                alt="Question illustration"
+                style={{
+                  filter: question.imageBlur && imageBlurred ? `blur(${question.imageBlur}px)` : 'none'
+                }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              />
+              {question.imageBlur && imageBlurred && (
+                <UnblurButton
+                  onClick={handleUnblurImage}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  🔍 Unblur Image
+                </UnblurButton>
+              )}
+            </ImageContainer>
+          )}
+          
+          {question.video && (
+            <iframe
+              width="100%"
+              height="400"
+              src={isYouTubeUrl(question.video) ? 
+                `https://www.youtube.com/embed/${getYouTubeVideoId(question.video)}?autoplay=1&enablejsapi=1` : 
+                question.video
+              }
+              title="Video content"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            ></iframe>
+          )}
+          
+          {question.audio && (
+            <AudioContainer>
+              <audio 
+                controls
+                preload="none"
+                style={{ width: '100%' }}
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                }}
+              >
+                <source src={question.audio} />
+                Your browser does not support the audio element.
+              </audio>
+            </AudioContainer>
+          )}
+        </MediaWrapper>
+      </MediaContainer>
+    );
   };
   
-  const handleTeamAnswer = (teamIndex: TeamIndex) => {
-    const team = teams[teamIndex];
+  // Helper for YouTube URLs
+  function isYouTubeUrl(url: string) {
+    return url.includes('youtube.com') || url.includes('youtu.be');
+  }
+  
+  function getYouTubeVideoId(url: string) {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : '';
+  }
+  
+  const handleRevealQuestion = () => {
+    setQuestionHidden(false);
+  };
+
+  const handleUnblurImage = () => {
+    setImageBlurred(false);
+    playSound('button-click');
+  };
+  
+  const handleCorrectAnswer = (teamIndex: 0 | 1) => {
+    playSound('button-click');
     
-    if (team.blockedFromAnswering) {
-      showNotification(`${team.name} is blocked from answering this question!`);
-      playSound('button-click');
-      return;
+    // Calculate points based on current question value and team's multiplier
+    const points = currentQuestion.value * teams[teamIndex].pointsMultiplier;
+    
+    // Award points to the team
+    dispatch(awardPoints({ teamIndex, points }));
+    
+    // Reset multiplier (if it was doubled)
+    if (teams[teamIndex].pointsMultiplier > 1) {
+      dispatch(setPointsMultiplier({ teamIndex, multiplier: 1 }));
     }
     
+    // Stop the Google search timer when a team answers correctly
+    triggerGoogleSearchTimer(false, '');
+    
+    // Return to board with this question marked as answered
+    dispatch(returnToBoard({ markAsAnswered: true }));
+  };
+  
+  const handleWrongAnswer = (teamIndex: 0 | 1) => {
+    playSound('button-click');
+    
+    // Switch to the other team
+    const otherTeamIndex = teamIndex === 0 ? 1 : 0;
+    dispatch(setActiveTeam(otherTeamIndex));
+    
+    // Stop the Google search timer when a team answers incorrectly
+    triggerGoogleSearchTimer(false, '');
   };
   
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
+      <QuestionContainer
+        ref={questionContainerRef}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3, ease: "easeOut" }}
       >
-        <QuestionContainer>
-          <QuestionHeader>
-          <ControlStats>
-              <StatItem>
-                <span></span>
-                <span>{question.value} points</span>
-              </StatItem>
-  
-            </ControlStats>
-            
-          </QuestionHeader>
-          
-          <QuestionContent>
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.4 }}
-              style={{ gridArea: 'question' }}
-            >
+<QuestionHeader>
+  <PointsDisplay style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    fontSize: "40px",
+    fontWeight: "bold",
+    margin: "0 auto"
+  }}>
+    <span>{question.value}</span> points
+  </PointsDisplay>
+</QuestionHeader>
+
+
+        
+        <QuestionContent>
+          <QuestionTextWrapper
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+          >
+            {currentQuestion?.question?.hideQuestion && questionHidden ? (
+              <RevealQuestionButton
+                onClick={handleRevealQuestion}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                🔍 Reveal Question
+              </RevealQuestionButton>
+            ) : (
               <QuestionTextContainer>
-                {currentQuestion?.question?.question?.split(/((?:\p{Emoji}|\p{Emoji_Presentation}|\p{Emoji_Modifier}|\p{Emoji_Modifier_Base}|\p{Emoji_Component})+)/u).map((part: string, i: number) => {
-                  const isEmoji = /(?:\p{Emoji}|\p{Emoji_Presentation}|\p{Emoji_Modifier}|\p{Emoji_Modifier_Base}|\p{Emoji_Component})+/u.test(part);
-                  return isEmoji ? 
-                    <EmojiSpan key={i}>{part}</EmojiSpan> : 
-                    <BidirectionalText key={i} text={part} />
-                })}
+                <BidirectionalText text={question.question} />
               </QuestionTextContainer>
-            </motion.div>
-            
-            {currentQuestion.question.image || currentQuestion.question.video || currentQuestion.question.audio ? (
-              <MediaContainer>
-                {currentQuestion.question.image && (
-                  <QuestionImage 
-                    src={currentQuestion.question.image} 
-                    alt="Question illustration" 
-                    onError={(e) => {
-                      e.currentTarget.style.display = 'none';
-                      console.error('Error loading image:', currentQuestion.question.image);
-                    }}
-                  />
-                )}
-                
-                {currentQuestion.question.video && renderMedia()}
-                
-                {currentQuestion.question.audio && (
-                  <AudioContainer>
-                    <QuestionAudio 
-                      controls
-                      preload="none"
-                      onError={(e) => {
-                        e.currentTarget.style.display = 'none';
-                        console.error('Error loading audio:', currentQuestion.question.audio);
-                      }}
-                    >
-                      <source src={currentQuestion.question.audio} />
-                      Your browser does not support the audio tag.
-                    </QuestionAudio>
-                  </AudioContainer>
-                )}
-              </MediaContainer>
-            ) : null}
-            
-            <TimerSection>
-              <TimerContainer>
-                <TimerLabel>
-                  <span>⏱️ Time Remaining</span>
-                  <TimerDisplay $isTimeUp={timer.remaining <= 0}>
-                    {timer.remaining > 0 ? `00:${timer.remaining.toString().padStart(2, '0')}` : '00:00'}
-                  </TimerDisplay>
-                </TimerLabel>
-                <TimerTrack>
-                  <TimerProgress 
-                    $percent={timerPercent}
-                    $isTimeUp={timer.remaining <= 0}
-                  />
-                </TimerTrack>
-              </TimerContainer>
-            
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.4 }}
-              >
-                <TeamInfo>
-                  {!bothTeamsFinished && currentTimerTeam !== null && (
-                    <>
-                      <span>⏱️</span>
-                      <span>{teams[currentTimerTeam]?.name}'s turn</span>
-                    </>
-                  )}
-                  {bothTeamsFinished && (
-                    <span>⏰ Both teams out of time!</span>
-                  )}
-                  <TimerActions>
-              <IconButton 
-                onClick={handleSkipTimer}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                ⏩
-              </IconButton>
-              <IconButton 
-                onClick={handleRestartTimers}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                🔄
-              </IconButton>
-                </TimerActions>
-                </TeamInfo>
-              </motion.div>
-            </TimerSection>
-            
-            <ButtonsContainer>
-              <RevealButton
-                onClick={handleRevealAnswer}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                🔍 كشف الإجابة
-              </RevealButton>
-              
-              <ActionButton
-                onClick={handleReturnToBoard}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                🏠 Return to Board
-              </ActionButton>
-            </ButtonsContainer>
-          </QuestionContent>
+            )}
+          </QuestionTextWrapper>
           
-          <BottomControls>
-            <ControlStats>
-              <StatItem>
-                <span></span>
-                <span>{question.value} points</span>
-              </StatItem>
-  
-            </ControlStats>
+          {renderMedia()}
+          
+          <TimerSection>
+            <TimerHeader>
+              <TimerLabelText>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Time Remaining
+              </TimerLabelText>
+              <TimerDisplay $isTimeUp={timer.remaining <= 0}>
+                {timer.remaining > 0 ? `${Math.floor(timer.remaining / 60)}:${(timer.remaining % 60).toString().padStart(2, '0')}` : '0:00'}
+              </TimerDisplay>
+            </TimerHeader>
             
+            <TimerTrack>
+              <TimerProgress 
+                $percent={timerPercent}
+                $isTimeUp={timer.remaining <= 0}
+              />
+            </TimerTrack>
             
-          </BottomControls>
-        </QuestionContainer>
-      </motion.div>
+            <TeamInfoContainer>
+              <TeamInfo>
+                {!bothTeamsFinished && currentTimerTeam !== null ? (
+                  <>Team: {teams[currentTimerTeam]?.name}</>
+                ) : (
+                  <>Time expired</>
+                )}
+              </TeamInfo>
+              
+              <TimerActions>
+                <IconButton 
+                  onClick={handleToggleTimer}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  disabled={timer.remaining <= 0 || bothTeamsFinished}
+                  aria-label={timer.isRunning ? "Pause timer" : "Resume timer"}
+                >
+                  {timer.isRunning ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M10 4H6V20H10V4Z" fill="currentColor" />
+                      <path d="M18 4H14V20H18V4Z" fill="currentColor" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M6 4L18 12L6 20V4Z" fill="currentColor" />
+                    </svg>
+                  )}
+                </IconButton>
+                
+                <IconButton 
+                  onClick={handleSkipTimer}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  aria-label="Skip timer"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M13 5L21 12L13 19V5Z" fill="currentColor" />
+                    <path d="M3 5L11 12L3 19V5Z" fill="currentColor" />
+                  </svg>
+                </IconButton>
+                
+                <IconButton 
+                  onClick={handleRestartTimers}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  aria-label="Restart timer"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M4 12C4 7.58172 7.58172 4 12 4C16.4183 4 20 7.58172 20 12C20 16.4183 16.4183 20 12 20C9.26349 20 6.85738 18.6778 5.42035 16.5698" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M8 4L4 8L8 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </IconButton>
+              </TimerActions>
+            </TeamInfoContainer>
+          </TimerSection>
+          
+          <ButtonsContainer>
+            <RevealButton
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleRevealAnswer}
+            >
+              🔍 كشف الإجابة
+            </RevealButton>
+            
+            <ActionButton
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleReturnToBoard}
+            >
+              🏠 العودة للوحة
+            </ActionButton>
+          </ButtonsContainer>
+        </QuestionContent>
+      </QuestionContainer>
     </AnimatePresence>
   );
 };
 
-export default QuestionScreen; 
+export default QuestionScreen;
