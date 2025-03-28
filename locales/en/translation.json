@@ -1,9 +1,9 @@
 {
-  "welcome": "Welcome to Frosty Trivia!",
+  "welcome": "Welcome to Doha Quiz!",
   "startGame": "Start Game",
   "teamSetup": "Team Setup",
   "chooseCategories": "Choose Categories",
-  "gameTitle": "Frosty Trivia ☃️",
+  "gameTitle": "Doha Quiz ☃️",
   "currentTeam": "Current Team Turn:",
   "switchTeam": "Switch Team",
   "endGame": "End Game",
@@ -127,7 +127,7 @@
   },
   "common": {
     "loading": "Loading...",
-    "gameTitle": "Frosty Trivia ☃️",
+    "gameTitle": "Doha Quiz ☃️",
     "points": "Points",
     "correct": "Correct",
     "wrong": "Wrong",
@@ -146,7 +146,7 @@
     "endGame": "End Game"
   },
   "setup": {
-    "welcome": "Welcome to Frosty Trivia!",
+    "welcome": "Welcome to Doha Quiz!",
     "setupGame": "Setup Game",
     "selectCategories": "Select Categories",
     "enterTeamNames": "Enter Team Names",
