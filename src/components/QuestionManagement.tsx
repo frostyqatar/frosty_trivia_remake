@@ -273,7 +273,7 @@ const NoQuestionsMessage = styled.div`
   margin: 32px 0;
 `;
 
-const Modal = styled(motion.div)`
+const Modal = styled(motion.div)<{ $isApiKeyModal?: boolean }>`
   position: fixed;
   top: 0;
   left: 0;
@@ -283,7 +283,7 @@ const Modal = styled(motion.div)`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: ${props => props.$isApiKeyModal ? 2000 : 1000};
   padding: 20px;
 `;
 
@@ -329,7 +329,7 @@ const FormInput = styled.input`
   font-size: 16px;
   transition: all 0.2s ease;
   background-color: #fafafa;
-  
+  color: #8c52ff;
   &:focus {
     border-color: #8c52ff;
     outline: none;
@@ -348,6 +348,7 @@ const FormTextarea = styled.textarea`
   resize: vertical;
   transition: all 0.2s ease;
   background-color: #fafafa;
+  color: #8c52ff;
   
   &:focus {
     outline: none;
@@ -365,6 +366,7 @@ const FormSelect = styled.select`
   font-size: 16px;
   transition: all 0.2s ease;
   background-color: #fafafa;
+  color: #333;
   
   &:focus {
     outline: none;
@@ -472,42 +474,21 @@ const PageButton = styled(motion.button)<{ $active?: boolean }>`
   color: ${props => props.$active ? 'white' : '#333'};
   border: none;
   cursor: pointer;
-  font-weight: 600;
   transition: all 0.2s ease;
-  box-shadow: ${props => props.$active ? '0 4px 8px rgba(140, 82, 255, 0.3)' : 'none'};
   
   &:hover {
-    background-color: ${props => props.$active ? '#7b45e8' : '#e9e9e9'};
-  }
-  
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+    background-color: ${props => props.$active ? '#7b45e8' : '#e0e0e0'};
   }
 `;
 
-const PageNumber = styled(PageButton)<{ $active?: boolean }>`
-  padding: 10px 16px;
-  border-radius: 10px;
-  background-color: ${props => props.$active ? '#8c52ff' : 'transparent'};
-  color: ${props => props.$active ? 'white' : '#333'};
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.2s ease;
-  box-shadow: ${props => props.$active ? '0 4px 8px rgba(140, 82, 255, 0.3)' : 'none'};
-  
-  &:hover {
-    background-color: ${props => props.$active ? '#7b45e8' : '#e9e9e9'};
-  }
+const PageNumber = styled(PageButton)`
+  min-width: 40px;
 `;
 
 const PageEllipsis = styled.span`
-  padding: 10px 16px;
-  border-radius: 10px;
-  background-color: transparent;
-  color: #666;
-  font-weight: 600;
+  display: flex;
+  align-items: center;
+  padding: 0 5px;
 `;
 
 const PageJump = styled.div`
@@ -838,7 +819,7 @@ const CategoryEditButton = styled(motion.button)`
 
 const COMMON_EMOJIS = [
   '📚', '🎮', '🎬', '🎵', '🎨', '🏛️', '🌍', '🏆', 
-  '🧩', '⚽', '🏀', '🏈', '🎯', '🎲', '🎭', '🎪',
+  '🧩', '⚽', '🏀', '🏈', '2️⃣', '🎲', '🎭', '🎪',
   '🧠', '💡', '⚙️', '💻', '🔬', '🔭', '📱', '📷',
   '🏖️', '🌋', '🏔️', '🌲', '🌊', '🐾', '🦁', '🐘',
   '🍕', '🍰', '🍦', '🍷', '👗', '👑', '💎', '🚗',
@@ -1098,6 +1079,38 @@ const NotificationDisplay = styled(motion.div)<{ type: 'success' | 'error' | 'in
   white-space: pre-line;
 `;
 
+const RadioGroup = styled.div`
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+`;
+
+const RadioButton = styled.label<{ selected: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 2px solid ${props => props.selected ? '#8c52ff' : '#e0e0e0'};
+  background-color: ${props => props.selected ? 'rgba(140, 82, 255, 0.1)' : 'white'};
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: ${props => props.selected ? '600' : 'normal'};
+  color: ${props => props.selected ? '#8c52ff' : '#333'};
+  
+  &:hover {
+    background-color: ${props => props.selected ? 'rgba(140, 82, 255, 0.15)' : '#f5f5f5'};
+    transform: translateY(-2px);
+  }
+  
+  input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+  }
+`;
+
 const QuestionManagement: React.FC = () => {
   const dispatch = useDispatch();
   const { playSound } = useSoundEffects();
@@ -1174,7 +1187,7 @@ const QuestionManagement: React.FC = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState('');
   
-  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('gemini-api-key') || '');
   const [showApiKeyPrompt, setShowApiKeyPrompt] = useState(false);
   
   // Add state for image cropping
@@ -1206,6 +1219,17 @@ const QuestionManagement: React.FC = () => {
 
   // Add this with the other useState declarations in the component
   const [isImporting, setIsImporting] = useState(false);
+
+  // Add these state variables after other useState declarations
+  const [showGenerateCategoryModal, setShowGenerateCategoryModal] = useState(false);
+  const [generatingCategory, setGeneratingCategory] = useState(false);
+  const [categoryPrompt, setCategoryPrompt] = useState('');
+  const [categoryNameInput, setCategoryNameInput] = useState('');
+  const [categoryIcon, setCategoryIcon] = useState('❓');
+  const [categoryGenerationError, setCategoryGenerationError] = useState('');
+  const [categoryLanguage, setCategoryLanguage] = useState<'English' | 'Arabic'>('English');
+  const [categoryDifficulty, setCategoryDifficulty] = useState<'Kid-friendly' | 'Default'>('Default');
+  const [questionCount, setQuestionCount] = useState<number>(6);
 
   // Helper function to generate QR code image data URL
   // Removed the generateQRCodeDataURL function
@@ -1305,6 +1329,52 @@ const QuestionManagement: React.FC = () => {
       alert('Failed to generate QR code. Please try again.');
       setIsGeneratingQR(false);
     }
+  };
+
+  // Add this function before handleSubmit to check missing point values for a category
+  const getMissingPointValues = (categoryId: string): number[] => {
+    if (!categoryId) return [];
+    
+    const category = categories.find((c: Category) => c.id === categoryId);
+    if (!category) return [];
+    
+    // Track counts for each point value
+    let count100 = 0;
+    let count200 = 0;
+    let count300 = 0;
+    let count400 = 0;
+    let count500 = 0;
+    
+    // Count each point value
+    category.questions.forEach((q: Question) => {
+      switch (q.value) {
+        case 100:
+          count100++;
+          break;
+        case 200:
+          count200++;
+          break;
+        case 300:
+          count300++;
+          break;
+        case 400:
+          count400++;
+          break;
+        case 500:
+          count500++;
+          break;
+      }
+    });
+    
+    // Check which values are missing
+    const missing: number[] = [];
+    if (count100 < 2) missing.push(100);
+    if (count200 < 1) missing.push(200);
+    if (count300 < 1) missing.push(300); 
+    if (count400 < 1) missing.push(400);
+    if (count500 < 1) missing.push(500);
+    
+    return missing;
   };
 
   const handleSubmit = () => {
@@ -1464,7 +1534,7 @@ const QuestionManagement: React.FC = () => {
     if (mode === 'add') {
       setFormData({
         id: '',
-        categoryId: '',  // We'll set this when we have categories
+        categoryId: '',  // Empty string so no category is pre-selected
         question: '',
         answer: '',
         value: 100,
@@ -2277,7 +2347,7 @@ const QuestionManagement: React.FC = () => {
             min="1" 
             max={totalPages}
             value={currentPage}
-            onChange={(e) => {
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               const value = parseInt(e.target.value);
               if (!isNaN(value) && value >= 1 && value <= totalPages) {
                 setCurrentPage(value);
@@ -2767,8 +2837,155 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
     }
   };
 
-  // Update the form elements to include the onKeyDown handler
-  // For example, in the modal's form elements, add onKeyDown={handleFormKeyDown} to inputs and textareas
+  // Add this function after handleDeleteCategory
+  const handleDeleteAllCategories = () => {
+    if (window.confirm("WARNING: Are you sure you want to delete ALL categories? This action cannot be undone.")) {
+      // Dispatch an empty array to clear all categories
+      dispatch(updateCategories([]));
+      
+      // Clear localStorage as well
+      try {
+        localStorage.setItem('trivia-game-categories', JSON.stringify([]));
+        alert('All categories have been deleted.');
+      } catch (e) {
+        console.error('Error saving to localStorage:', e);
+        alert('Categories were deleted but there was an error updating localStorage.');
+      }
+    }
+  };
+
+  // Add this function to generate an entire category with Gemini AI
+  const generateCategoryWithGemini = async () => {
+    if (!categoryNameInput.trim() || !categoryPrompt.trim()) {
+      setCategoryGenerationError('Please enter both a category name and what the questions should be about');
+      return;
+    }
+    
+    // Check if we have an API key, if not show the prompt
+    if (!geminiApiKey) {
+      setShowApiKeyPrompt(true);
+      return;
+    }
+    
+    setGeneratingCategory(true);
+    setCategoryGenerationError('');
+    
+    try {
+      // Create a new category ID
+      const newCategoryId = `category-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+      
+      // Determine question distribution based on difficulty
+      let questionDistribution = '';
+      if (categoryDifficulty === 'Kid-friendly') {
+        const questionsPerLevel = Math.ceil(questionCount / 5);
+        questionDistribution = `Generate ${questionCount} about ${categoryNameInput}, child-friendly questions. 
+        - ${questionsPerLevel} 100-point questions (very very easy)
+        - ${questionsPerLevel} 200-point questions (very easy)
+        - ${questionsPerLevel} 300-point questions (easy)
+        - ${questionsPerLevel} 400-point questions (straightforward)
+        - ${questionsPerLevel} 500-point questions (straightforward)
+        `;
+      } else {
+        // Calculate how many questions of each difficulty level
+        const questionsPerLevel = Math.ceil(questionCount / 5);
+        questionDistribution = `
+        For a total of ${questionCount} questions about ${categoryNameInput}, distribute them as follows:
+        - ${questionsPerLevel} 100-point questions (easier)
+        - ${questionsPerLevel} 200-point questions (a bit above easy)
+        - ${questionsPerLevel} 300-point questions (medium)
+        - ${questionsPerLevel} 400-point questions (a bit above medium)
+        - ${questionsPerLevel} 500-point questions (hardest)
+        
+        Make the questions progressively more difficult as the point values increase.`;
+      }
+      
+      // First build the prompt for Gemini
+      const prompt = `You are a professional trivia question generator. Please create exactly ${questionCount} trivia questions about ${categoryPrompt} in ${categoryLanguage} language. 
+      ${questionDistribution}.
+      
+      Format your response EXACTLY like this JSON structure, with no additional text:
+      [
+        {"value": 100, "question": "Question text here", "answer": "Answer text here"},
+        {"value": 100, "question": "Question text here", "answer": "Answer text here"},
+        ...
+      ]
+      
+      Ensure all questions are accurate and factual. ${categoryLanguage === 'Arabic' ? 'Make sure to write both the questions and answers in Arabic.' : ''}`;
+      
+      // Call the Gemini API
+      const response = await axios.post(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+        {
+          contents: [{
+            parts: [{
+              text: prompt
+            }]
+          }]
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      
+      // Extract the generated content
+      const generatedContent = response.data.candidates[0].content.parts[0].text;
+      
+      // Parse the JSON response - first clean up any potential markdown code blocks
+      let cleanedJson = generatedContent.replace(/```json\s+/g, '').replace(/```/g, '').trim();
+      const questions = JSON.parse(cleanedJson);
+      
+      // Create a deep copy of categories
+      const updatedCategories = JSON.parse(JSON.stringify(categories));
+      
+      // Create the new category with generated questions
+      const newCategory = {
+        id: newCategoryId,
+        name: categoryNameInput.trim(),
+        icon: categoryIcon,
+        questions: questions.map((q: any) => ({
+          question: q.question,
+          answer: q.answer,
+          value: parseInt(q.value, 10),
+          answered: false,
+          image: '',
+          audio: '',
+          video: '',
+          imageBlur: 0,
+          hideQuestion: false
+        }))
+      };
+      
+      // Add the new category to the list
+      updatedCategories.push(newCategory);
+      
+      // Update Redux
+      dispatch(updateCategories(updatedCategories));
+      
+      // Manual save to localStorage for redundancy
+      try {
+        localStorage.setItem('trivia-game-categories', JSON.stringify(updatedCategories));
+      } catch (e) {
+        console.error('Error saving to localStorage:', e);
+      }
+      
+      // Reset the form and close the modal
+      setCategoryNameInput('');
+      setCategoryPrompt('');
+      setCategoryIcon('❓');
+      setShowGenerateCategoryModal(false);
+      
+      // Show success notification
+      alert(`Category "${categoryNameInput.trim()}" has been created with ${questionCount} generated questions!`);
+      
+    } catch (error) {
+      console.error('Error generating category:', error);
+      setCategoryGenerationError(`Failed to generate category: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setGeneratingCategory(false);
+    }
+  };
 
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -3070,6 +3287,7 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
                   value={formData.categoryId}
                   onChange={handleFormChange}
                 >
+                  <option value="">-- Select a category --</option>
                   {categories.map((category: Category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -3079,6 +3297,31 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
                 <CreateCategoryLink onClick={handleCreateCategoryFromForm}>
                   + Create New Category
                 </CreateCategoryLink>
+                
+                {/* Show missing point values for selected category */}
+                {formData.categoryId && (
+                  <div style={{ marginTop: '10px' }}>
+                    {getMissingPointValues(formData.categoryId).length > 0 ? (
+                      <div style={{ 
+                        color: 'red', 
+                        fontWeight: 'bold',
+                        padding: '8px',
+                        border: '1px solid red',
+                        borderRadius: '4px',
+                        backgroundColor: 'rgba(255, 0, 0, 0.05)'
+                      }}>
+                        Missing point values: {getMissingPointValues(formData.categoryId).join(', ')}
+                        <div style={{ fontSize: '12px', marginTop: '4px' }}>
+                          Each category needs 2x100 point questions and 1 each of 200, 300, 400, 500
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ color: 'green', fontWeight: 'bold' }}>
+                        ✓ All required point values are present
+                      </div>
+                    )}
+                  </div>
+                )}
               </FormGroup>
               
               <FormGroup>
@@ -3506,6 +3749,7 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: 50, opacity: 0 }}
+          $isApiKeyModal={true}
         >
           <ModalHeader>
             <h2>Enter Gemini API Key</h2>
@@ -3569,6 +3813,28 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
           >
             ➕ Add Category
           </Button>
+          <Button 
+            onClick={() => setShowGenerateCategoryModal(true)}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{ 
+              backgroundColor: '#8C43A8',
+              color: 'white'
+            }}
+          >
+            🤖 Generate Category with AI
+          </Button>
+          <Button 
+            onClick={handleDeleteAllCategories}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{ 
+              backgroundColor: '#d00000',
+              color: 'white'
+            }}
+          >
+            🗑️ Delete All Categories
+          </Button>
         </div>
         <CategoryList>
           {categories.map((category: Category) => (
@@ -3630,6 +3896,155 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
         >
           {notification.message}
         </NotificationDisplay>
+      )}
+      {showGenerateCategoryModal && (
+        <Modal
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <ModalContent
+            initial={{ y: 50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <ModalHeader>
+              <ModalTitle className="halloween-drip">Generate Category with AI</ModalTitle>
+              <CloseButton 
+                onClick={() => setShowGenerateCategoryModal(false)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                ✕
+              </CloseButton>
+            </ModalHeader>
+            
+            <FormGroup>
+              <FormLabel>Category Name</FormLabel>
+              <FormInput
+                value={categoryNameInput}
+                onChange={(e) => setCategoryNameInput(e.target.value)}
+                placeholder="Enter category name"
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel>Category Icon</FormLabel>
+              <FormInput
+                value={categoryIcon}
+                onChange={(e) => setCategoryIcon(e.target.value)}
+                placeholder="Enter an emoji or character for the icon"
+              />
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel>Language</FormLabel>
+              <RadioGroup>
+                <RadioButton 
+                  selected={categoryLanguage === 'English'}
+                  onClick={() => setCategoryLanguage('English')}
+                >
+                  <input 
+                    type="radio" 
+                    name="categoryLanguage" 
+                    checked={categoryLanguage === 'English'}
+                    onChange={() => {}}
+                  />
+                  English
+                </RadioButton>
+                <RadioButton 
+                  selected={categoryLanguage === 'Arabic'}
+                  onClick={() => setCategoryLanguage('Arabic')}
+                >
+                  <input 
+                    type="radio" 
+                    name="categoryLanguage" 
+                    checked={categoryLanguage === 'Arabic'}
+                    onChange={() => {}}
+                  />
+                  Arabic
+                </RadioButton>
+              </RadioGroup>
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel>Difficulty</FormLabel>
+              <RadioGroup>
+                <RadioButton 
+                  selected={categoryDifficulty === 'Default'}
+                  onClick={() => setCategoryDifficulty('Default')}
+                >
+                  <input 
+                    type="radio" 
+                    name="categoryDifficulty" 
+                    checked={categoryDifficulty === 'Default'}
+                    onChange={() => {}}
+                  />
+                  Default (Progressive Difficulty)
+                </RadioButton>
+                <RadioButton 
+                  selected={categoryDifficulty === 'Kid-friendly'}
+                  onClick={() => setCategoryDifficulty('Kid-friendly')}
+                >
+                  <input 
+                    type="radio" 
+                    name="categoryDifficulty" 
+                    checked={categoryDifficulty === 'Kid-friendly'}
+                    onChange={() => {}}
+                  />
+                  Kid-friendly (Easy Questions)
+                </RadioButton>
+              </RadioGroup>
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel>Number of Questions (in multiples of 6)</FormLabel>
+              <FormSelect
+                value={questionCount.toString()}
+                onChange={(e) => setQuestionCount(parseInt(e.target.value, 10))}
+              >
+                <option value="6">6 Questions</option>
+                <option value="12">12 Questions</option>
+                <option value="18">18 Questions</option>
+                <option value="24">24 Questions</option>
+                <option value="30">30 Questions</option>
+                <option value="36">36 Questions</option>
+              </FormSelect>
+            </FormGroup>
+            
+            <FormGroup>
+              <FormLabel>What should the questions be about?</FormLabel>
+              <FormTextarea
+                value={categoryPrompt}
+                onChange={(e) => setCategoryPrompt(e.target.value)}
+                placeholder="E.g., 'Ancient Roman history', 'Solar system facts', or 'Famous artists and their works'"
+                rows={5}
+              />
+            </FormGroup>
+            
+            {categoryGenerationError && <ErrorMessage>{categoryGenerationError}</ErrorMessage>}
+            
+            <ButtonGroup>
+              <Button
+                onClick={generateCategoryWithGemini}
+                disabled={generatingCategory || !categoryNameInput.trim() || !categoryPrompt.trim()}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{ backgroundColor: '#43a047' }}
+              >
+                {generatingCategory ? '⏳ Generating...' : '✨ Generate Complete Category'}
+              </Button>
+              <Button
+                onClick={() => setShowGenerateCategoryModal(false)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                Cancel
+              </Button>
+            </ButtonGroup>
+          </ModalContent>
+        </Modal>
       )}
     </Container>
   );

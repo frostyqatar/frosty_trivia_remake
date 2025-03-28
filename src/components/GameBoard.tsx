@@ -95,25 +95,11 @@ const QuestionGrid = styled.div`
   width: 100%;
   margin-top: 10px;
   padding: 0 10px 10px 10px;
+ 
+  
 `;
 
-const ProgressBar = styled.div`
-  width: 100%;
-  max-width: 500px;
-  height: 10px;
-  background-color: #f0f0f0;
-  border-radius: 10px;
-  margin: 0 auto 30px;
-  overflow: hidden;
-`;
 
-const Progress = styled.div<{ percent: number }>`
-  height: 100%;
-  width: ${props => props.percent}%;
-  background: linear-gradient(90deg, #0099cc 0%, #66d4ff 100%);
-  border-radius: 10px;
-  transition: width 0.5s ease-in-out;
-`;
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -198,8 +184,8 @@ const QuestionCard = styled(motion.div)<QuestionCardProps>`
   display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 37px;
+  font-weight: 800;
   cursor: ${props => props.answered ? 'default' : 'pointer'};
   transition: all 0.2s ease;
   min-height: 50px;
@@ -321,49 +307,69 @@ const GameBoard: React.FC = () => {
       });
     });
     
-    // Create pairs of point values: [100,200], [300,400], [500]
+    // Create pairs of point values: [100,100], [200,300], [400,500]
+    // Modified to have two 100 point questions
     const pointValuePairs = [
-      [100, 200],
-      [300, 400],
-      [500]
+      [100, 100],
+      [200, 300],
+      [400, 500]
     ];
     
     // Render cards for each pair of point values
-    return pointValuePairs.flatMap(pair => {
-      return pair.map(value => {
+    return pointValuePairs.flatMap((pair, pairIndex) => {
+      return pair.map((value, valueIndex) => {
         const questionsData = questionsByValue[value];
         
         // If there's no question for this value, show empty slot
         if (!questionsData || questionsData.length === 0) {
           return (
-            <EmptyQuestionSlot key={`${category.id}-${value}`}>
+            <EmptyQuestionSlot key={`${category.id}-${value}-${pairIndex}-${valueIndex}`}>
               {value}
             </EmptyQuestionSlot>
           );
         }
         
+        // For 100 point questions, we need to ensure we don't repeat the same question
+        // So we'll use the index within the pair to select different questions
+        let questionSet = questionsData;
+        
+        // For the second 100 point question, we need to track which one was used
+        if (value === 100 && valueIndex === 1 && questionsData.length > 1) {
+          // Use a different question for the second 100 point slot
+          // This ensures we don't show the same question twice
+          questionSet = [questionsData[1]];
+        } else if (value === 100 && valueIndex === 0 && questionsData.length > 1) {
+          // For the first 100 point question, use the first one
+          questionSet = [questionsData[0]];
+        }
+        
         // Check if all questions for this value are answered
-        const allAnswered = questionsData.every(item => item.question.answered);
+        const allAnswered = questionSet.every(item => item.question.answered);
         
         // Otherwise render the question card
         return (
           <QuestionCard
-            key={`${category.id}-${value}`}
+            key={`${category.id}-${value}-${pairIndex}-${valueIndex}`}
             categoryId={category.id}
-            // We'll randomly select a question when clicked, so we don't need a specific index here
-            questionIndex={-1}
-            // Use the first question for display purposes
-            question={questionsData[0].question}
+            // We'll use a specific index for 100 point questions to avoid duplicates
+            questionIndex={value === 100 ? (valueIndex === 0 ? questionsData[0]?.index : questionsData[1]?.index) : -1}
+            // Use the appropriate question for display purposes
+            question={questionSet[0].question}
             answered={allAnswered}
             onClick={() => {
               if (!allAnswered) {
-                // Filter for unanswered questions
-                const unansweredQuestions = questionsData.filter(item => !item.question.answered);
-                if (unansweredQuestions.length > 0) {
-                  // Randomly select one of the unanswered questions
-                  const randomIndex = Math.floor(Math.random() * unansweredQuestions.length);
-                  const selectedQuestion = unansweredQuestions[randomIndex];
+                // For 100 point questions, use the specific question based on which card was clicked
+                if (value === 100) {
+                  const selectedQuestion = questionSet[0];
                   handleSelectQuestion(category.id, selectedQuestion.index);
+                } else {
+                  // For other values, randomly select one of the unanswered questions
+                  const unansweredQuestions = questionSet.filter(item => !item.question.answered);
+                  if (unansweredQuestions.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * unansweredQuestions.length);
+                    const selectedQuestion = unansweredQuestions[randomIndex];
+                    handleSelectQuestion(category.id, selectedQuestion.index);
+                  }
                 }
               }
             }}
@@ -415,10 +421,10 @@ const GameBoard: React.FC = () => {
           >
             <CategoryHeader className="category-header">
               <CategoryHeaderText className="category-name">
-                <BidirectionalText text={category.name} />
+                <BidirectionalText text={(category.name.length > 8 ? category.name.substring(0, 8) + "..." : category.name) + " " + category.icon}  />
               </CategoryHeaderText>
             </CategoryHeader>
-            <CategoryIcon>{category.icon}</CategoryIcon>
+          
             
             <QuestionGrid>
               {renderCategoryQuestions(category)}

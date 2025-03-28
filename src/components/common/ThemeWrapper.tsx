@@ -476,10 +476,12 @@ const GlobalThemeStyles = createGlobalStyle<{ themeStyles: any, themeName: strin
     /* Question tile styles */
     .question-card {
       background: var(--question-tile-background, linear-gradient(135deg, #2c1b30 0%, #451c47 100%)) !important;
-      border: var(--question-tile-border, 2px solid #ff6d00) !important;
+      border: var(--question-tile-border, 1px solid #ff6d00) !important;
       box-shadow: var(--question-tile-shadow, 0 4px 0 #000000, 0 6px 10px rgba(255, 109, 0, 0.3)) !important;
       color: var(--question-tile-color, #ff9e58) !important;
-      font-size: var(--question-tile-font-size, 1.9rem) !important;
+      font-size: var(--question-tile-font-size, 1.85rem) !important;
+      font-family: "Lalezar", system-ui !important;
+      font-weight: 800 !important;
     }
 
     .question-card:hover {

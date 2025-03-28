@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
+import { motion } from 'framer-motion';
 
 // Create two canvas elements, one for main lightning and one for the glow effect
-const LightningContainer = styled.div`
+const LightningContainer = styled(motion.div)`
   position: absolute;
   top: 0;
   left: 0;
@@ -514,15 +515,23 @@ const Lightning: React.FC<LightningProps> = ({
   if (!active) return null;
   
   return (
-    <LightningContainer 
+    <div 
       ref={containerRef}
       style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        pointerEvents: 'none',
+        zIndex: 100,
+        overflow: 'hidden',
         transform: `translate(${shakeValue.x}px, ${shakeValue.y}px)`
       }}
     >
       <MainCanvas ref={mainCanvasRef} />
       <GlowCanvas ref={glowCanvasRef} />
-    </LightningContainer>
+    </div>
   );
 };
 

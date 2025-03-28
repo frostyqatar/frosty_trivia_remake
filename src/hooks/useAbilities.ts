@@ -78,7 +78,7 @@ export const useAbilities = () => {
         return false;
       }
       
-      // Check if ability has already been used
+      // Check if ability has already been used - should never happen now as we replace the button
       if (team.abilities[abilityType].used) {
         showNotification('Electric shock already used this game');
         return false;
@@ -87,7 +87,7 @@ export const useAbilities = () => {
       // Play appropriate sound
       playSound(`ability-${abilityType}`);
       
-      // Mark ability as used (instead of setting cooldown)
+      // Mark ability as used
       dispatch(activateAbilityAction({ 
         teamIndex, 
         abilityType 
@@ -183,7 +183,7 @@ export const useAbilities = () => {
       case 'double':
         // Double points for next correct answer
         dispatch(setPointsMultiplier({ teamIndex, multiplier: 2 }));
-        showNotification(`🎯 ${team.name} activated Double Points! Next correct answer will be worth double points!`);
+        showNotification(`2️⃣ ${team.name} activated Double Points! Next correct answer will be worth double points!`);
         break;
         
       case 'google':
@@ -263,8 +263,85 @@ export const useAbilities = () => {
     return true;
   }, [dispatch, game, playSound]);
   
+  // Add a function to directly use an ability without marking it as used
+  const useDirectAbility = useCallback((
+    teamIndex: TeamIndex, 
+    abilityType: AbilityType
+  ) => {
+    const team = game.teams[teamIndex];
+    
+    // Play appropriate sound
+    playSound(`ability-${abilityType}`);
+    
+    switch (abilityType) {
+      case 'electric':
+        // Get opposing team index
+        const opposingTeamIndex = teamIndex === 0 ? 1 : 0;
+        const opposingTeam = game.teams[opposingTeamIndex];
+        
+        // Generate random points reduction between 300-500
+        const pointsReduction = Math.floor(Math.random() * 201) + 300;
+        
+        // Apply shock points without multiplier effect
+        dispatch(awardPoints({ 
+          teamIndex: opposingTeamIndex, 
+          points: -pointsReduction 
+        }));
+        
+        // Show notification about the electric shock
+        showNotification(`⚡ ${team.name} used Electric Shock! ${opposingTeam.name} lost ${pointsReduction} points!`);
+        
+        // Dispatch custom event for the animation
+        const shockEvent = new CustomEvent('electricShock', { 
+          detail: { teamIndex: opposingTeamIndex } 
+        });
+        window.dispatchEvent(shockEvent);
+        break;
+        
+      case 'chatgpt':
+        // Show first 3 letters of answer
+        if (game.currentQuestion && game.currentQuestion.question) {
+          const answer = game.currentQuestion.question.answer;
+          showNotification(`🤖 ChatGPT hint: The answer starts with "${answer.substring(0, 3)}..."`);
+        }
+        break;
+        
+      case 'double':
+        // Double points for next correct answer
+        dispatch(setPointsMultiplier({ teamIndex, multiplier: 2 }));
+        showNotification(`2️⃣ ${team.name} activated Double Points! Next correct answer will be worth double points!`);
+        break;
+        
+      case 'google':
+        // Show initial notification
+        showNotification(`🔍 ${team.name} is using Google search!`);
+        
+        // Trigger the Google search timer
+        triggerGoogleSearchTimer(true, team.name);
+        break;
+        
+      case 'dismiss':
+        // Get opposing team index
+        const dismissOpposingTeamIndex = teamIndex === 0 ? 1 : 0;
+        const dismissOpposingTeam = game.teams[dismissOpposingTeamIndex];
+        
+        // Block the entire opposing team from answering this question
+        dispatch({
+          type: 'game/blockTeamFromAnswering',
+          payload: { teamIndex: dismissOpposingTeamIndex }
+        });
+        
+        // Show notification about team being blocked
+        showNotification(`🚫 ${dismissOpposingTeam.name} has been blocked from answering this question!`);
+        break;
+    }
+    
+    return true;
+  }, [dispatch, game, playSound]);
+  
   return {
     activateAbility: triggerAbility,
+    useDirectAbility,
     initializeElectricCooldown,
     switchTeam
   };

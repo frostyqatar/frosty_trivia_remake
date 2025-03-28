@@ -38,7 +38,7 @@ const TitleContainer = styled.div`
 `;
 
 const Title = styled.h2`
-  color: #0f5e87;
+  color: var(--text-color, white);
   font-size: 24px;
   font-weight: 700;
   position: relative;
@@ -48,7 +48,7 @@ const Title = styled.h2`
 const CounterText = styled.div`
   margin-bottom: 16px;
   font-size: 18px;
-  color: #0f5e87;
+  color: var(--text-color, white);
   text-align: center;
   position: relative;
   z-index: 1;
@@ -113,18 +113,20 @@ const CategoryCard = styled(motion.div)<{ selected: boolean }>`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background-color: ${props => props.selected ? 'rgba(0, 153, 204, 0.2)' : 'rgba(255, 255, 255, 0.9)'};
+  background-color: ${props => props.selected ? 'var(--primary-color, #0099cc)' : '#333'};
   border-radius: 12px;
   padding: 16px;
   cursor: pointer;
   position: relative;
   transition: all 0.2s ease;
   overflow: hidden;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+  color: white;
   
   &:hover {
     transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+    background-color: ${props => props.selected ? 'var(--primary-color, #0099cc)' : '#444'};
   }
   
   &:after {
@@ -136,7 +138,7 @@ const CategoryCard = styled(motion.div)<{ selected: boolean }>`
     height: 100%;
     background: linear-gradient(
       to bottom right, 
-      rgba(255, 255, 255, 0.1), 
+      rgba(255, 255, 255, 0.05), 
       transparent
     );
     pointer-events: none;

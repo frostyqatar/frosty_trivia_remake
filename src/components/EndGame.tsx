@@ -37,6 +37,7 @@ const Container = styled(motion.div)`
   box-shadow: ${colors.shadow};
   width: 100%;
   max-width: 900px;
+  
   margin: 0 auto;
   color: ${colors.text};
   overflow: hidden;
@@ -239,6 +240,16 @@ const TeamLabel = styled.div`
   font-size: 28px;
   font-weight: 600;
   color: ${colors.textLight};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const WinningStar = styled(motion.span)`
+  color: #FFD700;
+  font-size: 28px;
+  display: inline-block;
+  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
 `;
 
 const ScoreValue = styled.div<{ isWinner: boolean }>`
@@ -501,6 +512,23 @@ const EndGame: React.FC = () => {
                 {teams[0]?.avatar || '👥'}
               </TeamAvatar>
               <TeamLabel>
+                {team1Score > team2Score && (
+                  <WinningStar
+                    initial={{ scale: 0 }}
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      rotate: [0, 10, -10, 0]
+                    }}
+                    transition={{ 
+                      delay: 1.8, 
+                      duration: 1.5,
+                      repeat: Infinity,
+                      repeatType: "reverse"
+                    }}
+                  >
+                    ★
+                  </WinningStar>
+                )}
                 <BidirectionalText text={teams[0]?.name || 'الفريق 1'} />
               </TeamLabel>
             </TeamHeader>
@@ -526,6 +554,23 @@ const EndGame: React.FC = () => {
                 {teams[1]?.avatar || '👥'}
               </TeamAvatar>
               <TeamLabel>
+                {team2Score > team1Score && (
+                  <WinningStar
+                    initial={{ scale: 0 }}
+                    animate={{ 
+                      scale: [1, 1.2, 1],
+                      rotate: [0, 10, -10, 0]
+                    }}
+                    transition={{ 
+                      delay: 1.8, 
+                      duration: 1.5,
+                      repeat: Infinity,
+                      repeatType: "reverse"
+                    }}
+                  >
+                    ★
+                  </WinningStar>
+                )}
                 <BidirectionalText text={teams[1]?.name || 'الفريق 2'} />
               </TeamLabel>
             </TeamHeader>

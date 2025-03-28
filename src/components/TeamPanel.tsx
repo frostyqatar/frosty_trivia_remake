@@ -1,14 +1,15 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
 import { Team, TeamIndex, AbilityType } from '../types/game.types';
-import { awardPoints } from '../store/gameSlice';
+import { activateAbility as activateAbilityAction, awardPoints } from '../store/gameSlice';
 import { RootState } from '../store';
 import { useAbilities } from '../hooks/useAbilities';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import Lightning, { updateTeamPosition } from './effects/Lightning';
 import CatLoader from './effects/CatLoader';
+import SlotMachineModal from './common/SlotMachineModal';
 
 interface TeamPanelProps {
   team: Team;
@@ -76,7 +77,7 @@ const TeamName = styled.h2`
   font-size: 45px;
   font-weight: 800;
   font-family: 'Arial', sans-serif;
-  color: #333;
+  color: var(--text-color, white);
   margin-bottom: 10px;
   font-weight: 600;
 `;
@@ -88,7 +89,7 @@ const TeamScore = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #0099cc;
+  color: var(--primary-color, #0099cc);
   text-shadow: 0px 3px 4px rgba(0, 153, 204, 0.25);
 `;
 
@@ -171,9 +172,9 @@ const PlayersList = styled.div`
 
 const PlayerItem = styled.div<{ isDismissed: boolean }>`
   padding: 8px 12px;
-  background-color: ${props => props.isDismissed ? 'rgba(241, 241, 241, 0.6)' : 'rgba(102, 212, 255, 0.15)'};
+  background-color: ${props => props.isDismissed ? 'rgba(241, 241, 241, 0.1)' : 'rgba(102, 212, 255, 0.15)'};
   border-radius: 8px;
-  color: ${props => props.isDismissed ? '#999' : '#0f5e87'};
+  color: ${props => props.isDismissed ? 'var(--text-color-secondary, #999)' : 'var(--text-color, white)'};
   text-decoration: ${props => props.isDismissed ? 'line-through' : 'none'};
   font-weight: 500;
   font-size: 14px;
@@ -191,10 +192,14 @@ const shockAnimation = {
 
 const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShocked }) => {
   const dispatch = useDispatch();
-  const { activateAbility } = useAbilities();
+  const { activateAbility, useDirectAbility } = useAbilities();
   const { playSound } = useSoundEffects();
   
   const gamePhase = useSelector((state: RootState) => state.gamePhase);
+  const teams = useSelector((state: RootState) => state.teams);
+  const currentQuestion = useSelector((state: RootState) => state.currentQuestion?.question);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [slotAbility, setSlotAbility] = useState<AbilityType | null>(null);
   
   // Add this to track the panel position
   const panelRef = useRef<HTMLDivElement>(null);
@@ -255,14 +260,68 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
     };
   }, [teamIndex]);
   
+  // Call useDirectAbility at the component level
+  const directAbility = useDirectAbility;
+  
+  // Create a memoized handler that uses the hook result
+  const handleDirectAbilityUse = useCallback((abilityType: AbilityType) => {
+    if (gamePhase !== 'question') return;
+    directAbility(teamIndex, abilityType);
+  }, [gamePhase, teamIndex, directAbility]);
+  
   const handleAbilityClick = (abilityType: AbilityType) => {
-    activateAbility(teamIndex, abilityType);
+    // If it's the electric ability (now slot machine), open the modal
+    if (abilityType === 'electric') {
+      setIsModalOpen(true);
+      playSound('button-click');
+      return;
+    }
+    
+    // Otherwise, use the original logic
+    playSound('button-click');
+    if (abilityType !== 'double') {
+      activateAbility(teamIndex, abilityType);
+    } else {
+      activateAbility(teamIndex, 'double');
+    }
+  };
+  
+  const handleSlotMachineResult = (ability: AbilityType) => {
+    // Set the slot ability to display in the button
+    setSlotAbility(ability);
+    
+    // Mark electric as used to prevent further slot machine usage
+    // But don't mark the selected ability as used yet
+    dispatch(activateAbilityAction({ 
+      teamIndex, 
+      abilityType: 'electric'
+    }));
+  };
+  
+  // Handle click on the slot ability button - now uses the component-level handler
+  const handleSlotAbilityClick = () => {
+    if (!slotAbility || gamePhase !== 'question') return;
+    
+    // Use our component-level handler
+    handleDirectAbilityUse(slotAbility);
+    
+    // Remove the slot ability so it can't be used again
+    setSlotAbility(null);
+  };
+  
+  // Get the appropriate icon for the slot ability button
+  const getSlotAbilityIcon = () => {
+    switch (slotAbility) {
+      case 'electric': return '⚡';
+      case 'google': return '🔍';
+      case 'double': return '2️⃣';
+      case 'chatgpt': return '🤖';
+      case 'dismiss': return '⛔';
+      default: return '🎰';
+    }
   };
   
   const handleAdjustScore = (amount: number) => {
-    // Play the button click sound
-    playSound('button-click');
-    
     // Award points directly without delay
     dispatch(awardPoints({ 
       teamIndex: teamIndex as TeamIndex, 
@@ -273,22 +332,21 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
   if (!team) return <div>Loading team data...</div>;
   
   return (
-    <TeamContainer 
+    <TeamContainer
       ref={panelRef}
       isActive={isActive} 
       isShocked={isShocked}
       variants={shockAnimation}
       animate={isShocked ? 'animate' : 'initial'}
+      className={`team-panel ${isActive ? 'active' : ''} ${isShocked ? 'shocked' : ''}`}
+      style={{
+        transform: isActive ? 'scale(1.05)' : 'scale(1)',
+        boxShadow: isActive ? '0 15px 30px rgba(0, 153, 204, 0.3)' : '0 5px 15px rgba(0, 153, 204, 0.2)',
+        transition: 'all 0.3s ease'
+      }}
     >
-      {/* Only show the lightning effect on the team RECEIVING the shock */}
-      {isShocked && 
-        <Lightning 
-          active={isShocked} 
-          toTeam={true} 
-          targetTeamIndex={teamIndex} 
-          sourceTeamIndex={teamIndex === 0 ? 1 : 0} 
-        />
-      }
+      {/* Only show the lightning effect when shocked */}
+      {isShocked && <Lightning active={true} />}
       
       {isActive && <ActiveTeamIndicator />}
       
@@ -341,7 +399,6 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
             whileHover={!team.abilities.double.used ? { scale: 1.05 } : {}}
             whileTap={!team.abilities.double.used ? { scale: 0.95 } : {}}
             onClick={() => !team.abilities.double.used && handleAbilityClick('double')}
-            isActive={team.abilities.double.active}
           >
             2️⃣
           </AbilityButton>
@@ -370,16 +427,35 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
           
           <AbilityButton 
             className="ability-button"
-            isUsed={team.abilities.electric.used}
-            disabled={team.abilities.electric.used}
-            whileHover={!team.abilities.electric.used ? { scale: 1.05 } : {}}
-            whileTap={!team.abilities.electric.used ? { scale: 0.95 } : {}}
-            onClick={() => !team.abilities.electric.used && handleAbilityClick('electric')}
+            isUsed={slotAbility === null ? team.abilities.electric.used : false}
+            disabled={(slotAbility === null && team.abilities.electric.used) || (slotAbility !== null && gamePhase !== 'question')}
+            whileHover={((slotAbility !== null || !team.abilities.electric.used) && gamePhase === 'question') ? { scale: 1.05 } : {}}
+            whileTap={((slotAbility !== null || !team.abilities.electric.used) && gamePhase === 'question') ? { scale: 0.95 } : {}}
+            onClick={() => {
+              if (!team.abilities.electric.used) {
+                handleAbilityClick('electric');
+              } else if (slotAbility !== null && gamePhase === 'question') {
+                handleSlotAbilityClick();
+              }
+            }}
+            style={{
+              background: slotAbility !== null || !team.abilities.electric.used 
+                ? 'linear-gradient(135deg, #ff9900, #ffcc00)' 
+                : 'rgba(241, 241, 241, 0.9)',
+              color: slotAbility !== null || !team.abilities.electric.used ? 'white' : '#999'
+            }}
           >
-            ⚡
+            {slotAbility !== null ? getSlotAbilityIcon() : '🎰'}
           </AbilityButton>
         </AbilitiesGrid>
       </AbilitiesSection>
+      
+      {/* Slot Machine Modal */}
+      <SlotMachineModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAbilitySelected={handleSlotMachineResult}
+      />
     </TeamContainer>
   );
 };

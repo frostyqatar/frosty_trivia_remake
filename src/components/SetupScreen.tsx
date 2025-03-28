@@ -65,7 +65,7 @@ const Header = styled.header`
   z-index: 2;
   padding: 30px;
   border-radius: 24px;
-  background: ${colors.glass};
+  background: ;
   backdrop-filter: blur(10px);
   box-shadow: 
     0 10px 30px rgba(31, 38, 135, 0.1),
@@ -97,25 +97,7 @@ const Logo = styled.h1`
   align-items: center;
   position: relative;
   
-  &::before {
-    content: '❄️';
-    margin-right: 20px;
-    font-size: 52px;
-    animation: pulse 4s infinite ease-in-out alternate;
-  }
-  
-  &::after {
-    content: '❄️';
-    margin-left: 20px;
-    font-size: 52px;
-    animation: pulse 4s infinite ease-in-out alternate-reverse;
-  }
-  
-  @keyframes pulse {
-    0% { transform: scale(1) rotate(0deg); opacity: 0.9; }
-    50% { transform: scale(1.1) rotate(10deg); opacity: 1; }
-    100% { transform: scale(1) rotate(0deg); opacity: 0.9; }
-  }
+
   
   @media (max-width: 768px) {
     font-size: 42px;
@@ -198,7 +180,7 @@ const SnowToggleButton = styled(motion.button)`
   border: 1px solid rgba(255, 255, 255, 0.2);
   
   &:hover {
-    background: ${colors.glassDarker};
+   
     transform: rotate(15deg);
     box-shadow: 
       0 6px 15px rgba(0, 0, 0, 0.15),
@@ -461,7 +443,7 @@ const Footer = styled.footer`
 const SectionWrapper = styled(motion.div)`
   margin: 25px 0;
   padding: 35px;
-  background: ${colors.glass};
+
   backdrop-filter: blur(10px);
   border-radius: 24px;
   box-shadow: 
@@ -964,12 +946,12 @@ const SetupScreen: React.FC = () => {
               onToggleMusic={handleToggleMusic}
               onVolumeChange={handleVolumeChange}
             />
-            <Shimmer />
+          
           </SoundControlsWrapper>
           
           <ThemeSwitcherWrapper>
             <ThemeSwitcher />
-            <Shimmer />
+            
           </ThemeSwitcherWrapper>
         </ControlsContainer>
 
