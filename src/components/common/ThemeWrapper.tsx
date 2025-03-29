@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import styled, { createGlobalStyle, css } from 'styled-components';
-import { useTheme } from '../../contexts/ThemeContext';
+import styled, { createGlobalStyle, css, DefaultTheme } from 'styled-components';
+import { useTheme, ThemeName } from '../../contexts/ThemeContext';
 import { getThemeStyles } from '../../styles/themeStyles';
+import { SnowflakesContainer } from './Snowflakes';
 
 // Snowflake animation keyframes
 const snowflakesContainer = css`
@@ -125,566 +126,152 @@ const Container = styled.div`
 `;
 
 // Global theme styles
-const GlobalThemeStyles = createGlobalStyle<{ themeStyles: any, themeName: string }>`
+const GlobalThemeStyles = createGlobalStyle`
+  /* Apply the theme variables */
   :root {
-    ${props => props.themeStyles}
+    ${props => {
+      // Extract the theme name from props and apply the appropriate styles
+      const themeName = props.theme && typeof props.theme === 'object' && 'themeName' in props.theme 
+        ? props.theme.themeName as ThemeName 
+        : 'default';
+      return getThemeStyles(themeName);
+    }}
   }
-  
+
+  /* Base styles */
   body {
-    margin: 0;
-    padding: 0;
-    min-height: 100vh;
-    overflow-x: hidden;
-    background: var(--background-image);
-    background-size: var(--background-size, cover);
+    background-color: var(--background-color);
     color: var(--text-color);
-    font-family: var(--font-family, var(--body-font));
-    font-weight: var(--font-weight, normal);
-    transition: background 0.5s ease, color 0.3s ease;
-    letter-spacing: var(--letter-spacing, normal);
-  }
-  
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--heading-font-family, var(--header-font));
-    font-weight: var(--font-weight, bold);
-    color: var(--text-color);
-    text-shadow: var(--text-shadow, none);
-    transition: color 0.3s ease;
-    position: relative;
-    
-    &::after {
-      content: '';
-      position: absolute;
-      left: 0;
-      bottom: -5px;
-      width: 0;
-      height: 2px;
-      background: var(--heading-underline, transparent);
-      transition: width 0.3s ease;
-    }
-    
-    &:hover {
-      color: var(--heading-hover-color, var(--text-color));
-      
-      &::after {
-        width: 100%;
-      }
-    }
-  }
-  
-  h1 {
-    font-family: var(--title-font-family, var(--heading-font-family));
-  }
-  
-  .accent-text {
-    font-family: var(--accent-font-family, var(--heading-font-family));
-  }
-  
-  button {
-    font-family: var(--font-family, var(--body-font));
-    font-weight: var(--font-weight, normal);
-    background-color: var(--button-background, var(--primary-color));
-    color: var(--button-text-color, white);
-    border: var(--button-border, none);
-    box-shadow: var(--button-shadow, var(--card-shadow));
-    transition: all var(--animation-speed, 0.3s) ease;
-    position: relative;
-    overflow: hidden;
-    
-    &:hover::after {
-      content: var(--hover-content, '');
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--hover-effect, none);
-      opacity: 0.1;
-      pointer-events: none;
-    }
-  }
-  
-  /* Game title specific styling */
-  .game-title {
-    font-family: var(--title-font-family, var(--heading-font-family));
-    letter-spacing: var(--letter-spacing, normal);
-    text-shadow: var(--text-shadow, none);
-    
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-    
-    @keyframes shake {
-      0% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      50% { transform: translateX(5px); }
-      75% { transform: translateX(-5px); }
-      100% { transform: translateX(0); }
-    }
-    
-    animation: var(--title-animation, none);
-  }
-  
-  /* Additional theme-specific styles */
-  .theme-card {
-    background-color: var(--card-background);
-    border: var(--card-border, 2px solid var(--border-color));
-    box-shadow: var(--card-shadow);
-    border-radius: var(--border-radius, 8px);
-  }
-  
-  .theme-button {
-    background: var(--primary-gradient, var(--button-gradient));
-    color: var(--button-text-color, white);
-    border: var(--button-border, none);
-    box-shadow: var(--button-shadow, var(--card-shadow));
-    border-radius: var(--border-radius, 30px);
-  }
-  
-  /* Style for modal content */
-  .modal-content {
-    background-color: var(--card-background);
-    color: var(--text-color);
-    border: var(--card-border, 2px solid var(--border-color));
-    box-shadow: var(--card-shadow);
-    border-radius: var(--border-radius, 8px);
-  }
-  
-  /* Style for inputs */
-  input, textarea, select {
-    background-color: var(--card-background);
-    color: var(--text-color);
-    font-weight: var(--font-weight, normal);
-    border: var(--card-border, 1px solid var(--border-color));
-    border-radius: var(--border-radius, 4px);
-    font-family: var(--font-family, var(--body-font));
-  }
-  
-  /* Add more theme overrides as needed */
-  .btn-primary {
-    background-color: var(--primary-color);
-    color: var(--button-text-color);
-  }
-  
-  .btn-secondary {
-    background-color: var(--secondary-color);
-    color: var(--button-text-color);
-  }
-  
-  .btn-danger {
-    background-color: var(--danger-color);
-    color: var(--button-text-color);
-  }
-  
-  .btn-success {
-    background-color: var(--success-color);
-    color: var(--button-text-color);
-  }
-  
-  /* Halloween drip animation */
-  @keyframes drip {
-    0% { transform: scaleY(0); transform-origin: top; }
-    100% { transform: scaleY(1); transform-origin: top; }
+    transition: background-color 0.3s ease, color 0.3s ease;
+    font-family: var(--font-family);
   }
 
-  .halloween-drip {
-    position: relative;
-    
-    &::before {
-      content: '';
-      position: absolute;
-      bottom: -15px;
-      left: 50%;
-      width: 2px;
-      height: 15px;
-      background: var(--primary-color);
-      opacity: 0;
-      transform-origin: top;
-      transition: opacity 0.3s ease;
-    }
-    
-    &:hover::before {
-      opacity: 1;
-      animation: drip 0.5s ease-in;
-    }
-  }
-  
-  /* Retro NES theme specific styles */
-  .retro-container {
-    padding: 8px;
-    border: 4px solid #fff;
-    border-radius: 0;
-    position: relative;
-  }
-  
-  .retro-button {
-    margin: 0 6px;
-  }
-  
-  /* Lalezar font */
-  .lalezar-regular {
-    font-family: "Lalezar", system-ui;
-    font-weight: 400;
-    font-style: normal;
-  }
-  
-  /* Apply NES.css styling when retro theme is active */
-  [data-theme="retro"] {
-    .nes-btn {
-      margin: 4px;
-    }
-    
-    input, select, textarea {
-      border-image-repeat: stretch;
-      border-image-slice: 2;
-      border-image-source: url('data:image/svg+xml;utf8,<?xml version="1.0" encoding="UTF-8" ?><svg version="1.1" width="8" height="8" xmlns="http://www.w3.org/2000/svg"><path d="M3 1 h1 v1 h-1 z M4 1 h1 v1 h-1 z M2 2 h1 v1 h-1 z M5 2 h1 v1 h-1 z M1 3 h1 v1 h-1 z M6 3 h1 v1 h-1 z M1 4 h1 v1 h-1 z M6 4 h1 v1 h-1 z M2 5 h1 v1 h-1 z M5 5 h1 v1 h-1 z M3 6 h1 v1 h-1 z M4 6 h1 v1 h-1 z" fill="rgb(33,37,41)" /></svg>');
-      border-image-width: 2;
-      border-style: solid;
-      padding: 6px 8px;
-    }
-    
-    button:not(.nes-btn) {
-      position: relative;
-      display: inline-block;
-      padding: 6px 8px;
-      margin: 4px;
-      text-align: center;
-      vertical-align: middle;
-      cursor: pointer;
-      border-style: solid;
-      border-width: 4px;
-      border-image-slice: 2;
-      border-image-width: 2;
-      border-image-repeat: stretch;
-      border-image-source: url('data:image/svg+xml;utf8,<?xml version="1.0" encoding="UTF-8" ?><svg version="1.1" width="8" height="8" xmlns="http://www.w3.org/2000/svg"><path d="M3 1 h1 v1 h-1 z M4 1 h1 v1 h-1 z M2 2 h1 v1 h-1 z M5 2 h1 v1 h-1 z M1 3 h1 v1 h-1 z M6 3 h1 v1 h-1 z M1 4 h1 v1 h-1 z M6 4 h1 v1 h-1 z M2 5 h1 v1 h-1 z M5 5 h1 v1 h-1 z M3 6 h1 v1 h-1 z M4 6 h1 v1 h-1 z" fill="#92cc41" /></svg>');
-      color: var(--text-color);
-      background-color: var(--button-background);
-      image-rendering: pixelated;
-    }
-    
-    .nes-container {
-      border-style: solid;
-      border-width: 4px;
-      border-color: #92cc41;
-      border-image-slice: 2;
-      border-image-width: 2;
-      border-image-repeat: stretch;
-      border-image-source: url('data:image/svg+xml;utf8,<?xml version="1.0" encoding="UTF-8" ?><svg version="1.1" width="8" height="8" xmlns="http://www.w3.org/2000/svg"><path d="M3 1 h1 v1 h-1 z M4 1 h1 v1 h-1 z M2 2 h1 v1 h-1 z M5 2 h1 v1 h-1 z M1 3 h1 v1 h-1 z M6 3 h1 v1 h-1 z M1 4 h1 v1 h-1 z M6 4 h1 v1 h-1 z M2 5 h1 v1 h-1 z M5 5 h1 v1 h-1 z M3 6 h1 v1 h-1 z M4 6 h1 v1 h-1 z" fill="#92cc41" /></svg>');
-      padding: 1rem 1.5rem;
-      margin: 8px 0;
-    }
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
   }
 
-  ${({ themeName }) => themeName === 'fun' && css`
-    &:root {
-      --background-image: url('/fun-bg.svg');
-      --background-size: cover;
-      --background-position: center;
+  ::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 4px;
+    transition: background 0.3s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+  }
+
+  /* Selection style */
+  ::selection {
+    background: var(--selection-background);
+    color: var(--selection-text);
+  }
+
+  /* Focus styles for accessibility */
+  :focus-visible {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
+  }
+
+  /* Dark theme specific enhancements */
+  [data-theme="dark"] {
+    /* Form elements in dark mode */
+    input, textarea, select {
+      background-color: var(--input-background);
+      border-color: var(--input-border);
+      color: var(--input-text);
     }
-    
+
+    /* Card hover effects */
     .card {
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(31, 38, 135, 0.2);
-      border: 2px solid rgba(255, 255, 255, 0.18);
-      transition: transform 0.3s, box-shadow 0.3s;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     
     .card:hover {
-      transform: scale(1.02);
-      box-shadow: 0 12px 32px rgba(31, 38, 135, 0.3);
+      transform: translateY(-2px);
+      box-shadow: var(--card-hover-shadow);
+      background-color: var(--card-hover-background);
+    }
+
+    /* Tables in dark mode */
+    th {
+      background-color: var(--table-header-background);
     }
     
-    button {
-      background: linear-gradient(45deg, #5271ff, #ff5ebd);
-      border-radius: 12px;
-      color: white;
-      font-weight: bold;
-      border: none;
-      transition: transform 0.2s, box-shadow 0.2s;
-      animation: bounce 0.5s ease-in-out;
+    tr:nth-child(even) {
+      background-color: var(--table-row-even);
     }
     
-    button:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-      background: linear-gradient(45deg, #3f5bf0, #ff3aaf);
-    }
-    
-    /* Answered question tiles styling */
-    .question-card[data-answered="true"] {
-      background: #000000 !important;
-      color: rgba(255, 255, 255, 0.7) !important;
-      border: 2px solid rgba(255, 255, 255, 0.1) !important;
+    tr:nth-child(odd) {
+      background-color: var(--table-row-odd);
     }
 
-    /* Used abilities styling */
-    .ability-button[disabled] {
-      background: #f44336 !important;
-      color: white !important;
-      opacity: 0.9 !important;
-      border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    }
-    
-    @keyframes bounce {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-5px); }
-    }
-  `}
-
-  ${({ themeName }) => themeName === 'halloween' && css`
-    /* Team name styles */
-    .team-name {
-      color: var(--team-name-color, #ffffff) !important;
-      font-size: var(--team-name-font-size, 2.1rem) !important;
-      font-weight: var(--team-name-font-weight, 900) !important;
-      text-shadow: var(--team-name-text-shadow, 2px 2px 4px rgba(0, 0, 0, 0.7)) !important;
-    }
-
-    /* Category styles */
-    .category-name, .category-header {
-      font-size: var(--category-font-size, 2.1rem) !important;
-      text-shadow: var(--category-text-shadow, 2px 2px 3px rgba(0, 0, 0, 0.8)) !important;
-      font-weight: bold !important;
-      color: var(--text-color, #ff9e58) !important;
-    }
-
-    /* Abilities button styles */
-    .ability-button {
-      background: var(--ability-button-background, linear-gradient(135deg, #7e00fc 0%, #aa53ff 100%)) !important;
-      border: var(--ability-button-border, 2px solid #aa53ff) !important;
-      box-shadow: var(--ability-button-shadow, 0 4px 0 #4b0094, 0 6px 10px rgba(0, 0, 0, 0.5)) !important;
-      color: var(--ability-button-color, #ffffff) !important;
-      transform: none !important;
-    }
-
-    .ability-button:hover {
-      transform: translateY(-2px) !important;
-    }
-
-    /* Used abilities styling */
-    .ability-button[disabled] {
-      background: #f44336 !important;
-      color: white !important;
-      opacity: 0.9 !important;
-      border: 2px solid rgba(255, 255, 255, 0.2) !important;
-      box-shadow: 0 4px 0 #8b0000, 0 6px 10px rgba(0, 0, 0, 0.5) !important;
-    }
-
-    /* Question tile styles */
+    /* Question cards with gradient */
     .question-card {
-      background: var(--question-tile-background, linear-gradient(135deg, #2c1b30 0%, #451c47 100%)) !important;
-      border: var(--question-tile-border, 1px solid #ff6d00) !important;
-      box-shadow: var(--question-tile-shadow, 0 4px 0 #000000, 0 6px 10px rgba(255, 109, 0, 0.3)) !important;
-      color: var(--question-tile-color, #ff9e58) !important;
-      font-size: var(--question-tile-font-size, 1.85rem) !important;
-      font-family: "Lalezar", system-ui !important;
-      font-weight: 800 !important;
+      background-image: var(--question-card-gradient);
+      background-size: 200%;
+      animation: gradientShift 15s ease infinite;
     }
 
-    .question-card:hover {
-      background: var(--question-tile-hover-background, linear-gradient(135deg, #451c47 0%, #2c1b30 100%)) !important;
-      transform: translateY(-5px) !important;
+    /* Category headers with gradient */
+    .category-header {
+      background-image: var(--category-header-gradient);
     }
 
-    /* Answered question tiles styling */
-    .question-card[data-answered="true"] {
-      background: #000000 !important;
-      color: rgba(255, 255, 255, 0.5) !important;
-      border: 2px solid rgba(255, 109, 0, 0.3) !important;
-      box-shadow: 0 2px 0 #000000, 0 3px 5px rgba(0, 0, 0, 0.3) !important;
+    /* Button styles */
+    button:not([disabled]) {
+      background-image: var(--button-gradient);
+      background-size: 200%;
+      transition: background-position 0.3s ease, transform 0.2s ease, box-shadow 0.2s ease;
     }
     
-    ${snowflakesContainer}
-  `}
-  
-  ${({ themeName }) => themeName === 'retro' && css`
-    /* Font settings */
-    body, button, input, select, textarea {
-      font-family: "Lalezar", system-ui;
-      font-weight: 400;
-      letter-spacing: 1px;
-    }
-    
-    /* Game title */
-    .game-title {
-      font-family: "Lalezar", system-ui;
-      font-size: 3rem;
-      color: #f8d800;
-      text-shadow: 4px 4px 0 #ff004d;
-      animation: pulse 2s infinite;
-    }
-    
-    /* Team name styles */
-    .team-name {
-      color: #29adff !important;
-      font-size: 2.1rem !important;
-      font-weight: 400 !important;
-      text-shadow: 3px 3px 0 #ff004d !important;
-      font-family: "Lalezar", system-ui !important;
+    button:not([disabled]):hover {
+      background-position: right center;
+      transform: translateY(-1px);
+      box-shadow: var(--button-hover-shadow);
     }
 
-    /* Category styles */
-    .category-name, .category-header {
-      font-size: 2.1rem !important;
-      text-shadow: 2px 2px 0 #ff004d !important;
-      font-weight: 400 !important;
-      color: #f8d800 !important;
-      font-family: "Lalezar", system-ui !important;
-    }
-    
-    /* Question tile styles */
-    .question-card {
-      background: #1d2b53 !important;
-      border: 4px solid #ff004d !important;
-      box-shadow: 4px 4px 0 #000000 !important;
-      color: #f8d800 !important;
-      font-size: 1.9rem !important;
-      font-family: "Lalezar", system-ui !important;
-      image-rendering: pixelated;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .question-card:hover {
-      transform: translateY(-5px) !important;
-      box-shadow: 6px 6px 0 #000000 !important;
+    /* Disabled state for buttons & form elements */
+    button[disabled], input[disabled], select[disabled], textarea[disabled] {
+      opacity: 0.6;
+      background: var(--disabled-background);
+      color: var(--disabled-text);
+      cursor: not-allowed;
     }
 
-    /* Answered question tiles styling */
-    .question-card[data-answered="true"] {
-      background: #000000 !important;
-      color: rgba(255, 255, 255, 0.7) !important;
-      border-color: #666666 !important;
-      image-rendering: pixelated;
-      box-shadow: 2px 2px 0 #333333 !important;
-    }
-    
-    /* Abilities button styles */
-    .ability-button {
-      background: #7e2553 !important;
-      border: 4px solid #ff77a8 !important;
-      box-shadow: 4px 4px 0 #000000 !important;
-      color: #ffffff !important;
-      font-family: "Lalezar", system-ui !important;
-      font-size: 1.2rem !important;
-      image-rendering: pixelated;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    
-    .ability-button:hover {
-      transform: translateY(-3px) !important;
-      box-shadow: 6px 6px 0 #000000 !important;
+    /* Timer styles */
+    .timer {
+      background: var(--timer-background);
+      color: var(--timer-text);
+      border: 1px solid var(--timer-border);
     }
 
-    /* Used abilities styling */
-    .ability-button[disabled] {
-      background: #83769c !important;
-      color: #ffffff !important;
-      border: 4px solid #5f574e !important;
-      box-shadow: 2px 2px 0 #000000 !important;
-      opacity: 0.8 !important;
-      image-rendering: pixelated;
-    }
-    
-    /* Modal content */
+    /* Modal styles */
     .modal-content {
-      background: #1d2b53 !important;
-      border: 4px solid #ff004d !important;
-      box-shadow: 8px 8px 0 #000000 !important;
-      color: #fff1e8 !important;
-      font-family: "Lalezar", system-ui !important;
+      background: var(--modal-background);
+      border: 1px solid var(--modal-border);
+      box-shadow: var(--modal-shadow);
     }
-    
-    /* Buttons */
-    button {
-      background: #00e436 !important;
-      color: #fff !important;
-      border: 4px solid #008751 !important;
-      box-shadow: 4px 4px 0 #000000 !important;
-      font-family: "Lalezar", system-ui !important;
-      font-size: 1.2rem !important;
-      padding: 8px 16px !important;
-      transition: transform 0.2s, box-shadow 0.2s;
+
+    /* Focus states for form elements */
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--input-focus-border);
+      box-shadow: 0 0 0 2px var(--input-focus-shadow);
     }
-    
-    button:hover {
-      transform: translateY(-3px) !important;
-      box-shadow: 6px 6px 0 #000000 !important;
-    }
-    
-    /* Inputs */
-    input, select, textarea {
-      background: #c2c3c7 !important;
-      color: #000000 !important;
-      border: 4px solid #5f574e !important;
-      box-shadow: 4px 4px 0 #000000 !important;
-      font-family: "Lalezar", system-ui !important;
-      padding: 8px !important;
-    }
-    
-    /* Card styling */
-    .theme-card, .card {
-      background: #1d2b53 !important;
-      border: 4px solid #ff004d !important;
-      box-shadow: 6px 6px 0 #000000 !important;
-      color: #fff1e8 !important;
-      padding: 16px !important;
-    }
-    
-    /* Animation for game elements */
-    @keyframes pixel-pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.05); }
-      100% { transform: scale(1); }
-    }
-    
-    /* Pixelated background effect */
-    body, .container {
-      background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAFElEQVQYlWNgYGD4z4AGGBkZSVIAAM9TA99mU+9GAAAAAElFTkSuQmCC') !important;
-      background-repeat: repeat !important;
-      background-size: 8px 8px !important;
-      background-color: #1d2b53 !important;
-    }
-    
-    /* Special effects for retro theme */
-    .retro-effect {
-      position: relative;
-      overflow: hidden;
-      
-      &::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 2px;
-        background: rgba(255, 255, 255, 0.3);
-        animation: scan-line 4s linear infinite;
-      }
-    }
-    
-    @keyframes scan-line {
-      0% { top: -10%; }
-      100% { top: 100%; }
-    }
-    
-    /* Pixelated icons */
-    .retro-icon {
-      image-rendering: pixelated;
-      image-rendering: -moz-crisp-edges;
-      image-rendering: crisp-edges;
-    }
-    
-    /* Floating pixel effect */
-    ${snowflakesContainer}
-    
-    .snowflake img {
-      image-rendering: pixelated;
-      height: 16px;
-    }
-  `}
+  }
+
+  /* Animation for gradient shifts */
+  @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
 `;
 
 interface ThemeWrapperProps {
@@ -693,7 +280,6 @@ interface ThemeWrapperProps {
 
 const ThemeWrapper: React.FC<ThemeWrapperProps> = ({ children }) => {
   const { currentTheme } = useTheme();
-  const themeStyles = getThemeStyles(currentTheme);
   const [showSnowflakes, setShowSnowflakes] = useState(false);
 
   // Check if snowfall should be enabled based on theme settings
@@ -709,47 +295,22 @@ const ThemeWrapper: React.FC<ThemeWrapperProps> = ({ children }) => {
   }, [currentTheme]);
   
   return (
-    <>
-      <GlobalThemeStyles themeStyles={themeStyles} themeName={currentTheme} />
+    <Wrapper data-theme={currentTheme}>
+      <GlobalThemeStyles theme={{ themeName: currentTheme }} />
       <Container>
         {showSnowflakes && (currentTheme === 'halloween' || currentTheme === 'retro') && (
-          <div className="snowflakes">
-            <div className="snowflake">
-              <img src={currentTheme === 'retro' ? "/pixel-star.png" : "https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif"} /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-            <div className="snowflake">
-              <img src="https://media1.giphy.com/media/0xR7MUO0hJfWtco7C6/giphy.gif" /> 
-            </div>
-          </div>
+          <SnowflakesContainer theme={currentTheme} />
         )}
         {children}
       </Container>
-    </>
+    </Wrapper>
   );
 };
+
+const Wrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+`;
 
 export default ThemeWrapper; 

@@ -446,7 +446,7 @@ const GameContainer: React.FC = () => {
         </ControlsLeftSection>
         
         <ControlsCenterSection>
-          <GameTitle className="game-title">Frosty Trivia ☃️</GameTitle>
+          <GameTitle className="game-title">Doha Quiz ☃️</GameTitle>
         </ControlsCenterSection>
         
         <ControlsRightSection>

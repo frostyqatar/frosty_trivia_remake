@@ -1,143 +1,207 @@
 import React, { useState } from 'react';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useTheme, ThemeName } from '../../contexts/ThemeContext';
-import { useSoundEffects } from '../../hooks/useSoundEffects';
-
-const SwitcherButton = styled(motion.button)`
-  background: var(--card-background);
-  border: 2px solid var(--border-color);
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  box-shadow: var(--card-shadow);
-  cursor: pointer;
-  z-index: 100;
-  
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.2);
-  }
-`;
-
-const ThemeMenu = styled(motion.div)`
-  position: absolute;
-  top: 50px;
-  left: 0;
-  background: var(--card-background);
-  border: 2px solid var(--border-color);
-  border-radius: 15px;
-  padding: 15px;
-  width: 200px;
-  box-shadow: var(--card-shadow);
-  z-index: 9999;
-`;
-
-const SwitcherContainer = styled.div`
-  position: relative;
-  margin: 0 10px;
-`;
-
-const ThemeOption = styled(motion.div)<{ isActive: boolean }>`
-  padding: 12px;
-  margin-bottom: 10px;
-  border-radius: 10px;
-  background: ${props => props.isActive ? 'var(--primary-color)' : 'transparent'};
-  color: ${props => props.isActive ? 'white' : 'var(--text-color)'};
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  transition: all 0.2s ease;
-  
-  &:hover {
-    background: ${props => props.isActive ? 'var(--primary-color)' : 'rgba(0, 0, 0, 0.05)'};
-  }
-  
-  &:last-child {
-    margin-bottom: 0;
-  }
-`;
-
-const ThemeIcon = styled.div`
-  width: 24px;
-  height: 24px;
-  margin-right: 10px;
-  border-radius: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-`;
-
-const ThemeTitle = styled.span`
-  font-weight: 500;
-  flex-grow: 1;
-`;
-
-// Define theme options with their icons
-const themeOptions: { name: ThemeName; icon: string; displayName: string }[] = [
-  { name: 'default', icon: '🎮', displayName: 'Default' },
-  { name: 'fun', icon: '🎨', displayName: 'Fun' },
-  { name: 'halloween', icon: '🎃', displayName: 'Halloween' },
-  { name: 'retro', icon: '👾', displayName: 'Retro' },
-  { name: 'dark', icon: '🌙', displayName: 'Dark' }
-];
+import { useTheme } from '../../contexts/ThemeContext';
 
 const ThemeSwitcher: React.FC = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const { currentTheme, setTheme } = useTheme();
-  const { playSound } = useSoundEffects();
-  
-  const toggleMenu = () => {
-    playSound('button-click');
+  const [isOpen, setIsOpen] = useState(false);
+
+  const themes = [
+    {
+      name: 'default',
+      icon: '☀️',
+      label: 'Light',
+      description: 'Clean and professional'
+    },
+    {
+      name: 'dark',
+      icon: '🌙',
+      label: 'Dark',
+      description: 'Modern and sleek'
+    },
+    {
+      name: 'fun',
+      icon: '🎨',
+      label: 'Fun',
+      description: 'Vibrant and playful'
+    },
+    {
+      name: 'retro',
+      icon: '👾',
+      label: 'Retro',
+      description: 'Pixelated nostalgia'
+    },
+    {
+      name: 'halloween',
+      icon: '🎃',
+      label: 'Halloween',
+      description: 'Spooky and dark'
+    }
+  ];
+
+  const currentThemeData = themes.find(t => t.name === currentTheme) || themes[0];
+
+  const handleToggleMenu = () => {
     setIsOpen(!isOpen);
   };
-  
-  const handleThemeSelect = (themeName: ThemeName) => {
-    playSound('button-click');
-    setTheme(themeName);
+
+  const handleThemeSelect = (themeName: string) => {
+    setTheme(themeName as any);
     setIsOpen(false);
   };
-  
-  // Get the icon for the current theme
-  const currentThemeIcon = themeOptions.find(option => option.name === currentTheme)?.icon || '🎮';
-  
+
   return (
-    <SwitcherContainer>
-      <SwitcherButton
-        onClick={toggleMenu}
-        whileTap={{ scale: 0.9 }}
+    <Container>
+      <CurrentThemeButton 
+        onClick={handleToggleMenu}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        aria-label={`Current theme: ${currentThemeData.label}. Click to change.`}
+        data-theme={currentTheme}
       >
-        {currentThemeIcon}
-      </SwitcherButton>
+        <ThemeIcon>{currentThemeData.icon}</ThemeIcon>
+        <ThemeLabel>{currentThemeData.label}</ThemeLabel>
+      </CurrentThemeButton>
       
       <AnimatePresence>
         {isOpen && (
           <ThemeMenu
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
           >
-            {themeOptions.map((option) => (
+            {themes.map((theme) => (
               <ThemeOption
-                key={option.name}
-                isActive={currentTheme === option.name}
-                onClick={() => handleThemeSelect(option.name)}
+                key={theme.name}
+                onClick={() => handleThemeSelect(theme.name)}
                 whileHover={{ x: 5 }}
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.98 }}
+                isActive={currentTheme === theme.name}
+                data-theme={theme.name}
               >
-                <ThemeIcon>{option.icon}</ThemeIcon>
-                <ThemeTitle>{option.displayName}</ThemeTitle>
+                <ThemeOptionIcon>{theme.icon}</ThemeOptionIcon>
+                <ThemeDetails>
+                  <ThemeOptionLabel>{theme.label}</ThemeOptionLabel>
+                  <ThemeDescription>{theme.description}</ThemeDescription>
+                </ThemeDetails>
+                {currentTheme === theme.name && <ActiveIndicator />}
               </ThemeOption>
             ))}
           </ThemeMenu>
         )}
       </AnimatePresence>
-    </SwitcherContainer>
+    </Container>
   );
 };
+
+const Container = styled.div`
+  position: relative;
+  z-index: 100;
+`;
+
+const CurrentThemeButton = styled(motion.button)`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--card-background, rgba(255, 255, 255, 0.95));
+  border: 1px solid var(--border-color, rgba(58, 134, 255, 0.2));
+  color: var(--text-color, #1e293b);
+  border-radius: var(--border-radius, 8px);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--card-shadow, 0 2px 10px rgba(0, 0, 0, 0.1));
+  transition: all 0.2s ease;
+  
+  &:hover {
+    box-shadow: var(--card-shadow, 0 4px 12px rgba(0, 0, 0, 0.15));
+  }
+`;
+
+const ThemeIcon = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+`;
+
+const ThemeLabel = styled.span`
+  display: block;
+`;
+
+const ThemeMenu = styled(motion.div)`
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: var(--card-background, white);
+  border-radius: var(--border-radius, 8px);
+  overflow: hidden;
+  width: 200px;
+  box-shadow: var(--menu-shadow, 0 4px 20px rgba(0, 0, 0, 0.2));
+  border: var(--menu-border, 1px solid rgba(58, 134, 255, 0.1));
+`;
+
+interface ThemeOptionProps {
+  isActive: boolean;
+}
+
+const ThemeOption = styled(motion.button)<ThemeOptionProps>`
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 12px 16px;
+  text-align: left;
+  border: none;
+  background: ${props => props.isActive ? 'var(--active-item-background, rgba(58, 134, 255, 0.1))' : 'transparent'};
+  color: var(--text-color, #1e293b);
+  cursor: pointer;
+  position: relative;
+  gap: 12px;
+  
+  &:hover {
+    background: var(--active-item-background, rgba(58, 134, 255, 0.05));
+  }
+  
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--divider-color, rgba(58, 134, 255, 0.05));
+  }
+`;
+
+const ThemeOptionIcon = styled.span`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--primary-color, #3a86ff);
+  color: white;
+  border-radius: 50%;
+  font-size: 14px;
+`;
+
+const ThemeDetails = styled.div`
+  flex: 1;
+`;
+
+const ThemeOptionLabel = styled.div`
+  font-weight: 500;
+  font-size: 14px;
+`;
+
+const ThemeDescription = styled.div`
+  font-size: 12px;
+  opacity: 0.7;
+  margin-top: 2px;
+`;
+
+const ActiveIndicator = styled.div`
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--primary-color, #3a86ff);
+`;
 
 export default ThemeSwitcher; 

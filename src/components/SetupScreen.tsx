@@ -934,7 +934,7 @@ const SetupScreen: React.FC = () => {
       
       {/* Header section */}
       <Header as={motion.header} variants={itemVariants}>
-        <Logo className="halloween-drip">Frosty Trivia</Logo>
+        <Logo className="halloween-drip">Doha Quiz</Logo>
         <CreatorInfo>برمجة عبدالله الشاعر </CreatorInfo>
         <Subtitle>استعد لتجربة لعبة سؤال وجواب رائعة ومسلية! اختبر معلوماتك وتنافس في هذه اللعبة الجماعية </Subtitle>
         
@@ -1091,7 +1091,7 @@ const SetupScreen: React.FC = () => {
           animate={{ opacity: 1 }}
           transition={{ delay: 1, duration: 0.5 }}
         >
-          Frosty Trivia - صنع في قطر - إصدار 1.0 
+          Doha Quiz - صنع في قطر - إصدار 1.0 
         </motion.div>
       </Footer>
       

@@ -3224,6 +3224,48 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
     }
   };
 
+  // Add a new styled component for the badge container and add button
+  const MissingPointBadgeContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 2px;
+  `;
+
+  const AddQuestionButton = styled(motion.button)`
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+  `;
+
+  // Add a function to handle adding a question with a specific point value
+  const handleAddMissingPointQuestion = (categoryId: string, pointValue: number) => {
+    // Set the form's categoryId and point value
+    setFormData({
+      ...DEFAULT_FORM_DATA,
+      categoryId: categoryId,
+      value: pointValue
+    });
+    
+    // Open the modal in add mode
+    setModalMode('add');
+    setShowModal(true);
+    
+    // Track the event
+    trackEvent('Questions', 'Add missing point question', `Category: ${categoryId}, Value: ${pointValue}`);
+  };
+
   return (
     <Container as={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
       <Header>
@@ -4111,6 +4153,37 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
               <CategoryIcon>{category.icon || '❓'}</CategoryIcon>
               <CategoryName>{category.name}</CategoryName>
               <CategoryInfo>{category.questions.length} questions</CategoryInfo>
+              
+              {/* Add missing points display */}
+              <MissingPointsContainer>
+                {getMissingPointValues(category.id).length > 0 ? (
+                  <>
+                    <MissingPointsLabel>Missing points:</MissingPointsLabel>
+                    <MissingPointsBadges>
+                      {getMissingPointValues(category.id).map((value) => (
+                        <MissingPointBadgeContainer key={`${category.id}-${value}`}>
+                          <MissingPointBadge value={value}>
+                            {value}
+                          </MissingPointBadge>
+                          <AddQuestionButton
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddMissingPointQuestion(category.id, value);
+                            }}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            +
+                          </AddQuestionButton>
+                        </MissingPointBadgeContainer>
+                      ))}
+                    </MissingPointsBadges>
+                  </>
+                ) : (
+                  <CompleteBadge>✓ Complete</CompleteBadge>
+                )}
+              </MissingPointsContainer>
+              
               <CategoryEditButton 
                 onClick={(e) => {
                   e.stopPropagation();
@@ -4312,3 +4385,62 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
 };
 
 export default QuestionManagement; 
+
+// Add these styled components for the missing points display
+// Add this near your other styled components
+const MissingPointsContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  width: 100%;
+`;
+
+const MissingPointsLabel = styled.div`
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+`;
+
+const MissingPointsBadges = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+`;
+
+interface PointBadgeProps {
+  value: number;
+}
+
+const MissingPointBadge = styled.span<PointBadgeProps>`
+  background-color: ${(props) => {
+    switch (props.value) {
+      case 100: return '#ff9800'; // Orange
+      case 200: return '#2196f3'; // Blue
+      case 300: return '#4caf50'; // Green
+      case 400: return '#9c27b0'; // Purple
+      case 500: return '#f44336'; // Red
+      default: return '#999';
+    }
+  }};
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const CompleteBadge = styled.span`
+  background-color: #4caf50;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+`;

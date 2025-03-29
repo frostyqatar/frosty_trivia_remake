@@ -145,7 +145,7 @@ const WelcomeMessage: React.FC = () => {
             transition={{ type: 'spring', damping: 25 }}
           >
             <MessageHeader>
-              Frosty Trivia - Welcome Message
+              Doha Quiz - Welcome Message
               <CloseButton 
                 onClick={handleDismiss}
                 whileHover={{ scale: 1.1 }}

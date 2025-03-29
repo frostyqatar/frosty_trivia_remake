@@ -73,13 +73,29 @@ const CategoryHeader = styled.div`
   border-radius: 8px 8px 0 0;
 `;
 
-const CategoryHeaderText = styled.div`
+// Add interface for CategoryHeaderText props
+interface CategoryHeaderTextProps {
+  textLength: number;
+}
+
+const CategoryHeaderText = styled.div<CategoryHeaderTextProps>`
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  /* Add dynamic font sizing based on content length */
+  font-size: ${props => {
+    if (props.textLength > 20) return '20px';
+    if (props.textLength > 15) return '24px';
+    if (props.textLength > 10) return '28px';
+    return '35px'; // Default font size
+  }};
+  
+  line-height: 1.2;
+  text-align: center;
 `;
 
 const CategoryIcon = styled.div`
@@ -745,8 +761,11 @@ const GameBoard: React.FC = () => {
             variants={cardVariants}
           >
             <CategoryHeader className="category-header">
-              <CategoryHeaderText className="category-name">
-                <BidirectionalText text={(category.name.length > 9 ? category.name.substring(0, 9) + "..." : category.name) + " " + category.icon}  />
+              <CategoryHeaderText 
+                className="category-name"
+                textLength={(category.name + " " + category.icon).length}
+              >
+                <BidirectionalText text={category.name + " " + category.icon} />
               </CategoryHeaderText>
             </CategoryHeader>
             

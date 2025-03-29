@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import styled from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
+import { AiOutlineUser, AiOutlineUsergroupAdd } from 'react-icons/ai';
+import Avatar from 'avataaars';
+import { RootState } from '../../store';
 import { Team, AbilityType } from '../../types/game.types';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
 import EmojiPickerElement from '../common/EmojiPickerElement';
-import Avatar from 'avataaars';
 
 const Container = styled.div`
   background-color: rgba(255, 255, 255, 0.9);
@@ -79,30 +82,25 @@ const RefreshButton = styled(motion.button)`
   }
 `;
 
-interface TeamSetupProps {
-  teamNumber: number;
-  onChange: (team: Partial<Team>) => void;
-  teamData: Partial<Team>;
-}
+// After the existing AvatarOptions interface, add gender-specific constraints
+const maleSpecificFeatures = {
+  facialHair: ['BeardLight', 'BeardMajestic', 'BeardMedium', 'MoustacheFancy', 'MoustacheMagnum'],
+  top: ['NoHair', 'Eyepatch', 'Hat', 'ShortHairDreads01', 'ShortHairDreads02', 
+        'ShortHairFrizzle', 'ShortHairShaggyMullet', 'ShortHairShortCurly', 
+        'ShortHairShortFlat', 'ShortHairShortRound', 'ShortHairShortWaved', 
+        'ShortHairSides', 'ShortHairTheCaesar', 'ShortHairTheCaesarSidePart']
+};
 
-// Define avatar config types
-interface AvatarConfigs {
-  topType: string[];
-  accessoriesType: string[];
-  hatColor: string[];
-  hairColor: string[];
-  facialHairType: string[];
-  facialHairColor: string[];
-  clotheType: string[];
-  clotheColor: string[];
-  graphicType: string[];
-  eyeType: string[];
-  eyebrowType: string[];
-  mouthType: string[];
-  skinColor: string[];
-}
+const femaleSpecificFeatures = {
+  facialHair: ['Blank'],
+  top: ['LongHairBigHair', 'LongHairBob', 'LongHairBun', 'LongHairCurly', 
+        'LongHairCurvy', 'LongHairDreads', 'LongHairFrida', 'LongHairFro', 
+        'LongHairFroBand', 'LongHairNotTooLong', 'LongHairShavedSides', 
+        'LongHairMiaWallace', 'LongHairStraight', 'LongHairStraight2', 
+        'LongHairStraightStrand', 'Hijab', 'Turban']
+};
 
-// Update AvatarOptions interface to include all possible properties
+// Add gender property to the existing AvatarOptions interface
 export interface AvatarOptions {
   topType?: string;
   accessoriesType?: string;
@@ -117,200 +115,147 @@ export interface AvatarOptions {
   eyebrowType?: string;
   mouthType?: string;
   skinColor?: string;
+  gender?: 'male' | 'female'; // Add gender property
 }
 
-// Define avatar options with all possible configurations
-const configs: AvatarConfigs = {
-  topType: [
-    'NoHair',
-    'Eyepatch',
-    'Hat',
-    'Hijab',
-    'Turban',
-    'WinterHat1',
-    'WinterHat2',
-    'WinterHat3',
-    'WinterHat4',
-    'LongHairBigHair',
-    'LongHairBob',
-    'LongHairBun',
-    'LongHairCurly',
-    'LongHairCurvy',
-    'LongHairDreads',
-    'LongHairFrida',
-    'LongHairFro',
-    'LongHairFroBand',
-    'LongHairNotTooLong',
-    'LongHairShavedSides',
-    'LongHairMiaWallace',
-    'LongHairStraight',
-    'LongHairStraight2',
-    'LongHairStraightStrand',
-    'ShortHairDreads01',
-    'ShortHairDreads02'
-  ],
-  accessoriesType: [
-    'Blank',
-    'Kurt',
-    'Prescription01',
-    'Prescription02',
-    'Round',
-    'Sunglasses',
-    'Wayfarers'
-  ],
-  hatColor: [
-    'Black',
-    'Blue01',
-    'Blue02',
-    'Blue03',
-    'Gray01',
-    'Gray02',
-    'Heather',
-    'PastelBlue',
-    'PastelGreen',
-    'PastelOrange',
-    'PastelRed',
-    'PastelYellow',
-    'Pink',
-    'Red',
-    'White'
-  ],
-  hairColor: [
-    'Auburn',
-    'Black',
-    'Blonde',
-    'BlondeGolden',
-    'Brown',
-    'BrownDark',
-    'PastelPink',
-    'Platinum',
-    'Red',
-    'SilverGray'
-  ],
-  facialHairType: [
-    'Blank',
-    'BeardMedium',
-    'BeardLight',
-    'BeardMajestic',
-    'MoustacheFancy',
-    'MoustacheMagnum'
-  ],
-  facialHairColor: [
-    'Auburn',
-    'Black',
-    'Blonde',
-    'BlondeGolden',
-    'Brown',
-    'BrownDark',
-    'Platinum',
-    'Red'
-  ],
-  clotheType: [
-    'BlazerShirt',
-    'BlazerSweater',
-    'CollarSweater',
-    'GraphicShirt',
-    'Hoodie',
-    'Overall',
-    'ShirtCrewNeck',
-    'ShirtScoopNeck',
-    'ShirtVNeck'
-  ],
-  clotheColor: [
-    'Black',
-    'Blue01',
-    'Blue02',
-    'Blue03',
-    'Gray01',
-    'Gray02',
-    'Heather',
-    'PastelBlue',
-    'PastelGreen',
-    'PastelOrange',
-    'PastelRed',
-    'PastelYellow',
-    'Pink',
-    'Red',
-    'White'
-  ],
-  graphicType: [
-    'Bat',
-    'Cumbia',
-    'Deer',
-    'Diamond',
-    'Hola',
-    'Pizza',
-    'Resist',
-    'Selena',
-    'Bear',
-    'SkullOutline',
-    'Skull'
-  ],
-  eyeType: [
-    'Close',
-    'Cry',
-    'Default',
-    'Dizzy',
-    'EyeRoll',
-    'Happy',
-    'Hearts',
-    'Side',
-    'Squint',
-    'Surprised',
-    'Wink',
-    'WinkWacky'
-  ],
-  eyebrowType: [
-    'Angry',
-    'AngryNatural',
-    'Default',
-    'DefaultNatural',
-    'FlatNatural',
-    'RaisedExcited',
-    'RaisedExcitedNatural',
-    'SadConcerned',
-    'SadConcernedNatural',
-    'UnibrowNatural',
-    'UpDown',
-    'UpDownNatural'
-  ],
-  mouthType: [
-    'Concerned',
-    'Default',
-    'Disbelief',
-    'Eating',
-    'Grimace',
-    'Sad',
-    'ScreamOpen',
-    'Serious',
-    'Smile',
-    'Tongue',
-    'Twinkle',
-    'Vomit'
-  ],
-  skinColor: [
-    'Tanned',
-    'Yellow',
-    'Pale',
-    'Light',
-    'Brown',
-    'DarkBrown',
-    'Black'
-  ]
+const defaultMaleOptions: AvatarOptions = {
+  topType: 'ShortHairShortRound',
+  accessoriesType: 'Blank',
+  hairColor: 'BrownDark',
+  facialHairType: 'Blank',
+  facialHairColor: 'BrownDark',
+  clotheType: 'BlazerShirt',
+  clotheColor: 'Blue03',
+  eyeType: 'Default',
+  eyebrowType: 'Default',
+  mouthType: 'Default',
+  skinColor: 'Light',
+  gender: 'male'
 };
 
-const configsKeys = Object.keys(configs);
+const defaultFemaleOptions: AvatarOptions = {
+  topType: 'LongHairBob',
+  accessoriesType: 'Blank',
+  hairColor: 'BrownDark',
+  facialHairType: 'Blank',
+  facialHairColor: 'BrownDark',
+  clotheType: 'ShirtScoopNeck',
+  clotheColor: 'Pink',
+  eyeType: 'Default',
+  eyebrowType: 'Default',
+  mouthType: 'Default',
+  skinColor: 'Light',
+  gender: 'female'
+};
 
-// Replace existing avatar arrays and randomization function
-const getRandomAvatarOptions = (): AvatarOptions => {
-  const options: AvatarOptions = {};
-  const keys = [...configsKeys];
-  keys.forEach(key => {
-    const configArray = configs[key as keyof AvatarConfigs];
-    options[key as keyof AvatarOptions] = configArray[Math.floor(Math.random() * configArray.length)];
-  });
+// Define the original getRandomAvatarOptions function first
+// Fix the sequence to avoid using before declaration
+export const getRandomAvatarOptions = (): AvatarOptions => {
+  // Define all possible avatar options
+  const allTopTypes = [
+    ...maleSpecificFeatures.top,
+    ...femaleSpecificFeatures.top
+  ];
+  
+  const allClothesTypes = [
+    'BlazerShirt', 'BlazerSweater', 'CollarSweater', 
+    'GraphicShirt', 'Hoodie', 'Overall', 
+    'ShirtCrewNeck', 'ShirtScoopNeck', 'ShirtVNeck'
+  ];
+  
+  const allFacialHairTypes = [
+    'Blank', 'BeardMedium', 'BeardLight', 
+    'BeardMajestic', 'MoustacheFancy', 'MoustacheMagnum'
+  ];
+  
+  const allSkinColors = [
+    'Light', 'Pale', 'Brown', 'DarkBrown', 'Black', 'Yellow', 'Red', 'Tanned'
+  ];
+  
+  const allHairColors = [
+    'Auburn', 'Black', 'Blonde', 'BlondeGolden', 'Brown', 
+    'BrownDark', 'PastelPink', 'Platinum', 'Red', 'SilverGray'
+  ];
+  
+  const allEyeTypes = [
+    'Close', 'Cry', 'Default', 'Dizzy', 'EyeRoll', 
+    'Happy', 'Hearts', 'Side', 'Squint', 'Surprised', 
+    'Wink', 'WinkWacky'
+  ];
+  
+  const allEyebrowTypes = [
+    'Angry', 'AngryNatural', 'Default', 'DefaultNatural', 
+    'FlatNatural', 'RaisedExcited', 'RaisedExcitedNatural', 
+    'SadConcerned', 'SadConcernedNatural', 'UnibrowNatural', 
+    'UpDown', 'UpDownNatural'
+  ];
+  
+  const allMouthTypes = [
+    'Concerned', 'Default', 'Disbelief', 'Eating', 'Grimace', 
+    'Sad', 'ScreamOpen', 'Serious', 'Smile', 'Tongue', 
+    'Twinkle', 'Vomit'
+  ];
+  
+  // Generate random avatar options
+  return {
+    topType: allTopTypes[Math.floor(Math.random() * allTopTypes.length)],
+    clotheType: allClothesTypes[Math.floor(Math.random() * allClothesTypes.length)],
+    facialHairType: allFacialHairTypes[Math.floor(Math.random() * allFacialHairTypes.length)],
+    skinColor: allSkinColors[Math.floor(Math.random() * allSkinColors.length)],
+    hairColor: allHairColors[Math.floor(Math.random() * allHairColors.length)],
+    facialHairColor: allHairColors[Math.floor(Math.random() * allHairColors.length)],
+    eyeType: allEyeTypes[Math.floor(Math.random() * allEyeTypes.length)],
+    eyebrowType: allEyebrowTypes[Math.floor(Math.random() * allEyebrowTypes.length)],
+    mouthType: allMouthTypes[Math.floor(Math.random() * allMouthTypes.length)],
+    clotheColor: 'Blue03',
+    accessoriesType: 'Blank' // Default no accessories
+  };
+};
 
-  return options;
+// Implement our validation function here (since the import is having issues)
+const validateGenderFeatures = (
+  avatarOptions: AvatarOptions, 
+  gender: 'male' | 'female'
+): AvatarOptions => {
+  const validatedOptions = { ...avatarOptions };
+  
+  // Apply gender-specific constraints
+  if (gender === 'male') {
+    // Ensure no female-specific tops
+    if (validatedOptions.topType && femaleSpecificFeatures.top.includes(validatedOptions.topType)) {
+      // Replace with a random male top
+      const maleTop = maleSpecificFeatures.top[Math.floor(Math.random() * maleSpecificFeatures.top.length)];
+      validatedOptions.topType = maleTop;
+    }
+    
+    // Males can have facial hair (no need to restrict)
+  } else if (gender === 'female') {
+    // Ensure no male-specific tops
+    if (validatedOptions.topType && maleSpecificFeatures.top.includes(validatedOptions.topType)) {
+      // Replace with a random female top
+      const femaleTop = femaleSpecificFeatures.top[Math.floor(Math.random() * femaleSpecificFeatures.top.length)];
+      validatedOptions.topType = femaleTop;
+    }
+    
+    // Ensure no facial hair for females
+    if (validatedOptions.facialHairType && validatedOptions.facialHairType !== 'Blank') {
+      validatedOptions.facialHairType = 'Blank';
+    }
+  }
+  
+  return validatedOptions;
+};
+
+// Gender-aware avatar generator
+export const getGenderedRandomAvatarOptions = (gender: 'male' | 'female'): AvatarOptions => {
+  // Get random avatar
+  const randomOptions = getRandomAvatarOptions();
+  // Apply gender validation
+  const validatedOptions = validateGenderFeatures(randomOptions, gender);
+  return {
+    ...validatedOptions,
+    gender
+  };
 };
 
 const generateDefaultAbilities = (): Record<AbilityType, { type: AbilityType; used: boolean }> => {
@@ -323,21 +268,38 @@ const generateDefaultAbilities = (): Record<AbilityType, { type: AbilityType; us
   };
 };
 
+// Extend Team type to support avatar options
+interface ExtendedTeam extends Team {
+  avatarOptions?: AvatarOptions;
+}
+
+interface TeamSetupProps {
+  teamNumber: number;
+  onChange: (team: Partial<ExtendedTeam>) => void;
+  teamData: Partial<ExtendedTeam>;
+}
+
 export const TeamSetup: React.FC<TeamSetupProps> = ({ teamNumber, onChange, teamData }) => {
   const { playSound } = useSoundEffects();
+  const dispatch = useDispatch();
   
   const [isCustomizingAvatar, setIsCustomizingAvatar] = useState(false);
   
+  // Get initial gender from avatar options or default to male
+  const initialGender = teamData.avatarOptions?.gender || 'male';
+  const [gender, setGender] = useState<'male' | 'female'>(initialGender);
+  
   useEffect(() => {
     if (!teamData.name || !teamData.avatar) {
-      const randomAvatarOptions = getRandomAvatarOptions();
+      const randomAvatarOptions = getGenderedRandomAvatarOptions(gender);
       onChange({
         name: `Team ${teamNumber}`,
         avatar: JSON.stringify(randomAvatarOptions),
         abilities: generateDefaultAbilities(),
+        avatarOptions: randomAvatarOptions // Add avatar options
       });
     }
-  }, [teamData, teamNumber, onChange]);
+  }, [teamData, teamNumber, onChange, gender]);
   
   const handleTeamNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({
@@ -346,16 +308,46 @@ export const TeamSetup: React.FC<TeamSetupProps> = ({ teamNumber, onChange, team
     });
   };
   
+  // Add this to handle gender toggle
+  const handleGenderToggle = () => {
+    const newGender = gender === 'male' ? 'female' : 'male';
+    setGender(newGender);
+    
+    // Update avatar options when gender changes
+    if (teamData.avatarOptions) {
+      const validatedOptions = validateGenderFeatures(teamData.avatarOptions, newGender);
+      onChange({
+        ...teamData,
+        avatarOptions: {
+          ...validatedOptions,
+          gender: newGender
+        }
+      });
+    }
+    
+    playSound('button-click');
+  };
+  
+  // Modify handleRefreshAvatar to respect gender
   const handleRefreshAvatar = () => {
     playSound('button-click');
-    const randomAvatarOptions = getRandomAvatarOptions();
+    // Use the gender-aware randomization
+    const newOptions = getGenderedRandomAvatarOptions(gender);
+    
     onChange({
       ...teamData,
-      avatar: JSON.stringify(randomAvatarOptions)
+      avatar: JSON.stringify(newOptions),
+      avatarOptions: newOptions
     });
   };
-
+  
   const getAvatarOptions = (): AvatarOptions => {
+    // Check if we already have avatar options stored
+    if (teamData.avatarOptions) {
+      return teamData.avatarOptions;
+    }
+    
+    // Otherwise try to parse from avatar string
     try {
       if (teamData.avatar && teamData.avatar.startsWith('{')) {
         return JSON.parse(teamData.avatar);
@@ -364,22 +356,26 @@ export const TeamSetup: React.FC<TeamSetupProps> = ({ teamNumber, onChange, team
       console.error('Error parsing avatar options:', e);
     }
     
-    return {
-      topType: 'ShortHairShortFlat',
-      accessoriesType: 'Blank',
-      hatColor: 'Black',
-      hairColor: 'Brown',
-      facialHairType: 'Blank',
-      facialHairColor: 'Brown',
-      clotheType: 'Hoodie',
-      clotheColor: 'Blue03',
-      graphicType: 'Diamond',
-      eyeType: 'Default',
-      eyebrowType: 'Default',
-      mouthType: 'Smile',
-      skinColor: 'Pale'
-    };
+    // Default fallback
+    return gender === 'male' ? defaultMaleOptions : defaultFemaleOptions;
   };
+  
+  // Add gender button component
+  const GenderToggleButton = styled(motion.button)`
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 10px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    padding: 0;
+  `;
   
   return (
     <Container>
@@ -404,6 +400,15 @@ export const TeamSetup: React.FC<TeamSetupProps> = ({ teamNumber, onChange, team
         >
           🔄
         </RefreshButton>
+        
+        {/* Add gender toggle button */}
+        <GenderToggleButton
+          onClick={handleGenderToggle}
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
+        >
+          {gender === 'male' ? '👨' : '👩'}
+        </GenderToggleButton>
       </TeamHeader>
     </Container>
   );
