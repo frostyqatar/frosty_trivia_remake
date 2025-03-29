@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import styled from 'styled-components';
 import { motion } from 'framer-motion';
@@ -213,6 +213,15 @@ const GameBoard: React.FC = () => {
   const { playSound } = useSoundEffects();
   const { switchTeam } = useAbilities();
   
+  // Create a persistent map to track tile-to-question assignments
+  const tileAssignmentsRef = useRef(new Map<string, {questionIndex: number, categoryId: string}>());
+  
+  // Reset tile assignments when categories change
+  useEffect(() => {
+    // Clear existing assignments when categories change
+    tileAssignmentsRef.current = new Map();
+  }, [selectedCategories]);
+  
   // Filter categories that are selected
   const displayCategories = categories.filter(
     (cat: Category) => selectedCategories.includes(cat.id)
@@ -293,7 +302,6 @@ const GameBoard: React.FC = () => {
 
   const renderCategoryQuestions = (category: Category) => {
     // Create a map of questions indexed by their point value
-    // Each value will contain an array of questions with the same point value
     const questionsByValue: Record<number, Array<{question: Question, index: number}>> = {};
     
     // Populate the map with arrays of questions
@@ -308,7 +316,6 @@ const GameBoard: React.FC = () => {
     });
     
     // Create pairs of point values: [100,100], [200,300], [400,500]
-    // Modified to have two 100 point questions
     const pointValuePairs = [
       [100, 100],
       [200, 300],
@@ -319,62 +326,95 @@ const GameBoard: React.FC = () => {
     return pointValuePairs.flatMap((pair, pairIndex) => {
       return pair.map((value, valueIndex) => {
         const questionsData = questionsByValue[value];
+        const tileKey = `${category.id}-${value}-${pairIndex}-${valueIndex}`;
         
         // If there's no question for this value, show empty slot
         if (!questionsData || questionsData.length === 0) {
           return (
-            <EmptyQuestionSlot key={`${category.id}-${value}-${pairIndex}-${valueIndex}`}>
+            <EmptyQuestionSlot key={tileKey}>
               {value}
             </EmptyQuestionSlot>
           );
         }
         
-        // For 100 point questions, we need to ensure we don't repeat the same question
-        // So we'll use the index within the pair to select different questions
-        let questionSet = questionsData;
+        // Determine which questions are still unanswered
+        const unansweredQuestions = questionsData.filter(item => !item.question.answered);
         
-        // For the second 100 point question, we need to track which one was used
-        if (value === 100 && valueIndex === 1 && questionsData.length > 1) {
-          // Use a different question for the second 100 point slot
-          // This ensures we don't show the same question twice
-          questionSet = [questionsData[1]];
-        } else if (value === 100 && valueIndex === 0 && questionsData.length > 1) {
-          // For the first 100 point question, use the first one
-          questionSet = [questionsData[0]];
+        // Check if we already have an assignment for this tile
+        if (!tileAssignmentsRef.current.has(tileKey)) {
+          // If there are no unanswered questions for this value, show an empty slot
+          if (unansweredQuestions.length === 0) {
+            return (
+              <EmptyQuestionSlot key={tileKey}>
+                {value}
+              </EmptyQuestionSlot>
+            );
+          }
+          
+          // For the second 100-point tile, make sure we don't use the same question as the first tile
+          let availableQuestions = [...unansweredQuestions];
+          if (value === 100 && valueIndex === 1) {
+            const firstTileKey = `${category.id}-100-${pairIndex}-0`;
+            const firstTileAssignment = tileAssignmentsRef.current.get(firstTileKey);
+            
+            if (firstTileAssignment) {
+              availableQuestions = availableQuestions.filter(
+                q => q.index !== firstTileAssignment.questionIndex
+              );
+            }
+            
+            // If no questions left after filtering, show empty slot
+            if (availableQuestions.length === 0) {
+              return (
+                <EmptyQuestionSlot key={tileKey}>
+                  {value}
+                </EmptyQuestionSlot>
+              );
+            }
+          }
+          
+          // Randomly select a question from available questions
+          const randomIndex = Math.floor(Math.random() * availableQuestions.length);
+          const questionToAssign = availableQuestions[randomIndex];
+          
+          // Store the assignment in our persistent ref
+          tileAssignmentsRef.current.set(tileKey, {
+            questionIndex: questionToAssign.index,
+            categoryId: category.id
+          });
         }
         
-        // Check if all questions for this value are answered
-        const allAnswered = questionSet.every(item => item.question.answered);
+        // Get the assigned question for this tile
+        const assignment = tileAssignmentsRef.current.get(tileKey);
         
-        // Otherwise render the question card
+        // If no question is assigned, show empty slot
+        if (!assignment) {
+          return (
+            <EmptyQuestionSlot key={tileKey}>
+              {value}
+            </EmptyQuestionSlot>
+          );
+        }
+        
+        // Check the current answered status directly from the category
+        const currentQuestion = category.questions[assignment.questionIndex];
+        const isAnswered = currentQuestion.answered;
+        
+        // Return the tile with its assigned question and current state
         return (
           <QuestionCard
-            key={`${category.id}-${value}-${pairIndex}-${valueIndex}`}
+            key={tileKey}
             categoryId={category.id}
-            // We'll use a specific index for 100 point questions to avoid duplicates
-            questionIndex={value === 100 ? (valueIndex === 0 ? questionsData[0]?.index : questionsData[1]?.index) : -1}
-            // Use the appropriate question for display purposes
-            question={questionSet[0].question}
-            answered={allAnswered}
+            questionIndex={assignment.questionIndex}
+            question={currentQuestion}
+            answered={isAnswered}
             onClick={() => {
-              if (!allAnswered) {
-                // For 100 point questions, use the specific question based on which card was clicked
-                if (value === 100) {
-                  const selectedQuestion = questionSet[0];
-                  handleSelectQuestion(category.id, selectedQuestion.index);
-                } else {
-                  // For other values, randomly select one of the unanswered questions
-                  const unansweredQuestions = questionSet.filter(item => !item.question.answered);
-                  if (unansweredQuestions.length > 0) {
-                    const randomIndex = Math.floor(Math.random() * unansweredQuestions.length);
-                    const selectedQuestion = unansweredQuestions[randomIndex];
-                    handleSelectQuestion(category.id, selectedQuestion.index);
-                  }
-                }
+              if (!isAnswered) {
+                handleSelectQuestion(category.id, assignment.questionIndex);
               }
             }}
             className="question-card"
-            data-answered={allAnswered}
+            data-answered={isAnswered}
           >
             {value}
           </QuestionCard>
@@ -421,7 +461,7 @@ const GameBoard: React.FC = () => {
           >
             <CategoryHeader className="category-header">
               <CategoryHeaderText className="category-name">
-                <BidirectionalText text={(category.name.length > 8 ? category.name.substring(0, 8) + "..." : category.name) + " " + category.icon}  />
+                <BidirectionalText text={(category.name.length > 9 ? category.name.substring(0, 9) + "..." : category.name) + " " + category.icon}  />
               </CategoryHeaderText>
             </CategoryHeader>
           

@@ -4,9 +4,9 @@ globs:
 alwaysApply: false
 ---
 
-### **Detailed Description of Each File in the Frosty Trivia Remake Game**
+### **Detailed Description of Each File in the Doha Quiz Remake Game**
 
-The directory structure of the **Frosty Trivia Remake** game is organized to separate concerns, making the codebase maintainable and scalable. Below is a comprehensive description of each file and its role within the application.
+The directory structure of the **Doha Quiz Remake** game is organized to separate concerns, making the codebase maintainable and scalable. Below is a comprehensive description of each file and its role within the application.
 
 ---
 

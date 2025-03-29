@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Team, AbilityType } from '../../types/game.types';
 import { useSoundEffects } from '../../hooks/useSoundEffects';
 import EmojiPickerElement from '../common/EmojiPickerElement';
+import Avatar from 'avataaars';
 
 const Container = styled.div`
   background-color: rgba(255, 255, 255, 0.9);
@@ -29,62 +30,11 @@ const TeamHeader = styled.div`
   z-index: 5;
 `;
 
-const TeamAvatarPicker = styled(EmojiPickerElement)`
-  background: none;
-  border: none;
-  font-size: 36px;
-  cursor: pointer;
-  padding: 0;
+const AvatarContainer = styled.div`
   margin-right: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  
-  span:first-child {
-    font-size: 36px;
-  }
-  
+  cursor: pointer;
   &:hover {
-    transform: scale(1.1);
-    background: none;
-  }
-  
-  input {
-    font-size: 36px;
-    width: 80px;
-    height: 60px;
-  }
-  
-  > div {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  /* Styling for emoji-picker-element */
-  emoji-picker {
-    height: 350px;
-    --emoji-size: 1.5rem;
-    --background: white;
-    --border-color: #e0e0e0;
-    --border-size: 1px;
-    --input-border-color: #e0e0e0;
-    --input-font-color: #333;
-    --input-placeholder-color: #999;
-    --category-font-color: #111;
-  }
-  
-  /* Custom positioning for the emoji picker */
-  div[class*='PickerWrapper'] {
-    position: absolute;
-    z-index: 10000;
-    right: calc(100% + 10px);
-    top: 0;
-    
-    /* Reset position when being dragged */
-    &[data-dragging="true"] {
-      position: fixed;
-    }
+    transform: scale(1.05);
   }
 `;
 
@@ -135,16 +85,234 @@ interface TeamSetupProps {
   teamData: Partial<Team>;
 }
 
-// List of emoji options for team avatars
-const avatarOptions = [
-  '😎', '🦊', '🐱', '🐶', '🦁', '🐯', '🐺', '🦝', '🐮', '😏',
-  '🐸', '🐵', '🐔', '🐧', '🐢', '🦄', '🐲', '👽', '🤖', '👻',
-  '🦉', '🦇', '🐙', '🦈', '🐬', '🦚', '🦜', '🦖', '🐘', '🦓',
-  '🦒', '🦛', '🐼', '🐨', '🦔', '🦡', '🐰', '🐻', '🐹', '🐝',
-  '🦋', '🐌', '🐞', '🦂', '🦕', '🐊', '🐅', '🦍', '🦧', '🦮'
-];
+// Define avatar config types
+interface AvatarConfigs {
+  topType: string[];
+  accessoriesType: string[];
+  hatColor: string[];
+  hairColor: string[];
+  facialHairType: string[];
+  facialHairColor: string[];
+  clotheType: string[];
+  clotheColor: string[];
+  graphicType: string[];
+  eyeType: string[];
+  eyebrowType: string[];
+  mouthType: string[];
+  skinColor: string[];
+}
 
-// Function to generate default abilities
+// Update AvatarOptions interface to include all possible properties
+export interface AvatarOptions {
+  topType?: string;
+  accessoriesType?: string;
+  hatColor?: string;
+  hairColor?: string;
+  facialHairType?: string;
+  facialHairColor?: string;
+  clotheType?: string;
+  clotheColor?: string;
+  graphicType?: string;
+  eyeType?: string;
+  eyebrowType?: string;
+  mouthType?: string;
+  skinColor?: string;
+}
+
+// Define avatar options with all possible configurations
+const configs: AvatarConfigs = {
+  topType: [
+    'NoHair',
+    'Eyepatch',
+    'Hat',
+    'Hijab',
+    'Turban',
+    'WinterHat1',
+    'WinterHat2',
+    'WinterHat3',
+    'WinterHat4',
+    'LongHairBigHair',
+    'LongHairBob',
+    'LongHairBun',
+    'LongHairCurly',
+    'LongHairCurvy',
+    'LongHairDreads',
+    'LongHairFrida',
+    'LongHairFro',
+    'LongHairFroBand',
+    'LongHairNotTooLong',
+    'LongHairShavedSides',
+    'LongHairMiaWallace',
+    'LongHairStraight',
+    'LongHairStraight2',
+    'LongHairStraightStrand',
+    'ShortHairDreads01',
+    'ShortHairDreads02'
+  ],
+  accessoriesType: [
+    'Blank',
+    'Kurt',
+    'Prescription01',
+    'Prescription02',
+    'Round',
+    'Sunglasses',
+    'Wayfarers'
+  ],
+  hatColor: [
+    'Black',
+    'Blue01',
+    'Blue02',
+    'Blue03',
+    'Gray01',
+    'Gray02',
+    'Heather',
+    'PastelBlue',
+    'PastelGreen',
+    'PastelOrange',
+    'PastelRed',
+    'PastelYellow',
+    'Pink',
+    'Red',
+    'White'
+  ],
+  hairColor: [
+    'Auburn',
+    'Black',
+    'Blonde',
+    'BlondeGolden',
+    'Brown',
+    'BrownDark',
+    'PastelPink',
+    'Platinum',
+    'Red',
+    'SilverGray'
+  ],
+  facialHairType: [
+    'Blank',
+    'BeardMedium',
+    'BeardLight',
+    'BeardMajestic',
+    'MoustacheFancy',
+    'MoustacheMagnum'
+  ],
+  facialHairColor: [
+    'Auburn',
+    'Black',
+    'Blonde',
+    'BlondeGolden',
+    'Brown',
+    'BrownDark',
+    'Platinum',
+    'Red'
+  ],
+  clotheType: [
+    'BlazerShirt',
+    'BlazerSweater',
+    'CollarSweater',
+    'GraphicShirt',
+    'Hoodie',
+    'Overall',
+    'ShirtCrewNeck',
+    'ShirtScoopNeck',
+    'ShirtVNeck'
+  ],
+  clotheColor: [
+    'Black',
+    'Blue01',
+    'Blue02',
+    'Blue03',
+    'Gray01',
+    'Gray02',
+    'Heather',
+    'PastelBlue',
+    'PastelGreen',
+    'PastelOrange',
+    'PastelRed',
+    'PastelYellow',
+    'Pink',
+    'Red',
+    'White'
+  ],
+  graphicType: [
+    'Bat',
+    'Cumbia',
+    'Deer',
+    'Diamond',
+    'Hola',
+    'Pizza',
+    'Resist',
+    'Selena',
+    'Bear',
+    'SkullOutline',
+    'Skull'
+  ],
+  eyeType: [
+    'Close',
+    'Cry',
+    'Default',
+    'Dizzy',
+    'EyeRoll',
+    'Happy',
+    'Hearts',
+    'Side',
+    'Squint',
+    'Surprised',
+    'Wink',
+    'WinkWacky'
+  ],
+  eyebrowType: [
+    'Angry',
+    'AngryNatural',
+    'Default',
+    'DefaultNatural',
+    'FlatNatural',
+    'RaisedExcited',
+    'RaisedExcitedNatural',
+    'SadConcerned',
+    'SadConcernedNatural',
+    'UnibrowNatural',
+    'UpDown',
+    'UpDownNatural'
+  ],
+  mouthType: [
+    'Concerned',
+    'Default',
+    'Disbelief',
+    'Eating',
+    'Grimace',
+    'Sad',
+    'ScreamOpen',
+    'Serious',
+    'Smile',
+    'Tongue',
+    'Twinkle',
+    'Vomit'
+  ],
+  skinColor: [
+    'Tanned',
+    'Yellow',
+    'Pale',
+    'Light',
+    'Brown',
+    'DarkBrown',
+    'Black'
+  ]
+};
+
+const configsKeys = Object.keys(configs);
+
+// Replace existing avatar arrays and randomization function
+const getRandomAvatarOptions = (): AvatarOptions => {
+  const options: AvatarOptions = {};
+  const keys = [...configsKeys];
+  keys.forEach(key => {
+    const configArray = configs[key as keyof AvatarConfigs];
+    options[key as keyof AvatarOptions] = configArray[Math.floor(Math.random() * configArray.length)];
+  });
+
+  return options;
+};
+
 const generateDefaultAbilities = (): Record<AbilityType, { type: AbilityType; used: boolean }> => {
   return {
     chatgpt: { type: 'chatgpt', used: false },
@@ -155,21 +323,17 @@ const generateDefaultAbilities = (): Record<AbilityType, { type: AbilityType; us
   };
 };
 
-// Random avatar generator
-const getRandomAvatar = (): string => {
-  const randomIndex = Math.floor(Math.random() * avatarOptions.length);
-  return avatarOptions[randomIndex];
-};
-
 export const TeamSetup: React.FC<TeamSetupProps> = ({ teamNumber, onChange, teamData }) => {
   const { playSound } = useSoundEffects();
   
-  // Initialize team if not already set
+  const [isCustomizingAvatar, setIsCustomizingAvatar] = useState(false);
+  
   useEffect(() => {
-    if (!teamData.name && !teamData.avatar) {
+    if (!teamData.name || !teamData.avatar) {
+      const randomAvatarOptions = getRandomAvatarOptions();
       onChange({
         name: `Team ${teamNumber}`,
-        avatar: getRandomAvatar(),
+        avatar: JSON.stringify(randomAvatarOptions),
         abilities: generateDefaultAbilities(),
       });
     }
@@ -184,27 +348,50 @@ export const TeamSetup: React.FC<TeamSetupProps> = ({ teamNumber, onChange, team
   
   const handleRefreshAvatar = () => {
     playSound('button-click');
+    const randomAvatarOptions = getRandomAvatarOptions();
     onChange({
       ...teamData,
-      avatar: getRandomAvatar()
+      avatar: JSON.stringify(randomAvatarOptions)
     });
+  };
+
+  const getAvatarOptions = (): AvatarOptions => {
+    try {
+      if (teamData.avatar && teamData.avatar.startsWith('{')) {
+        return JSON.parse(teamData.avatar);
+      }
+    } catch (e) {
+      console.error('Error parsing avatar options:', e);
+    }
+    
+    return {
+      topType: 'ShortHairShortFlat',
+      accessoriesType: 'Blank',
+      hatColor: 'Black',
+      hairColor: 'Brown',
+      facialHairType: 'Blank',
+      facialHairColor: 'Brown',
+      clotheType: 'Hoodie',
+      clotheColor: 'Blue03',
+      graphicType: 'Diamond',
+      eyeType: 'Default',
+      eyebrowType: 'Default',
+      mouthType: 'Smile',
+      skinColor: 'Pale'
+    };
   };
   
   return (
     <Container>
       <TeamHeader>
-        <TeamAvatarPicker
-          onEmojiSelected={(emoji) => {
-            playSound('button-click');
-            onChange({
-              ...teamData,
-              avatar: emoji
-            });
-          }}
-          currentEmoji={teamData.avatar || '😎'}
-          label=""
-          buttonStyle={{ background: 'none' }}
-        />
+        <AvatarContainer onClick={() => setIsCustomizingAvatar(!isCustomizingAvatar)}>
+          <Avatar
+            style={{ width: '80px', height: '80px' }}
+            avatarStyle='Circle'
+            {...getAvatarOptions()}
+          />
+        </AvatarContainer>
+        
         <TeamNameInput
           value={teamData.name || ''}
           onChange={handleTeamNameChange}

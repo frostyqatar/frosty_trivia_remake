@@ -15,7 +15,9 @@ export type SoundType =
   | 'victory'
   | 'background-music'
   | 'winner-celebration'
-  | 'team-award';
+  | 'team-award'
+  | 'slot-machine-spin'
+  | 'slot-machine-reveal';
 
 interface SoundMap {
   [key: string]: HTMLAudioElement;
@@ -41,7 +43,9 @@ const SOUND_URLS: Record<SoundType, string> = {
   'victory': 'https://cdn.pixabay.com/download/audio/2024/08/07/audio_c11dea5bd4.mp3?filename=victorymale-version-230553.mp3',
   'winner-celebration': 'https://cdn.pixabay.com/download/audio/2022/03/10/audio_2564010374.mp3?filename=tadaa-47995.mp3',
   'team-award': 'https://cdn.pixabay.com/download/audio/2022/03/15/audio_e8b2fa25cf.mp3?filename=goodresult-82807.mp3',
-  'background-music': 'https://cdn.pixabay.com/download/audio/2025/02/27/audio_9c5363b7af.mp3?filename=funny-cartoon-comedy-background-music-306997.mp3'
+  'background-music': 'https://cdn.pixabay.com/download/audio/2025/02/27/audio_9c5363b7af.mp3?filename=funny-cartoon-comedy-background-music-306997.mp3',
+  'slot-machine-spin': 'https://cdn.pixabay.com/download/audio/2024/08/15/audio_e17db8c011.mp3?filename=spin-232536.mp3',
+  'slot-machine-reveal': 'https://cdn.pixabay.com/download/audio/2024/08/07/audio_c341b5dcee.mp3?filename=energy-up-sound-effect-230472.mp3'
 };
 
 // Keep references to active playing sounds

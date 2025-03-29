@@ -277,18 +277,31 @@ const MediaContainer = styled(motion.div)`
 
 const MediaWrapper = styled.div`
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto;
-  border-radius: var(--border-radius);
   overflow: hidden;
-  box-shadow: var(--card-shadow, 0 8px 30px rgba(0, 0, 0, 0.1));
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+`;
+
+const ImageContainer = styled.div`
+  position: relative;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.03);
+  overflow: hidden;
 `;
 
 const QuestionImage = styled.img`
-  width: 100%;
+  max-width: 100%;
+  max-height: 571px;
+  width: auto;
   height: auto;
+  object-fit: contain;
+  margin: 0 auto;
   display: block;
-  border-radius: var(--border-radius);
+  border-radius: 8px;
+  transition: filter 0.3s ease;
 `;
 
 const AudioContainer = styled.div`
@@ -354,14 +367,6 @@ const RevealQuestionButton = styled(motion.button)`
     transform: translateY(1px);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
-`;
-
-const ImageContainer = styled.div`
-  position: relative;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
 `;
 
 const UnblurButton = styled(motion.button)`
@@ -617,14 +622,16 @@ const QuestionScreen: React.FC = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.3, duration: 0.4 }}
       >
-        <MediaWrapper>
+        <MediaWrapper style={{ maxWidth: '622px', margin: '0 auto' }}>
           {question.image && (
             <ImageContainer>
               <QuestionImage 
                 src={question.image} 
                 alt="Question illustration"
                 style={{
-                  filter: question.imageBlur && imageBlurred ? `blur(${question.imageBlur}px)` : 'none'
+                  filter: question.imageBlur && imageBlurred ? `blur(${question.imageBlur}px)` : 'none',
+                  maxHeight: '571px', 
+                  maxWidth: '622px'
                 }}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
@@ -646,6 +653,7 @@ const QuestionScreen: React.FC = () => {
             <iframe
               width="100%"
               height="400"
+              style={{ maxWidth: '622px', maxHeight: '571px' }}
               src={isYouTubeUrl(question.video) ? 
                 `https://www.youtube.com/embed/${getYouTubeVideoId(question.video)}?autoplay=1&enablejsapi=1` : 
                 question.video
@@ -662,7 +670,7 @@ const QuestionScreen: React.FC = () => {
               <audio 
                 controls
                 preload="none"
-                style={{ width: '100%' }}
+                style={{ width: '100%', maxWidth: '622px' }}
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                 }}

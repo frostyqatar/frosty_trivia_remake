@@ -10,6 +10,8 @@ import { useSoundEffects } from '../hooks/useSoundEffects';
 import Lightning, { updateTeamPosition } from './effects/Lightning';
 import CatLoader from './effects/CatLoader';
 import SlotMachineModal from './common/SlotMachineModal';
+import Avatar from 'avataaars';
+import { AvatarOptions } from './setup/TeamSetup';
 
 interface TeamPanelProps {
   team: Team;
@@ -56,7 +58,6 @@ const TeamHeader = styled.div`
 
 const TeamAvatar = styled.div`
   position: relative;
-  font-size: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -65,6 +66,7 @@ const TeamAvatar = styled.div`
   border-radius: 50%;
   background-color: rgba(102, 212, 255, 0.15);
   box-shadow: 0 4px 15px rgba(0, 153, 204, 0.1);
+  font-size: 44px; /* For fallback emoji */
 `;
 
 const TeamInfo = styled.div`
@@ -329,6 +331,18 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
     }));
   };
   
+  // Function to parse avatar options or return null if not valid
+  const getAvatarOptions = (): AvatarOptions | null => {
+    try {
+      if (team.avatar && team.avatar.startsWith('{')) {
+        return JSON.parse(team.avatar);
+      }
+    } catch (e) {
+      console.error('Error parsing avatar options:', e);
+    }
+    return null;
+  };
+  
   if (!team) return <div>Loading team data...</div>;
   
   return (
@@ -352,7 +366,16 @@ const TeamPanel: React.FC<TeamPanelProps> = ({ team, teamIndex, isActive, isShoc
       
       <TeamHeader>
         <TeamAvatar ref={avatarRef}>
-          {team.avatar}
+          {/* Conditionally render Avatar component or fallback to emoji */}
+          {getAvatarOptions() ? (
+            <Avatar
+              style={{ width: '75px', height: '75px' }}
+              avatarStyle='Circle'
+              {...getAvatarOptions()}
+            />
+          ) : (
+            team.avatar
+          )}
           <CatLoader active={true} size={1.2} />
         </TeamAvatar>
         <TeamInfo>

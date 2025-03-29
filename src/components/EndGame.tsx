@@ -8,6 +8,8 @@ import { resetGame } from '../store/gameSlice';
 import { BidirectionalText } from '../utils/textUtils';
 import { useSoundEffects } from '../hooks/useSoundEffects';
 import { trackGameEvent } from '../services/analytics';
+import Avatar from 'avataaars';
+import { AvatarOptions } from './setup/TeamSetup';
 
 // Frosty winter theme colors
 const colors = {
@@ -441,6 +443,18 @@ const EndGame: React.FC = () => {
     }
   };
   
+  // Function to parse avatar options or return null if not valid
+  const getAvatarOptions = (avatar: string | undefined): AvatarOptions | null => {
+    try {
+      if (avatar && avatar.startsWith('{')) {
+        return JSON.parse(avatar);
+      }
+    } catch (e) {
+      console.error('Error parsing avatar options:', e);
+    }
+    return null;
+  };
+  
   return (
     <AnimatePresence>
       <Container
@@ -495,21 +509,22 @@ const EndGame: React.FC = () => {
         >
           <TeamScore 
             isWinner={team1Score > team2Score}
-            whileHover={{ y: -5 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
           >
-            {team1Score > team2Score && (
-              <WinnerBadge
-                initial={{ scale: 0, rotate: -30 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 1.6, type: "spring" }}
-              >
-                🥇
-              </WinnerBadge>
-            )}
+            {team1Score > team2Score && <WinnerBadge>🥇</WinnerBadge>}
             <TeamHeader>
               <TeamAvatar isWinner={team1Score > team2Score}>
-                {teams[0]?.avatar || '👥'}
+                {getAvatarOptions(teams[0]?.avatar) ? (
+                  <Avatar
+                    style={{ width: '55px', height: '55px' }}
+                    avatarStyle='Circle'
+                    {...getAvatarOptions(teams[0]?.avatar)}
+                  />
+                ) : (
+                  teams[0]?.avatar || '👥'
+                )}
               </TeamAvatar>
               <TeamLabel>
                 {team1Score > team2Score && (
@@ -517,19 +532,18 @@ const EndGame: React.FC = () => {
                     initial={{ scale: 0 }}
                     animate={{ 
                       scale: [1, 1.2, 1],
-                      rotate: [0, 10, -10, 0]
+                      rotate: [0, 5, -5, 0]
                     }}
                     transition={{ 
-                      delay: 1.8, 
-                      duration: 1.5,
+                      duration: 0.5,
                       repeat: Infinity,
-                      repeatType: "reverse"
+                      repeatDelay: 1
                     }}
                   >
-                    ★
+                    ⭐
                   </WinningStar>
                 )}
-                <BidirectionalText text={teams[0]?.name || 'الفريق 1'} />
+                <BidirectionalText text={teams[0]?.name || 'Team 1'} />
               </TeamLabel>
             </TeamHeader>
             <ScoreValue isWinner={team1Score > team2Score}>{team1Score}</ScoreValue>
@@ -537,21 +551,22 @@ const EndGame: React.FC = () => {
           
           <TeamScore 
             isWinner={team2Score > team1Score}
-            whileHover={{ y: -5 }}
-            transition={{ type: "spring", stiffness: 300 }}
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.3 }}
           >
-            {team2Score > team1Score && (
-              <WinnerBadge
-                initial={{ scale: 0, rotate: -30 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ delay: 1.6, type: "spring" }}
-              >
-                🥇
-              </WinnerBadge>
-            )}
+            {team2Score > team1Score && <WinnerBadge>🥇</WinnerBadge>}
             <TeamHeader>
               <TeamAvatar isWinner={team2Score > team1Score}>
-                {teams[1]?.avatar || '👥'}
+                {getAvatarOptions(teams[1]?.avatar) ? (
+                  <Avatar
+                    style={{ width: '55px', height: '55px' }}
+                    avatarStyle='Circle'
+                    {...getAvatarOptions(teams[1]?.avatar)}
+                  />
+                ) : (
+                  teams[1]?.avatar || '👥'
+                )}
               </TeamAvatar>
               <TeamLabel>
                 {team2Score > team1Score && (
@@ -559,19 +574,18 @@ const EndGame: React.FC = () => {
                     initial={{ scale: 0 }}
                     animate={{ 
                       scale: [1, 1.2, 1],
-                      rotate: [0, 10, -10, 0]
+                      rotate: [0, 5, -5, 0]
                     }}
                     transition={{ 
-                      delay: 1.8, 
-                      duration: 1.5,
+                      duration: 0.5,
                       repeat: Infinity,
-                      repeatType: "reverse"
+                      repeatDelay: 1
                     }}
                   >
-                    ★
+                    ⭐
                   </WinningStar>
                 )}
-                <BidirectionalText text={teams[1]?.name || 'الفريق 2'} />
+                <BidirectionalText text={teams[1]?.name || 'Team 2'} />
               </TeamLabel>
             </TeamHeader>
             <ScoreValue isWinner={team2Score > team1Score}>{team2Score}</ScoreValue>
@@ -585,10 +599,10 @@ const EndGame: React.FC = () => {
         >
      
           
-          <StatItem>
+          {/* <StatItem>
             <StatValue>{scoreDifference}</StatValue>
             <StatLabel>فرق النقاط</StatLabel>
-          </StatItem>
+          </StatItem> */}
         </GameStats>
         
         <PlayAgainButton

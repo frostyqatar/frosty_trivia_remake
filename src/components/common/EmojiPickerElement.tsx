@@ -57,6 +57,8 @@ const PickerWrapper = styled(motion.div)`
   right: calc(100% + 10px);
   top: 0;
   
+  /* Default styling can be overridden by specific container styles */
+  
   @media (max-width: 360px) {
     right: auto;
     left: 0;
@@ -91,6 +93,8 @@ const PickerWrapper = styled(motion.div)`
     --category-font-color: #111;
     --indicator-color: #385ac1;
     --num-columns: 8;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
   }
 `;
 
@@ -100,6 +104,7 @@ interface EmojiPickerElementProps {
   label?: string;
   buttonStyle?: React.CSSProperties;
   className?: string;
+  centered?: boolean;
 }
 
 /**
@@ -110,7 +115,8 @@ const EmojiPickerElement: React.FC<EmojiPickerElementProps> = ({
   currentEmoji = '❓',
   label = 'Select Emoji',
   buttonStyle = {},
-  className
+  className,
+  centered = false
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -179,6 +185,14 @@ const EmojiPickerElement: React.FC<EmojiPickerElementProps> = ({
           onDragStart={() => setIsDragging(true)}
           onDragEnd={() => setIsDragging(false)}
           data-dragging={isDragging}
+          style={centered ? {
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            right: 'auto',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10001
+          } : {}}
         >
           <div className="drag-handle">Drag to move</div>
           <emoji-picker 

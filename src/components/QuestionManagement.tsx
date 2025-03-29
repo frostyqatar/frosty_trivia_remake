@@ -183,6 +183,29 @@ const SearchInput = styled.input`
   }
 `;
 
+const ClearButton = styled.button`
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+    color: #333;
+  }
+`;
+
 const Table = styled.table`
   width: 100%;
   border-collapse: separate;
@@ -823,7 +846,7 @@ const COMMON_EMOJIS = [
   '🧠', '💡', '⚙️', '💻', '🔬', '🔭', '📱', '📷',
   '🏖️', '🌋', '🏔️', '🌲', '🌊', '🐾', '🦁', '🐘',
   '🍕', '🍰', '🍦', '🍷', '👗', '👑', '💎', '🚗',
-  '✈️', '🚀', '⏱️', '📆', '📝', '��', '💰', '🏛️'
+  '✈️', '🚀', '⏱️', '📆', '📝', '', '💰', '🏛️'
 ];
 
 const EmojiGrid = styled.div`
@@ -1046,16 +1069,17 @@ const CategoryEmojiPickerWrapper = styled.div`
   
   /* Styling for the emoji picker */
   div[class*='PickerWrapper'] {
-    bottom: calc(100% + 10px);
-    top: auto;
-    right: auto;
-    left: 50%;
-    transform: translateX(-50%) !important;
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    z-index: 10001 !important; /* Higher than modal z-index */
     
     /* Reset position when being dragged */
     &[data-dragging="true"] {
-      bottom: auto;
-      left: auto;
+      position: absolute !important;
+      top: auto !important;
+      left: auto !important;
       transform: none !important;
     }
   }
@@ -1245,8 +1269,8 @@ const QuestionManagement: React.FC = () => {
     try {
       // Create a canvas element with larger dimensions
       const canvas = document.createElement('canvas');
-      canvas.width = 500; // Increased further from 400
-      canvas.height = 500; // Increased further from 400
+      canvas.width = 500; 
+      canvas.height = 500;
       const ctx = canvas.getContext('2d');
       
       if (!ctx) {
@@ -1259,6 +1283,9 @@ const QuestionManagement: React.FC = () => {
       
       // Create temporary container to render QRCode
       const tempContainer = document.createElement('div');
+      tempContainer.style.position = 'absolute';
+      tempContainer.style.left = '-9999px';
+      tempContainer.style.top = '-9999px';
       document.body.appendChild(tempContainer);
       
       // Process answer text - if too long, it might need special handling
@@ -1267,63 +1294,103 @@ const QuestionManagement: React.FC = () => {
       
       if (qrValue.length > MAX_RECOMMENDED_LENGTH) {
         console.log(`Warning: QR code content is very long (${qrValue.length} chars). This may affect scannability.`);
-        // We'll still try to generate it, but let the user know
         showNotification(`Warning: Long answer (${qrValue.length} chars) may affect QR code scannability.`);
       }
       
-      // Render QR code into temporary container with increased size and error correction
-      ReactDOM.render(
-        <QRCodeCanvas 
-          value={qrValue} 
-          size={440} // Increased for better readability 
-          level="H" // High error correction for better reliability with longer text
-          includeMargin={true}
-          bgColor="#FFFFFF"
-          fgColor="#000000"
-        />, 
-        tempContainer
-      );
+      // Create a QRCodeCanvas element directly
+      const qrElement = document.createElement('div');
+      tempContainer.appendChild(qrElement);
       
-      // Wait a moment for the QR code to render
-      setTimeout(() => {
-        // Get rendered canvas from QRCodeCanvas
-        const qrCanvas = tempContainer.querySelector('canvas');
-        
-        if (qrCanvas) {
-          // Draw QR code onto our main canvas (centered)
-          ctx.drawImage(
-            qrCanvas, 
-            (canvas.width - qrCanvas.width) / 2, 
-            (canvas.height - qrCanvas.height) / 2
+      // Use a Promise to wait for the QR code to be rendered
+      const renderQRCode = new Promise<void>((resolve, reject) => {
+        try {
+          ReactDOM.render(
+            <QRCodeCanvas 
+              value={qrValue} 
+              size={400}
+              level="H" // High error correction
+              includeMargin={true}
+              bgColor="#FFFFFF"
+              fgColor="#000000"
+            />, 
+            qrElement,
+            () => {
+              // Resolve when rendering is complete
+              resolve();
+            }
           );
-          
-          
-          
-          // Convert to data URL
-          const dataURL = canvas.toDataURL('image/png');
-          
-          // Update form directly without using the cropper
-          setFormData({
-            ...formData,
-            image: dataURL,
-            question: formData.question.includes('Do not scan the qr code')
-              ? formData.question
-              : `${formData.question || ''} Do not scan the qr code`.trim()
-          });
-          
-          // Clean up
-          ReactDOM.unmountComponentAtNode(tempContainer);
-          document.body.removeChild(tempContainer);
-          
-          // Play sound for feedback
-          playSound('button-click');
-        } else {
-          throw new Error('QR code canvas not found');
+        } catch (err) {
+          reject(err);
         }
-        
-        setIsGeneratingQR(false);
-      }, 100);
+      });
       
+      renderQRCode
+        .then(() => {
+          // Allow time for browser to fully render
+          setTimeout(() => {
+            try {
+              // Get rendered canvas from QRCodeCanvas
+              const qrCanvas = qrElement.querySelector('canvas');
+              
+              if (!qrCanvas) {
+                throw new Error('QR code canvas not found');
+              }
+              
+              // Draw QR code onto our main canvas (centered)
+              ctx.drawImage(
+                qrCanvas, 
+                (canvas.width - qrCanvas.width) / 2, 
+                (canvas.height - qrCanvas.height) / 2
+              );
+              
+              // Add a caption
+              ctx.font = '16px Arial';
+              ctx.fillStyle = '#333333';
+              ctx.textAlign = 'center';
+              ctx.fillText('Scan for answer', canvas.width / 2, canvas.height - 30);
+              
+              // Convert to data URL with higher quality
+              const dataURL = canvas.toDataURL('image/png', 1.0);
+              
+              // Update form data
+              setFormData({
+                ...formData,
+                image: dataURL,
+                question: formData.question.includes('Do not scan the qr code')
+                  ? formData.question
+                  : `${formData.question || ''} Do not scan the qr code`.trim()
+              });
+              
+              // Clean up
+              ReactDOM.unmountComponentAtNode(qrElement);
+              document.body.removeChild(tempContainer);
+              
+              // Play sound for feedback
+              playSound('button-click');
+              
+              setIsGeneratingQR(false);
+            } catch (err) {
+              console.error('Error processing QR code:', err);
+              alert('Failed to generate QR code. Please try again.');
+              setIsGeneratingQR(false);
+              
+              // Clean up on error
+              if (tempContainer.parentNode) {
+                document.body.removeChild(tempContainer);
+              }
+            }
+          }, 200); // Increase timeout for slower devices/browsers
+        })
+        .catch((err) => {
+          console.error('Error rendering QR code:', err);
+          alert('Failed to generate QR code. Please try again.');
+          setIsGeneratingQR(false);
+          
+          // Clean up on error
+          if (tempContainer.parentNode) {
+            document.body.removeChild(tempContainer);
+          }
+        });
     } catch (error) {
       console.error('Error generating QR code:', error);
       alert('Failed to generate QR code. Please try again.');
@@ -1960,12 +2027,13 @@ const QuestionManagement: React.FC = () => {
     const isChecked = e.target.checked;
     
     if (isChecked) {
-      // Select all questions
-      const allQuestions = flattenQuestions().map(q => ({
+      // Select only filtered questions
+      const { filteredQuestions } = calculatePagination();
+      const filteredSelectableQuestions = filteredQuestions.map(q => ({
         categoryId: q.categoryId,
         questionIndex: q.questionIndex
       }));
-      setSelectedQuestions(allQuestions);
+      setSelectedQuestions(filteredSelectableQuestions);
     } else {
       // Deselect all questions
       setSelectedQuestions([]);
@@ -2406,6 +2474,52 @@ const QuestionManagement: React.FC = () => {
     // Scroll to the questions section
     document.querySelector('.question-table')?.scrollIntoView({ behavior: 'smooth' });
   };
+  
+  // Create a function to compare category structures
+  const checkCategoryStructureChanges = () => {
+    try {
+      // Get categories from localStorage
+      const savedCategoriesJson = localStorage.getItem('trivia-game-categories');
+      if (!savedCategoriesJson) return false;
+      
+      const savedCategories = JSON.parse(savedCategoriesJson);
+      
+      // Get default categories 
+      const defaultCategories = resetToDefaultCategories();
+      
+      // If saved categories length doesn't match default categories, structure has changed
+      if (savedCategories.length !== defaultCategories.length) return true;
+      
+      // Check if any category IDs in default categories aren't in saved categories
+      const savedCategoryIds = savedCategories.map((c: Category) => c.id);
+      const defaultCategoryIds = defaultCategories.map((c: Category) => c.id);
+      
+      // Check if any default category ID is missing from saved categories
+      for (const id of defaultCategoryIds) {
+        if (!savedCategoryIds.includes(id)) return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Error checking category structure changes:", error);
+      return false;
+    }
+  };
+
+  // Check for category structure changes on component mount
+  useEffect(() => {
+    const structureChanged = checkCategoryStructureChanges();
+    if (structureChanged) {
+      const confirmation = window.confirm(
+        "⚠️ ATTENTION: Category structure has changed. Would you like to reset to the latest default categories? " +
+        "(This will discard any custom questions you've created.)"
+      );
+      
+      if (confirmation) {
+        handleEmergencyReset();
+      }
+    }
+  }, []);
   
   const handleEmergencyReset = () => {
     if (window.confirm("⚠️ EMERGENCY RESET: This will restore all original questions and discard all your changes. Are you absolutely sure?")) {
@@ -2874,43 +2988,102 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
       // Create a new category ID
       const newCategoryId = `category-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
       
-      // Determine question distribution based on difficulty
-      let questionDistribution = '';
-      if (categoryDifficulty === 'Kid-friendly') {
-        const questionsPerLevel = Math.ceil(questionCount / 5);
-        questionDistribution = `Generate ${questionCount} about ${categoryNameInput}, child-friendly questions. 
-        - ${questionsPerLevel} 100-point questions (very very easy)
-        - ${questionsPerLevel} 200-point questions (very easy)
-        - ${questionsPerLevel} 300-point questions (easy)
-        - ${questionsPerLevel} 400-point questions (straightforward)
-        - ${questionsPerLevel} 500-point questions (straightforward)
-        `;
-      } else {
-        // Calculate how many questions of each difficulty level
-        const questionsPerLevel = Math.ceil(questionCount / 5);
-        questionDistribution = `
-        For a total of ${questionCount} questions about ${categoryNameInput}, distribute them as follows:
-        - ${questionsPerLevel} 100-point questions (easier)
-        - ${questionsPerLevel} 200-point questions (a bit above easy)
-        - ${questionsPerLevel} 300-point questions (medium)
-        - ${questionsPerLevel} 400-point questions (a bit above medium)
-        - ${questionsPerLevel} 500-point questions (hardest)
-        
-        Make the questions progressively more difficult as the point values increase.`;
+      // Helper function to get difficulty instructions based on point value
+      const getDifficultyInstructions = (level: number): string => {
+        const kidInstructions: Record<string, string> = {
+          '100': 'Very very easy, simple facts, one-word answers',
+          '200': 'Very easy, basic concepts with simple reasoning',
+          '300': 'Easy, specific details that are well-known',
+          '400': 'Straightforward, common knowledge with clear answers',
+          '500': 'Straightforward, familiar topics with slightly more detail'
+        };
+
+        const standardInstructions: Record<string, string> = {
+          '100': 'Simple facts',
+          '200': 'Basic concepts requiring simple reasoning',
+          '300': 'Specific details with multi-step facts',
+          '400': 'Lesser-known facts requiring connections',
+          '500': 'Obscure knowledge or complex reasoning'
+        };
+
+        return categoryDifficulty === 'Kid-friendly'
+          ? kidInstructions[level.toString()]
+          : standardInstructions[level.toString()];
+      };
+      
+      // Calculate how many questions of each difficulty level based on the distribution
+      // Base distribution: 2 x 100pt, 1 x 200pt, 1 x 300pt, 1 x 400pt, 1 x 500pt = 6 questions
+      const baseDistribution = {
+        100: 2,
+        200: 1,
+        300: 1,
+        400: 1,
+        500: 1
+      };
+      
+      // Calculate the multiplier based on the total question count
+      const baseCount = Object.values(baseDistribution).reduce((sum, count) => sum + count, 0);
+      const multiplier = Math.max(1, Math.floor(questionCount / baseCount));
+      const remainder = questionCount % baseCount;
+      
+      // Create the distribution with the multiplier applied
+      const distribution: Record<number, number> = {
+        100: baseDistribution[100] * multiplier,
+        200: baseDistribution[200] * multiplier,
+        300: baseDistribution[300] * multiplier,
+        400: baseDistribution[400] * multiplier,
+        500: baseDistribution[500] * multiplier
+      };
+      
+      // Distribute any remainder questions starting from the lowest difficulty
+      let remainingToDistribute = remainder;
+      const pointValues = [100, 200, 300, 400, 500];
+      let index = 0;
+      
+      while (remainingToDistribute > 0 && index < pointValues.length) {
+        distribution[pointValues[index]]++;
+        remainingToDistribute--;
+        index++;
       }
       
-      // First build the prompt for Gemini
-      const prompt = `You are a professional trivia question generator. Please create exactly ${questionCount} trivia questions about ${categoryPrompt} in ${categoryLanguage} language. 
-      ${questionDistribution}.
-      
-      Format your response EXACTLY like this JSON structure, with no additional text:
+      // Build the enhanced prompt for Gemini
+      const prompt = `You are a professional trivia question generator. Please create exactly ${questionCount} trivia questions about ${categoryNameInput} ${categoryPrompt} in ${categoryLanguage} language.
+
+      STRICT RULES:
+      1. Format your response EXACTLY like this JSON structure, with no additional text:
       [
         {"value": 100, "question": "Question text here", "answer": "Answer text here"},
-        {"value": 100, "question": "Question text here", "answer": "Answer text here"},
+        {"value": 200, "question": "Question text here", "answer": "Answer text here"},
         ...
       ]
       
-      Ensure all questions are accurate and factual. ${categoryLanguage === 'Arabic' ? 'Make sure to write both the questions and answers in Arabic.' : ''}`;
+      2. Difficulty distribution:
+         - 100pts: ${getDifficultyInstructions(100)} (${distribution[100]} questions)
+         - 200pts: ${getDifficultyInstructions(200)} (${distribution[200]} questions)
+         - 300pts: ${getDifficultyInstructions(300)} (${distribution[300]} questions)
+         - 400pts: ${getDifficultyInstructions(400)} (${distribution[400]} questions)
+         - 500pts: ${getDifficultyInstructions(500)} (${distribution[500]} questions)
+      
+      3. ${
+        categoryDifficulty === 'Kid-friendly'
+          ? 'Use child-friendly language, avoid complex terms, include fun facts'
+          : 'Use precise terminology, include historical dates/names for 300+ points'
+      }
+      
+      4. Include 1 "curveball" question per 10 questions
+      5. Verify facts through cross-references
+      6. ${
+        categoryLanguage === 'Arabic'
+          ? 'Write both questions and answers in Arabic script with simple vocabulary for kids'
+          : 'Use age-appropriate terminology'
+      }
+      7. ${
+        categoryDifficulty === 'Kid-friendly'
+          ? 'Avoid abstract concepts, use relatable examples'
+          : 'Require multi-step reasoning for 400+ points'
+      }
+      
+      Ensure all questions are accurate and factual.`;
       
       // Call the Gemini API
       const response = await axios.post(
@@ -2984,6 +3157,70 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
       setCategoryGenerationError(`Failed to generate category: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setGeneratingCategory(false);
+    }
+  };
+
+  // Add a list of emojis to use for random assignment
+  const CATEGORY_EMOJIS = [
+    '🌟', '🎮', '🎬', '🎭', '🎨', '🎵', '📚', '🏛️', '🧪', '🔬', 
+    '🪐', '🌍', '🌋', '🏔️', '🌊', '🌲', '🌱', '🍄', '🍎', '🍕', 
+    '🍦', '🎂', '🍩', '🏆', '🎯', '⚽', '🏀', '🎾', '🏓', '🎣', 
+    '✈️', '🚀', '🚗', '🚂', '🏰', '🏠', '🔮', '⏰', '📱', '💻', 
+    '🧠', '❤️', '🧩', '🎪', '🎠', '🎢', '🎡', '🎲', '🎯', '🎺',
+    '🤫' // ولا كلمة - silence
+  ];
+
+  // Function to assign random emojis to categories with default icons
+  const handleAssignRandomEmojis = () => {
+    // Create a deep copy of categories
+    const updatedCategories = JSON.parse(JSON.stringify(categories));
+    let updatedCount = 0;
+
+    // Loop through categories and assign random emojis to those with '❓' icon
+    updatedCategories.forEach((category: Category) => {
+      if (!category.icon || category.icon === '❓') {
+        // Pick a random emoji from the list
+        const randomIndex = Math.floor(Math.random() * CATEGORY_EMOJIS.length);
+        category.icon = CATEGORY_EMOJIS[randomIndex];
+        updatedCount++;
+      }
+    });
+
+    // Only update if changes were made
+    if (updatedCount > 0) {
+      // Update Redux
+      dispatch(updateCategories(updatedCategories));
+      
+      // Manual save to localStorage for redundancy
+      try {
+        localStorage.setItem('trivia-game-categories', JSON.stringify(updatedCategories));
+      } catch (e) {
+        console.error('Error saving to localStorage:', e);
+      }
+      
+      // Show success notification
+      setNotification({
+        type: 'success',
+        message: `Assigned random emojis to ${updatedCount} categories!`,
+        visible: true
+      });
+      
+      // Hide notification after 3 seconds
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, visible: false }));
+      }, 3000);
+    } else {
+      // Show info notification if no categories needed updating
+      setNotification({
+        type: 'info',
+        message: 'No categories needed emoji assignment!',
+        visible: true
+      });
+      
+      // Hide notification after 3 seconds
+      setTimeout(() => {
+        setNotification(prev => ({ ...prev, visible: false }));
+      }, 3000);
     }
   };
 
@@ -3139,6 +3376,17 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
               setCurrentPage(1); // Reset to first page on search
             }}
           />
+          {searchQuery && (
+            <ClearButton 
+              onClick={() => {
+                setSearchQuery('');
+                setCurrentPage(1);
+              }}
+              title="Clear search"
+            >
+              ✖
+            </ClearButton>
+          )}
         </SearchBar>
         
         <BatchSizeSelector>
@@ -3657,6 +3905,7 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
                       currentEmoji={newCategoryIcon}
                       label="Choose Emoji"
                       buttonStyle={{ backgroundColor: '#f5f5f5' }}
+                      centered={true}
                     />
                   </CategoryEmojiPickerWrapper>
                   
@@ -3721,6 +3970,7 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
                       currentEmoji={editCategoryIcon}
                       label="Choose Emoji"
                       buttonStyle={{ backgroundColor: '#f5f5f5' }}
+                      centered={true}
                     />
                   </CategoryEmojiPickerWrapper>
                   
@@ -3798,7 +4048,7 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
       
       <CategoriesSection>
         <CategoriesHeader className="halloween-drip">Category Management</CategoriesHeader>
-        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
+        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', flexWrap: 'wrap' }}>
           <Button 
             onClick={handleReturnToSetup}
             whileHover={{ scale: 1.05 }}
@@ -3823,6 +4073,17 @@ Entertainment,Who directed the movie "Jurassic Park"?,Steven Spielberg,300,,,,"d
             }}
           >
             🤖 Generate Category with AI
+          </Button>
+          <Button 
+            onClick={handleAssignRandomEmojis}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            style={{ 
+              backgroundColor: '#4CAF50',
+              color: 'white'
+            }}
+          >
+            🎲 Assign Random Emojis
           </Button>
           <Button 
             onClick={handleDeleteAllCategories}

@@ -195,9 +195,8 @@ const SlotMachineModal: React.FC<SlotMachineModalProps> = ({ isOpen, onClose, on
       ]);
     }, 100);
     
-    // Play slot machine sound
-    // Ideally we would have a slot machine sound, but using an existing sound for now
-    playSound('ability-electric');
+    // Play slot machine spin sound
+    playSound('slot-machine-spin');
     
     // Stop after 2 seconds and show result
     setTimeout(() => {
@@ -222,8 +221,8 @@ const SlotMachineModal: React.FC<SlotMachineModalProps> = ({ isOpen, onClose, on
       const resultSymbol = symbolMap[firstSymbol];
       setDisplaySymbols([resultSymbol, resultSymbol, resultSymbol]);
       
-      // Play a sound for the result
-      playSound('ability-electric');
+      // Play the reveal sound when the result is shown
+      playSound('slot-machine-reveal');
       
       // Stop spinning
       setSpinning(false);
